@@ -167,7 +167,12 @@ SaveCalibration() {
 
 GetCamHubUiaElement() {
     global APP_EXE
-    uiaElement := UIA.ElementFromHandle("ahk_exe " APP_EXE)
+    hwnd := WinExist("ahk_exe " APP_EXE)
+    if !hwnd {
+        MsgBox "Could not find Camera Hub window."
+        return
+    }
+    uiaElement := UIA.ElementFromHandle(hwnd)
     if !uiaElement {
         MsgBox "UIA Failed"
     }
