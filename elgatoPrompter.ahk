@@ -20,25 +20,32 @@ INI := A_ScriptDir "\PrompterSpeed.ini"
 DEBUG_LOG := A_ScriptDir "\PrompterDebug.txt"
 
 ; ---- State & Globals----
-global _pendingSum := 0
+global _pending := Map()   ; controlName => delta
 global _applyArmed := false
 global _UIA_RangeValuePatternId := 10003
 global _BrightnessSpinner :=
     "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.propertyContainer.propertyGroup_com.elgato.vh-ui.group.picture-camlink4k.contentFrame.propertyGroup.property_kPCBrightness.spinBox_kPCBrightness"
+global _ContrastSpinner :=
+    "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.propertyContainer.propertyGroup_com.elgato.vh-ui.group.picture-camlink4k.contentFrame.propertyGroup.property_kPCContrast.spinBox_kPCContrast"
 
 ; ---- Hotkeys ----
 ;F18:: QueuePulse(-1)
 ;F19:: QueuePulse(+1)
-^!d:: QueuePulse(-1)
-^!a:: QueuePulse(+1)
+^!d:: QueuePulse("brightness", -1)
+^!a:: QueuePulse("brightness", +1)
+^!e:: QueuePulse("contrast", -1)
+^!q:: QueuePulse("contrast", +1)
 ^!x:: QuitApp()
 ^!s:: SaveCalibration()
 ^!z:: DebugProbe()
 
 ; ===== Core accumulator =====
-QueuePulse(sign) {
-    global _pendingSum, _applyArmed, BASE_STEP, APPLY_DELAY_MS
-    _pendingSum += (BASE_STEP * sign)
+QueuePulse(controlName, sign) {
+    global _pending, _applyArmed, BASE_STEP, APPLY_DELAY_MS
+    if !_pending.Has(controlName)
+        _pending[controlName] := 0
+    _pending[controlName] += (BASE_STEP * sign)
+
     if !_applyArmed {
         _applyArmed := true
         SetTimer ApplyAccumulated, -APPLY_DELAY_MS
@@ -46,26 +53,61 @@ QueuePulse(sign) {
 }
 
 ApplyAccumulated() {
-    global _pendingSum, _applyArmed, SHOW_PATH_TIP
-    delta := _pendingSum, _pendingSum := 0, _applyArmed := false
-    if (delta = 0)
+    global _pending, _applyArmed, SHOW_PATH_TIP
+    global _BrightnessSpinner, _ContrastSpinner, _UIA_RangeValuePatternId
+    _applyArmed := false
+
+    ; Nothing to do?
+    if (_pending.Count = 0)
         return
 
     uiaElement := GetCamHubUiaElement()
     if !uiaElement {
         Tip("Camera Hub window not found.")
+        _pending.Clear()
         return
     }
 
-    prompterElement := uiaElement.FindElement({ AutomationId: _BrightnessSpinner })
-    rvp := prompterElement.GetCurrentPattern(_UIA_RangeValuePatternId) ; RangeValue (10003): exposes numeric Value, with Minimum, Maximum, SmallChange, LargeChange, and SetValue(number).
-    if rvp {
-        cur := rvp.value            ; numeric
-        rvp.SetValue(cur + delta)   ; write a number (UIA clamps if needed)
+    ; Map control -> AutomationId resolver
+    ; Add more controls here in the future if needed.
+    ctrlToAutoId := Map(
+        "brightness", _BrightnessSpinner,
+        "contrast", _ContrastSpinner
+    )
+
+    summary := ""
+    ; Flush all non-zero deltas and reset them to 0
+    for controlName, delta in _pending.Clone() {
+        if (delta = 0)
+            continue
+
+        if !ctrlToAutoId.Has(controlName) {
+            _pending[controlName] := 0
+            continue
+        }
+
+        autoId := ctrlToAutoId[controlName]
+        try {
+            elem := uiaElement.FindElement({ AutomationId: autoId })
+            if elem {
+                rvp := elem.GetCurrentPattern(_UIA_RangeValuePatternId)
+                if rvp {
+                    cur := rvp.value              ; already numeric from UIA
+                    rvp.SetValue(cur + delta)     ; UIA will clamp to [min,max]
+                    sign := (delta > 0 ? "+" : "")
+                    summary .= (summary ? "`n" : "") controlName " " sign delta " -> " (cur + delta)
+                }
+            }
+        }
+
+        ; Zero out after applying (even if it failed—keeps the queue bounded)
+        _pending[controlName] := 0
     }
 
-    if SHOW_PATH_TIP {
-        Tip("Δ " delta)
+    ; Optional: tooltip that shows what we just targeted
+
+    if SHOW_PATH_TIP && summary {
+        Tip("Applied:`n" summary)
     }
 }
 
@@ -84,7 +126,8 @@ DebugProbe() {
     lines.Push("AHK: v" A_AhkVersion "  (x" (A_PtrSize * 8) ")  Elevated: " (A_IsAdmin ? "Yes" : "No"))
     lines.Push("App hwnd: " (hwnd ? hwnd : "NOT FOUND"))
     lines.Push("Saved point: " GetSavedPointText(hwnd))
-    lines.Push("AutomationId: " _BrightnessSpinner)
+    lines.Push("AutomationId (Brightness): " _BrightnessSpinner)
+    lines.Push("AutomationId (Contrast): " _ContrastSpinner)
 
     txt := JoinLines(lines)
     A_Clipboard := txt
