@@ -27,10 +27,14 @@ global _BrightnessSpinner :=
     "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.propertyContainer.propertyGroup_com.elgato.vh-ui.group.picture-camlink4k.contentFrame.propertyGroup.property_kPCBrightness.spinBox_kPCBrightness"
 global _ContrastSpinner :=
     "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.propertyContainer.propertyGroup_com.elgato.vh-ui.group.picture-camlink4k.contentFrame.propertyGroup.property_kPCContrast.spinBox_kPCContrast"
+global _ScrollSpeedSpinner :=
+    "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.prompterContainer.propertyGroup_com.elgato.vh-ui.prompter.group.scrolling.contentFrame.propertyGroup.property_kPRPScrollSpeed.spinBox_kPRPScrollSpeed"
+global _FontSizeSpinner :=
+    "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.prompterContainer.propertyGroup_com.elgato.vh-ui.prompter.group.appearance.contentFrame.propertyGroup.property_kPRPFontSize.spinBox_kPRPFontSize"
 
 ; ---- Hotkeys ----
-;F18:: QueuePulse(-1)
-;F19:: QueuePulse(+1)
+F18:: QueuePulse("scrollspeed", -1)
+F19:: QueuePulse("scrollspeed", +1)
 ^!d:: QueuePulse("brightness", -1)
 ^!a:: QueuePulse("brightness", +1)
 ^!e:: QueuePulse("contrast", -1)
@@ -54,7 +58,7 @@ QueuePulse(controlName, sign) {
 
 ApplyAccumulated() {
     global _pending, _applyArmed, SHOW_PATH_TIP
-    global _BrightnessSpinner, _ContrastSpinner, _UIA_RangeValuePatternId
+    global _ScrollSpeedSpinner, _FontSizeSpinner, _BrightnessSpinner, _ContrastSpinner, _UIA_RangeValuePatternId
     _applyArmed := false
 
     ; Nothing to do?
@@ -72,7 +76,9 @@ ApplyAccumulated() {
     ; Add more controls here in the future if needed.
     ctrlToAutoId := Map(
         "brightness", _BrightnessSpinner,
-        "contrast", _ContrastSpinner
+        "contrast", _ContrastSpinner,
+        "scrollspeed", _ScrollSpeedSpinner,
+        "fontsize", _FontSizeSpinner
     )
 
     summary := ""
@@ -87,6 +93,12 @@ ApplyAccumulated() {
         }
 
         autoId := ctrlToAutoId[controlName]
+        ; MsgBox "Type of autoId: " Type(autoId) "`nValue: " autoId
+        ;ClassName:"EVHSpinBox"
+        matches := ""
+        for el in uiaElement.FindElements({ ClassName: "EVHSpinBox" })
+            matches .= el.Dump() "`n"
+        ; MsgBox "All elements with type ClassName: `n`n" matches
         try {
             elem := uiaElement.FindElement({ AutomationId: autoId })
             if elem {
@@ -98,6 +110,11 @@ ApplyAccumulated() {
                     summary .= (summary ? "`n" : "") controlName " " sign delta " -> " (cur + delta)
                 }
             }
+        }
+        catch as e {
+            MsgBox "Error in FindElement: " e.Message "`nWhat: " e.What "`nExtra: " e.Extra
+            A_Clipboard := "Message: " e.Message "`nWhat: " e.What "`nExtra: " e.Extra
+            ; Store the error message
         }
 
         ; Zero out after applying (even if it failed—keeps the queue bounded)
