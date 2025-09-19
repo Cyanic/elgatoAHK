@@ -6,7 +6,7 @@
 
 ; ---- App targeting ----
 APP_EXE := "Camera Hub.exe"
-WIN_CLASS_RX := "Qt\d+QWindowIcon"
+WIN_CLASS_RX := "Qt\d+QWindowIcon" ; Qt673QWindowIcon
 
 ; ---- Behavior tuning ----
 BASE_STEP := 1              ; 1% per knob detent
@@ -33,6 +33,8 @@ global _FontSizeSpinner :=
     "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.prompterContainer.propertyGroup_com.elgato.vh-ui.prompter.group.appearance.contentFrame.propertyGroup.property_kPRPFontSize.spinBox_kPRPFontSize"
 
 ; ---- Hotkeys ----
+F16:: QueuePulse("scroll", -1)   ; up / slower
+F17:: QueuePulse("scroll", +1)   ; down / faster
 F18:: QueuePulse("scrollspeed", -1)
 F19:: QueuePulse("scrollspeed", +1)
 ^!d:: QueuePulse("brightness", -1)
@@ -42,6 +44,36 @@ F19:: QueuePulse("scrollspeed", +1)
 ^!x:: QuitApp()
 ^!s:: SaveCalibration()
 ^!z:: DebugProbe()
+
+
+^!u:: (FullDiag(), Tip("Wrote full diagnostics to log"))
+^!m:: (DumpMonitors(), Tip("Monitors dumped"))
+^!w:: (DumpWindows(), Tip("Windows dumped"))
+^!p:: (DumpUnderMouse(), Tip("Under-mouse UIA dumped"))
+^!f:: {  ; Quick scan
+    u := GetCamHubUiaElement()
+    cnt1 := u ? Scan(u, { ClassName: "EVHSpinBox" }, "ClassName:EVHSpinBox", 50) : 0
+    cnt2 := u ? Scan(u, { ControlType: "Spinner" }, "ControlType:Spinner", 50) : 0
+    cnt3 := u ? Scan(u, { ControlType: "Slider" }, "ControlType:Slider", 50) : 0
+    Tip("EVHSpinBox=" cnt1 "  Spinner=" cnt2 "  Slider=" cnt3)
+}
+^!c:: {  ; “Check candidates”
+    global APP_EXE, WIN_CLASS_RX
+    picked := GetCamHubHwnd()
+    Tip("Picked hwnd=" Format("{:#x}", picked))
+    for hwnd in WinGetList() {
+        try {
+            pid := WinGetPID("ahk_id " hwnd)
+            exe := ProcessGetPath(pid)
+            if InStr(exe, APP_EXE) {
+                cls := WinGetClass("ahk_id " hwnd)
+                title := WinGetTitle("ahk_id " hwnd)
+                Log(Format("CamHub candidate hwnd={:#x}  cls={}  title={}", hwnd, cls, title))
+            }
+        }
+    }
+}
+
 
 ; ===== Core accumulator =====
 QueuePulse(controlName, sign) {
@@ -98,7 +130,23 @@ ApplyAccumulated() {
         matches := ""
         for el in uiaElement.FindElements({ ClassName: "EVHSpinBox" })
             matches .= el.Dump() "`n"
-        ; MsgBox "All elements with type ClassName: `n`n" matches
+        ;MsgBox "All elements with type ClassName: `n`n" matches
+
+        matches := ""
+        for el in uiaElement.FindElements({ ClassName: "EVHSpinBox" })
+            matches .= el.Dump() "`n"
+
+        if (matches = "") {
+            Log("ApplyAccumulated: EVHSpinBox not found. Running quick scan.")
+            c1 := Scan(uiaElement, { ClassName: "EVHSpinBox" }, 'ClassName:"EVHSpinBox"', 10)
+            c2 := Scan(uiaElement, { ControlType: "Spinner" }, 'ControlType:"Spinner"', 10)
+            c3 := Scan(uiaElement, { ControlType: "Slider" }, 'ControlType:"Slider"', 10)
+            MsgBox "Quick scan — EVHSpinBox: " c1 "  Spinner: " c2 "  Slider: " c3
+        } else {
+            ;MsgBox "All elements with type ClassName: `n`n" matches
+        }
+
+
         try {
             elem := uiaElement.FindElement({ AutomationId: autoId })
             if elem {
@@ -111,10 +159,17 @@ ApplyAccumulated() {
                 }
             }
         }
+        /*
         catch as e {
             MsgBox "Error in FindElement: " e.Message "`nWhat: " e.What "`nExtra: " e.Extra
             A_Clipboard := "Message: " e.Message "`nWhat: " e.What "`nExtra: " e.Extra
             ; Store the error message
+        }
+        */
+        catch as e {
+            Log("FindElement ERROR: " e.Message "  What=" e.What "  Extra=" e.Extra)
+            MsgBox "Error in FindElement: " e.Message "`nWhat: " e.What "`nExtra: " e.Extra
+            A_Clipboard := "Message: " e.Message "`nWhat: " e.What "`nExtra: " e.Extra
         }
 
         ; Zero out after applying (even if it failed—keeps the queue bounded)
@@ -183,8 +238,7 @@ SaveCalibration() {
 }
 
 GetCamHubUiaElement() {
-    global APP_EXE
-    hwnd := WinExist("ahk_exe " APP_EXE)
+    hwnd := GetCamHubHwnd()
     if !hwnd {
         MsgBox "Could not find Camera Hub window."
         return
@@ -197,13 +251,239 @@ GetCamHubUiaElement() {
 }
 
 GetCamHubHwnd() {
-    global APP_EXE, WIN_CLASS_RX
-    hwnd := WinExist("ahk_exe " APP_EXE)
-    if !hwnd
-        hwnd := WinExist("ahk_class " WIN_CLASS_RX)
-    return hwnd
+    global APP_EXE
+    bestHwnd := 0, bestScore := -999999
+
+    ; Enumerate all top-level windows and pick the best candidate for Camera Hub
+    for hwnd in WinGetList() {
+        ; try-except guards for odd windows
+        try {
+            pid := WinGetPID("ahk_id " hwnd)
+            exe := ProcessGetPath(pid)
+            if !exe || !InStr(Exe, "\Camera Hub.exe")
+                continue
+
+            cls := WinGetClass("ahk_id " hwnd)
+            title := WinGetTitle("ahk_id " hwnd)
+
+            ; Score the candidate. Prefer QWindowIcon, penalize ToolSaveBits/renderer.
+            score := 0
+            if InStr(cls, "QWindowIcon")
+                score += 1000
+            if InStr(cls, "ToolSaveBits") || InStr(cls, "Renderer")
+                score -= 1000
+
+            ; Light UIA probe (cheap): presence of a QScrollArea suggests the real UI shell
+            root := UIA.ElementFromHandle(hwnd)
+            if root {
+                try score += (Scan(root, { ClassName: "QScrollArea" }, "probe:QScrollArea", 1) > 0) ? 50 : 0
+                ; If we see EVHPrompterTextWidget (render surface), penalize further
+                try score -= (Scan(root, { ClassName: "EVHPrompterTextWidget" }, "probe:TextWidget", 1) > 0) ? 50 : 0
+            }
+
+            ; Keep the best
+            if (score > bestScore)
+                bestScore := score, bestHwnd := hwnd
+
+            ; Log candidates for visibility
+            Log(Format("CamHub candidate hwnd={:#x} cls={} title={} score={}", hwnd, cls, title, score))
+        }
+    }
+
+    if bestHwnd {
+        Log(Format("GetCamHubHwnd: picked={:#x} score={}", bestHwnd, bestScore))
+        return bestHwnd
+    }
+
+    ; Last-resort fallback (shouldn’t be hit anymore)
+    Log("GetCamHubHwnd: fallback path hit")
+    return WinExist("ahk_exe " APP_EXE)
 }
 
+;GetCamHubHwnd() {
+;    global APP_EXE, WIN_CLASS_RX
+;    ; Prefer the real UI window (Icon), then fall back to exe
+;    hwnd := WinExist("ahk_class " WIN_CLASS_RX)
+;    if !hwnd
+;        hwnd := WinExist("ahk_exe " APP_EXE)
+;    return hwnd
+;}
+
+; ======== Diagnostics & Logging (AHK v2) ========
+
+; Append a line to our debug log with timestamp
+Log(line) {
+    global DEBUG_LOG
+    ts := FormatTime(, "yyyy-MM-dd HH:mm:ss")
+    try FileAppend(ts "  " line "`r`n", DEBUG_LOG)
+}
+
+; Dump monitor layout and DPI (per-monitor where supported)
+DumpMonitors() {
+    Log("=== Monitors ===")
+    count := MonitorGetCount()   ; or: SysGet(80)
+    Log("Monitor count: " count)
+    Loop count {
+        i := A_Index
+        MonitorGet(i, &l, &t, &r, &b)
+        name := ""
+        try name := MonitorGetName(i)  ; may fail on older Windows
+        Log(Format("[{}] {}x{} @({},{})  Name: {}", i, r - l, b - t, l, t, name))
+    }
+    hwnd := WinActive("A")
+    if hwnd {
+        dpi := 0
+        try dpi := DllCall("User32\GetDpiForWindow", "ptr", hwnd, "uint")
+        if dpi
+            Log("Active window DPI: " dpi)
+    }
+}
+
+; Enumerate all windows that match app exe or Qt class and show which one we picked
+DumpWindows() {
+    global APP_EXE, WIN_CLASS_RX
+    Log("=== Windows ===")
+    picked := GetCamHubHwnd()
+    for hwnd in WinGetList() {
+        title := WinGetTitle("ahk_id " hwnd)
+        cls := WinGetClass("ahk_id " hwnd)
+        pid := WinGetPID("ahk_id " hwnd)
+        exe := ""
+        try exe := ProcessGetPath(pid)
+        flag := (hwnd = picked) ? " <== PICKED" : ""
+        Log(Format("hwnd={:#x}  cls={}  pid={}  exe={}  title={}{}", hwnd, cls, pid, exe, title, flag))
+    }
+}
+
+; Try to infer elevation mismatch risk: if script is admin and target isn't (or vice versa)
+CheckElevationRisk() {
+    global APP_EXE
+    hwnd := WinExist("ahk_exe " APP_EXE)
+    if !hwnd {
+        Log("ElevationCheck: target hwnd NOT FOUND")
+        return
+    }
+    pid := WinGetPID("ahk_id " hwnd)
+    exe := ""
+    try exe := ProcessGetPath(pid)
+    Log("ElevationCheck: AHK IsAdmin=" (A_IsAdmin ? "Yes" : "No") "  TargetExe=" exe)
+    ; NOTE: Accurate token elevation check for target proc requires COM/WMI or adv API; this is a hint only.
+}
+
+; Dump the element under the mouse and its ancestors
+DumpUnderMouse() {
+    try {
+        MouseGetPos &mx, &my, &hwin
+        el := UIA.ElementFromPoint(mx, my)
+        Log("=== UIA UnderMouse ===")
+        Log(Format("Screen @({},{})  hwnd={:#x}", mx, my, hwin))
+        if !el {
+            Log("ElementFromPoint: NULL")
+            return
+        }
+        DumpOne(el, "UNDER_MOUSE")
+        Log("Ancestors:")
+        p := el
+        loop 10 {
+            p := p.Parent
+            if !p
+                break
+            DumpOne(p, "  ^ parent")
+        }
+    } catch as e {
+        Log("DumpUnderMouse ERROR: " e.Message)
+    }
+}
+
+; Dump basic fields for one UIA element
+DumpOne(el, prefix := "") {
+    if !el
+        return
+    name := ""
+    tempclass := ""
+    aid := ""
+    ctype := ""
+    rect := ""
+    try name := el.Name
+    try tempclass := el.ClassName
+    try aid := el.AutomationId
+    try ctype := el.ControlType  ; may be enum name or number depending on lib
+    try {
+        r := el.BoundingRectangle
+        rect := Format("[{},{},{},{}]", r.x, r.y, r.w, r.h)
+    }
+    Log(prefix "  Name=" name "  Class=" tempclass "  AutoId=" aid "  CtrlType=" ctype "  Rect=" rect)
+}
+
+; Walk the subtree and list first N descendants
+DumpSubtree(uiaRoot, N := 50) {
+    if !uiaRoot {
+        Log("DumpSubtree: root is NULL")
+        return
+    }
+    Log("=== UIA Subtree (first " N ") ===")
+    cnt := 0
+    for el in uiaRoot.FindElements({}) { ; empty condition == all descendants in this lib
+        cnt += 1
+        DumpOne(el, "#" cnt)
+        if (cnt >= N)
+            break
+    }
+    Log("Subtree enumerated: " cnt " elements (displayed up to " N ")")
+}
+
+; Count by a condition, list up to M
+Scan(uiaRoot, condObj, label := "", M := 25) {
+    if !uiaRoot {
+        Log("Scan[" label "]: root is NULL")
+        return 0
+    }
+    cnt := 0
+    Log("=== Scan " label " ===")
+    for el in uiaRoot.FindElements(condObj) {
+        cnt += 1
+        if (cnt <= M)
+            DumpOne(el, "#" cnt)
+    }
+    Log("Scan " label ": total=" cnt)
+    return cnt
+}
+
+; Convenience: run a full diagnostic pass
+FullDiag() {
+    Log("===== FULL DIAGNOSTIC START =====")
+    DumpMonitors()
+    DumpWindows()
+    CheckElevationRisk()
+    hwnd := GetCamHubHwnd()
+    if !hwnd {
+        Log("No target hwnd; aborting UIA dumps.")
+        Log("===== FULL DIAGNOSTIC END =====")
+        return
+    }
+    root := UIA.ElementFromHandle(hwnd)
+    if !root {
+        Log("UIA.ElementFromHandle returned NULL")
+        Log("===== FULL DIAGNOSTIC END =====")
+        return
+    }
+    DumpOne(root, "ROOT")
+    DumpSubtree(root, 50)
+    Scan(root, { ClassName: "EVHSpinBox" }, 'ClassName:"EVHSpinBox"', 25)
+    ; Fallback: some builds expose spinners as ControlType: Spinner or Slider
+    Scan(root, { ControlType: "Spinner" }, 'ControlType:"Spinner"', 25)
+    Scan(root, { ControlType: "Slider" }, 'ControlType:"Slider"', 10)
+    DumpUnderMouse()
+    Log("===== FULL DIAGNOSTIC END =====")
+}
+
+; Helper: list of monitors with names (best-effort)
+MonitorGetList() {
+    arr := []
+    Loop MonitorGetCount()
+        arr.Push(A_Index)
+    return arr
+}
 ; ---- Small utilities ----
 JoinLines(arr) {
     s := ""
