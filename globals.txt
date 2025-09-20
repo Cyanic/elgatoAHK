@@ -1,5 +1,0 @@
-SHOW_PATH_TIP
-_pending
-_applyArmed
-_UIA_RangeValuePatternId
-INI
