@@ -1,0 +1,83 @@
+2025-09-19 09:37:00  === Scan ClassName:EVHSpinBox ===
+2025-09-19 09:37:00  Scan ClassName:EVHSpinBox: total=0
+2025-09-19 09:37:00  === Scan ControlType:Spinner ===
+2025-09-19 09:37:00  Scan ControlType:Spinner: total=0
+2025-09-19 09:37:00  === Scan ControlType:Slider ===
+2025-09-19 09:37:00  Scan ControlType:Slider: total=0
+2025-09-19 09:37:18  ===== FULL DIAGNOSTIC START =====
+2025-09-19 09:37:18  === Monitors ===
+2025-09-19 09:37:18  Monitor count: 3
+2025-09-19 09:37:18  [1] 1920x1200 @(0,0)  Name: \\.\DISPLAY1
+2025-09-19 09:37:18  [2] 1920x1200 @(157,-1200)  Name: \\.\DISPLAY2
+2025-09-19 09:37:18  [3] 1024x600 @(-867,-618)  Name: \\.\DISPLAY5
+2025-09-19 09:37:18  Active window DPI: 96
+2025-09-19 09:37:18  === Windows ===
+2025-09-19 09:37:18  hwnd=0x701a8  cls=Shell_TrayWnd  pid=7296  exe=C:\Windows\explorer.exe  title=
+2025-09-19 09:37:18  hwnd=0x4f904ee  cls=Shell_SecondaryTrayWnd  pid=7296  exe=C:\Windows\explorer.exe  title=
+2025-09-19 09:37:18  hwnd=0x312fa  cls=Qt673QWindowToolSaveBits  pid=8136  exe=C:\Program Files\Elgato\CameraHub\Camera Hub.exe  title=Camera Hub <== PICKED
+2025-09-19 09:37:18  hwnd=0x6a0aaa  cls=Qt673QWindowIcon  pid=8136  exe=C:\Program Files\Elgato\CameraHub\Camera Hub.exe  title=Camera Hub
+2025-09-19 09:37:18  hwnd=0x137112a  cls=MozillaWindowClass  pid=17060  exe=C:\Program Files\Mozilla Firefox\firefox.exe  title=Script issue diagnosis � Mozilla Firefox
+2025-09-19 09:37:18  hwnd=0xcd0ae0  cls=CabinetWClass  pid=7296  exe=C:\Windows\explorer.exe  title=C:\Cyanic\Code\elgatoAHK - File Explorer
+2025-09-19 09:37:18  hwnd=0x19e0e10  cls=Chrome_WidgetWin_1  pid=24184  exe=C:\Users\Doug\AppData\Local\Programs\Microsoft VS Code\Code.exe  title=elgatoPrompter.ahk - elgatoAHK - Visual Studio Code
+2025-09-19 09:37:18  hwnd=0x9705c0  cls=Notepad++  pid=25852  exe=C:\Program Files\Notepad++\notepad++.exe  title=C:\Cyanic\Code\elgatoAHK\PrompterDebug.txt - Notepad++
+2025-09-19 09:37:18  hwnd=0xf810a8  cls=CabinetWClass  pid=7296  exe=C:\Windows\explorer.exe  title=D:\VMActive\2025-05-27 Ubuntu - File Explorer
+2025-09-19 09:37:18  hwnd=0x280e12  cls=CabinetWClass  pid=7296  exe=C:\Windows\explorer.exe  title=C:\Cyanic\Tools\UIA-v2-main\Lib - File Explorer
+2025-09-19 09:37:18  hwnd=0x20490  cls=#32770  pid=17184  exe=C:\Program Files\Microsoft Office\root\Office16\OUTLOOK.EXE  title=1 Reminder(s)
+2025-09-19 09:37:18  hwnd=0xa122e  cls=Chrome_WidgetWin_1  pid=29252  exe=C:\Users\Doug\AppData\Local\Programs\signal-desktop\Signal.exe  title=Signal
+2025-09-19 09:37:18  hwnd=0x502bc  cls=Chrome_WidgetWin_1  pid=15500  exe=C:\Users\Doug\AppData\Local\slack\app-4.45.69\slack.exe  title=* jobbook_benchmark (Channel) - Cyanic Automation - Slack
+2025-09-19 09:37:18  hwnd=0x21568  cls=MozillaWindowClass  pid=17060  exe=C:\Program Files\Mozilla Firefox\firefox.exe  title=Benchmark Surveys � Mozilla Firefox
+2025-09-19 09:37:18  hwnd=0x2f16ae  cls=MozillaWindowClass  pid=17060  exe=C:\Program Files\Mozilla Firefox\firefox.exe  title=Script linter warning fix � Mozilla Firefox
+2025-09-19 09:37:18  hwnd=0x1c019c  cls=MozillaWindowClass  pid=17060  exe=C:\Program Files\Mozilla Firefox\firefox.exe  title=Keyboard Event Viewer � Mozilla Firefox
+2025-09-19 09:37:18  hwnd=0x214e0  cls=PseudoConsoleWindow  pid=26032  exe=C:\Windows\System32\cmd.exe  title=
+2025-09-19 09:37:18  hwnd=0x114c8  cls=CASCADIA_HOSTING_WINDOW_CLASS  pid=24636  exe=C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.22.12111.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe  title=C:\WINDOWS\system32\cmd.exe 
+2025-09-19 09:37:18  hwnd=0x7103bc  cls=Chrome_WidgetWin_1  pid=24496  exe=C:\Users\Doug\AppData\Local\Logseq\app-0.10.13\Logseq.exe  title=VS Code
+2025-09-19 09:37:18  hwnd=0x910a2  cls=MozillaWindowClass  pid=17060  exe=C:\Program Files\Mozilla Firefox\firefox.exe  title=Build a Killer YouTube Setup in 2025 (Everything on the Desk) - YouTube � Mozilla Firefox
+2025-09-19 09:37:18  hwnd=0x30472  cls=MozillaWindowClass  pid=17060  exe=C:\Program Files\Mozilla Firefox\firefox.exe  title=WhatsApp � Mozilla Firefox
+2025-09-19 09:37:18  hwnd=0x1070a  cls=MozillaWindowClass  pid=17060  exe=C:\Program Files\Mozilla Firefox\firefox.exe  title=MikroTik CAPsMAN VLAN & Multi SSID WiFi � Full Setup Guide! - YouTube � Mozilla Firefox
+2025-09-19 09:37:18  hwnd=0x22304f6  cls=Shell_SecondaryTrayWnd  pid=7296  exe=C:\Windows\explorer.exe  title=
+2025-09-19 09:37:18  hwnd=0x101e0  cls=Progman  pid=7296  exe=C:\Windows\explorer.exe  title=Program Manager
+2025-09-19 09:37:18  ElevationCheck: AHK IsAdmin=No  TargetExe=C:\Program Files\Elgato\CameraHub\Camera Hub.exe
+2025-09-19 09:37:18  ROOT  Name=Camera Hub  Class=EVHPrompterRendererWindow  AutoId=  CtrlType=50032  Rect=
+2025-09-19 09:37:18  === UIA Subtree (first 50) ===
+2025-09-19 09:37:18  #1  Name=  Class=QWidget  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #2  Name=  Class=EVHCrosshair  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #3  Name=  Class=EVHPrompterTextWidget  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #4  Name=  Class=QWidget  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #5  Name=  Class=QScrollArea  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #6  Name=  Class=QWidget  AutoId=qt_scrollarea_viewport  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #7  Name=  Class=QWidget  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #8  Name=  Class=QTextBrowser  AutoId=  CtrlType=50020  Rect=
+2025-09-19 09:37:18  #9  Name=  Class=QWidget  AutoId=qt_scrollarea_viewport  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #10  Name=  Class=QTextBrowser  AutoId=  CtrlType=50020  Rect=
+2025-09-19 09:37:18  #11  Name=  Class=QWidget  AutoId=qt_scrollarea_viewport  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #12  Name=  Class=QTextBrowser  AutoId=  CtrlType=50020  Rect=
+2025-09-19 09:37:18  #13  Name=  Class=QWidget  AutoId=qt_scrollarea_viewport  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #14  Name=  Class=QTextBrowser  AutoId=  CtrlType=50020  Rect=
+2025-09-19 09:37:18  #15  Name=  Class=QWidget  AutoId=qt_scrollarea_viewport  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #16  Name=  Class=QTextBrowser  AutoId=  CtrlType=50020  Rect=
+2025-09-19 09:37:18  #17  Name=  Class=QWidget  AutoId=qt_scrollarea_viewport  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #18  Name=  Class=QTextBrowser  AutoId=  CtrlType=50020  Rect=
+2025-09-19 09:37:18  #19  Name=  Class=QWidget  AutoId=qt_scrollarea_viewport  CtrlType=50026  Rect=
+2025-09-19 09:37:18  #20  Name=  Class=EVHReadingLine  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18  Subtree enumerated: 20 elements (displayed up to 50)
+2025-09-19 09:37:18  === Scan ClassName:"EVHSpinBox" ===
+2025-09-19 09:37:18  Scan ClassName:"EVHSpinBox": total=0
+2025-09-19 09:37:18  === Scan ControlType:"Spinner" ===
+2025-09-19 09:37:18  Scan ControlType:"Spinner": total=0
+2025-09-19 09:37:18  === Scan ControlType:"Slider" ===
+2025-09-19 09:37:18  Scan ControlType:"Slider": total=0
+2025-09-19 09:37:18  === UIA UnderMouse ===
+2025-09-19 09:37:18  Screen @(302,692)  hwnd=0x6a0aaa
+2025-09-19 09:37:18  UNDER_MOUSE  Name=Source Control History  Class=  AutoId=  CtrlType=50023  Rect=
+2025-09-19 09:37:18  Ancestors:
+2025-09-19 09:37:18    ^ parent  Name=  Class=  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18    ^ parent  Name=  Class=  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18    ^ parent  Name=  Class=  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18    ^ parent  Name=  Class=  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18    ^ parent  Name=  Class=  AutoId=workbench.view.scm  CtrlType=50026  Rect=
+2025-09-19 09:37:18    ^ parent  Name=  Class=  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18    ^ parent  Name=  Class=  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18    ^ parent  Name=  Class=  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18    ^ parent  Name=  Class=  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18    ^ parent  Name=  Class=  AutoId=  CtrlType=50026  Rect=
+2025-09-19 09:37:18  ===== FULL DIAGNOSTIC END =====
