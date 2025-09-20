@@ -128,22 +128,21 @@ ApplyAccumulated() {
     ctrlSpecs := GetControlSpecs()
     summary := ""
 
-    for controlName, delta in _pending.Clone() {
-        if (delta = 0) {
-            _pending[controlName] := 0
-            continue
-        }
-        if !ctrlSpecs.Has(controlName) {
+    for controlName in _pending.Keys() {
+        delta := _pending[controlName]
+        if !delta {
             _pending[controlName] := 0
             continue
         }
 
-        spec := ctrlSpecs[controlName]
-        autoId := spec["AutoId"]
-        handler := spec["Handler"]
+        spec := ctrlSpecs.Has(controlName) ? ctrlSpecs[controlName] : 0
+        if !spec {
+            _pending[controlName] := 0
+            continue
+        }
 
         ok := false
-        try ok := handler.Call(uiaElement, autoId, delta)
+        try ok := spec["Handler"].Call(uiaElement, spec["AutoId"], delta)
         catch {
         }
 
