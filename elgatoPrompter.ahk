@@ -398,29 +398,25 @@ GetCamHubUiaElement() {
 
 GetCamHubHwnd() {
     global APP_EXE, WIN_CLASS_RX
-    hwnd := WinExist("ahk_class " WIN_CLASS_RX)
-    if !hwnd
-        hwnd := WinExist("ahk_exe " APP_EXE)
-    if !hwnd
-        return 0
 
-    ; If we latched onto the ToolSaveBits surface, try to promote the sibling icon window
-    cls := ""
-    try cls := WinGetClass("ahk_id " hwnd)
-    if InStr(cls, "ToolSaveBits") {
-        try {
-            pid := WinGetPID("ahk_id " hwnd)
-            for candidate in WinGetList("ahk_exe " APP_EXE) {
-                if WinGetPID("ahk_id " candidate) != pid
-                    continue
-                if InStr(WinGetClass("ahk_id " candidate), "QWindowIcon") {
-                    hwnd := candidate
-                    break
-                }
+    ; Prefer a class that matches the configured regex among windows for this exe
+    if WIN_CLASS_RX {
+        for candidate in WinGetList("ahk_exe " APP_EXE) {
+            try {
+                cls := WinGetClass("ahk_id " candidate)
+                if RegExMatch(cls, WIN_CLASS_RX)
+                    return candidate
             }
         }
     }
-    return hwnd
+
+    ; Fallback to first window owned by the executable
+    hwnd := WinExist("ahk_exe " APP_EXE)
+    if hwnd
+        return hwnd
+
+    ; Final fallback: exact class match if provided
+    return WIN_CLASS_RX ? WinExist("ahk_class " WIN_CLASS_RX) : 0
 }
 
 ; ======== Diagnostics & Logging (AHK v2) ========
@@ -623,12 +619,13 @@ IniReadNumber(file, section, key, default) {
 }
 
 LoadConfigOverrides() {
-    global INI, APP_EXE, DEBUG_LOG, BASE_STEP, APPLY_DELAY_MS
+    global INI, APP_EXE, WIN_CLASS_RX, DEBUG_LOG, BASE_STEP, APPLY_DELAY_MS
     global MAX_ANCESTOR_DEPTH, SUBTREE_LIST_LIMIT, SCAN_LIST_LIMIT, SLIDER_SCAN_LIMIT, TOOLTIP_HIDE_DELAY_MS
     global DEBUG_VERBOSE_LOGGING, ENABLE_PROBE_SCANS
     global _BrightnessSpinner, _ContrastSpinner, _ScrollSpeedSpinner, _FontSizeSpinner, _ScrollViewportAutoId
 
     APP_EXE := IniRead(INI, "App", "Executable", APP_EXE)
+    WIN_CLASS_RX := IniRead(INI, "App", "ClassRegex", WIN_CLASS_RX)
     DEBUG_LOG := IniRead(INI, "Files", "DebugLog", DEBUG_LOG)
 
     BASE_STEP := IniReadNumber(INI, "Behavior", "BaseStep", BASE_STEP)
