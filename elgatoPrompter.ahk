@@ -228,34 +228,38 @@ FindPrompterViewport(root, autoId) {
     if el
         return el
 
-    ; 2) Look inside QScrollArea for QTextBrowser child
+    ; 2) Look inside QScrollArea for first QTextBrowser child
     for area in root.FindElements({ ClassName: "QScrollArea" }) {
-        for kid in area.FindElements({}) {
-            try if (kid.ClassName = "QTextBrowser")
-                return kid
+        try {
+            qb := area.FindElement({ ClassName: "QTextBrowser" })
+            if qb
+                return qb
         }
     }
 
     ; 3) Fallback: first QTextBrowser anywhere
-    for kid in root.FindElements({ ClassName: "QTextBrowser" })
-        return kid
+    try {
+        qb := root.FindElement({ ClassName: "QTextBrowser" })
+        if qb
+            return qb
+    }
+    catch {
+    }
 
     return 0  ; nothing found
 }
 
 ; Helper: find an element by AutomationId
 FindByAutoId(root, autoId) {
-    if !root
-        return 0
-    if !autoId
+    if !root || !autoId
         return 0
     try {
         return root.FindElement({ AutomationId: autoId })
-    } catch {
+        }
+    catch {
         return 0
-    }
+        }
 }
-
 /*
 ApplyAccumulated() {
     global _pending, _applyArmed, SHOW_PATH_TIP
@@ -668,7 +672,7 @@ JoinLines(arr) {
 IniReadBool(file, section, key, default := false) {
     defStr := default ? "1" : "0"
     val := IniRead(file, section, key, defStr)
-    txt := StrLower(val)
+    txt := StrLower(Trim(val))
     return (txt = "1" || txt = "true" || txt = "yes" || txt = "on")
 }
 
