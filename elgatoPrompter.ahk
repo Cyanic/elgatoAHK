@@ -15,6 +15,9 @@ APPLY_DELAY_MS := 40        ; coalesce fast pulses so no detents are dropped (40
 ; ---- Path control ----
 SHOW_PATH_TIP := true
 
+; ---- Debug toggles ----
+ENABLE_PROBE_SCANS := false
+
 ; ---- Files ----
 INI := A_ScriptDir "\PrompterSpeed.ini"
 DEBUG_LOG := A_ScriptDir "\PrompterDebug.txt"
@@ -171,7 +174,7 @@ ApplyRangeValueDelta(root, autoId, delta, uiRangeValueId := 10003) {
 
 ; Apply a delta to the Prompter viewport using ScrollPattern or wheel fallback
 ApplyScrollDelta(root, autoId, delta, uiScrollId := 10004) {
-    global SCROLL_PERCENT_PER_STEP, SCROLL_WHEEL_PER_STEP
+    global BASE_STEP
     vp := FindPrompterViewport(root, autoId)
     if !vp
         return false
@@ -190,7 +193,7 @@ ApplyScrollDelta(root, autoId, delta, uiScrollId := 10004) {
         try {
             cur := sp.VerticalScrollPercent  ; -1 means unsupported
             if (cur >= 0) {
-                step := BASE_STEP * (delta > 0 ? +1 : -1) ; SCROLL_PERCENT_PER_STEP
+                step := BASE_STEP * (delta > 0 ? +1 : -1)
                 newp := cur + step
                 if (newp < 0) newp := 0
                     if (newp > 100) newp := 100
@@ -386,18 +389,21 @@ SaveCalibration() {
 GetCamHubUiaElement() {
     hwnd := GetCamHubHwnd()
     if !hwnd {
-        MsgBox "Could not find Camera Hub window."
+        Tip("Camera Hub window not found.")
+        Log("GetCamHubUiaElement: Camera Hub window not found")
         return
     }
     uiaElement := UIA.ElementFromHandle(hwnd)
     if !uiaElement {
-        MsgBox "UIA Failed"
+        Tip("UIA handle lookup failed")
+        Log("GetCamHubUiaElement: UIA.ElementFromHandle returned NULL")
     }
     return uiaElement
 }
 
 GetCamHubHwnd() {
     global APP_EXE
+    global ENABLE_PROBE_SCANS
     bestHwnd := 0, bestScore := -999999
 
     ; Enumerate all top-level windows and pick the best candidate for Camera Hub
@@ -406,7 +412,7 @@ GetCamHubHwnd() {
         try {
             pid := WinGetPID("ahk_id " hwnd)
             exe := ProcessGetPath(pid)
-            if !exe || !InStr(Exe, "\Camera Hub.exe")
+            if !exe || !InStr(exe, "\Camera Hub.exe")
                 continue
 
             cls := WinGetClass("ahk_id " hwnd)
@@ -421,7 +427,7 @@ GetCamHubHwnd() {
 
             ; Light UIA probe (cheap): presence of a QScrollArea suggests the real UI shell
             root := UIA.ElementFromHandle(hwnd)
-            if root {
+            if root && ENABLE_PROBE_SCANS {
                 try score += (Scan(root, { ClassName: "QScrollArea" }, "probe:QScrollArea", 1) > 0) ? 50 : 0
                 ; If we see EVHPrompterTextWidget (render surface), penalize further
                 try score -= (Scan(root, { ClassName: "EVHPrompterTextWidget" }, "probe:TextWidget", 1) > 0) ? 50 : 0
