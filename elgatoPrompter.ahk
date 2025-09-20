@@ -623,7 +623,7 @@ IniReadNumber(file, section, key, default) {
 }
 
 LoadConfigOverrides() {
-    global INI, APP_EXE, WIN_CLASS_RX, DEBUG_LOG, BASE_STEP, APPLY_DELAY_MS
+    global INI, APP_EXE, WIN_CLASS_RX, DEBUG_LOG, BASE_STEP, APPLY_DELAY_MS, SHOW_PATH_TIP
     global MAX_ANCESTOR_DEPTH, SUBTREE_LIST_LIMIT, SCAN_LIST_LIMIT, SLIDER_SCAN_LIMIT, TOOLTIP_HIDE_DELAY_MS
     global DEBUG_VERBOSE_LOGGING, ENABLE_PROBE_SCANS
     global _BrightnessSpinner, _ContrastSpinner, _ScrollSpeedSpinner, _FontSizeSpinner, _ScrollViewportAutoId
@@ -634,6 +634,7 @@ LoadConfigOverrides() {
 
     BASE_STEP := IniReadNumber(INI, "Behavior", "BaseStep", BASE_STEP)
     APPLY_DELAY_MS := IniReadNumber(INI, "Behavior", "ApplyDelayMs", APPLY_DELAY_MS)
+    SHOW_PATH_TIP := IniReadBool(INI, "Behavior", "ShowPathTip", SHOW_PATH_TIP)
 
     ENABLE_PROBE_SCANS := IniReadBool(INI, "Debug", "ProbeScans", ENABLE_PROBE_SCANS)
     DEBUG_VERBOSE_LOGGING := IniReadBool(INI, "Debug", "VerboseLogging", DEBUG_VERBOSE_LOGGING)
