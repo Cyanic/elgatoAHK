@@ -17,6 +17,7 @@ SHOW_PATH_TIP := true
 
 ; ---- Debug toggles ----
 ENABLE_PROBE_SCANS := false
+DEBUG_VERBOSE_LOGGING := false
 
 ; ---- Diagnostics & UI ----
 MAX_ANCESTOR_DEPTH := 10
@@ -31,6 +32,7 @@ DEBUG_LOG := A_ScriptDir "\PrompterDebug.txt"
 
 ; Initialize runtime-configurable toggles
 ENABLE_PROBE_SCANS := IniReadBool(INI, "Debug", "ProbeScans", ENABLE_PROBE_SCANS)
+DEBUG_VERBOSE_LOGGING := IniReadBool(INI, "Debug", "VerboseLogging", DEBUG_VERBOSE_LOGGING)
 
 ; ---- State & Globals----
 global _pending := Map()   ; controlName => delta
@@ -92,6 +94,7 @@ F19:: QueuePulse("scrollspeed", +1)
 }
 
 ^!g:: ToggleProbeScans()   ; Toggle diagnostic UIA probe scans
+^!h:: ShowHelp()
 
 
 ; ===== Core accumulator =====
@@ -108,7 +111,7 @@ QueuePulse(controlName, sign) {
 }
 
 ApplyAccumulated() {
-    global _pending, _applyArmed, SHOW_PATH_TIP
+    global _pending, _applyArmed, SHOW_PATH_TIP, DEBUG_VERBOSE_LOGGING
     _applyArmed := false
     if (_pending.Count = 0)
         return
@@ -131,19 +134,25 @@ ApplyAccumulated() {
 
         spec := ctrlSpecs.Has(controlName) ? ctrlSpecs[controlName] : 0
         if !spec {
+            if DEBUG_VERBOSE_LOGGING
+                Log("ApplyAccumulated: missing control spec for " controlName)
             _pending[controlName] := 0
             continue
         }
 
         ok := false
         try ok := spec["Handler"].Call(uiaElement, spec["AutoId"], delta)
-        catch {
+        catch as err {
+            if DEBUG_VERBOSE_LOGGING
+                Log("ApplyAccumulated: handler error for " controlName " -> " err.Message)
         }
 
         if ok {
             sign := (delta > 0 ? "+" : "")
             summary .= (summary ? "`n" : "") controlName " " sign delta
         } else {
+            if DEBUG_VERBOSE_LOGGING
+                Log("ApplyAccumulated: handler returned false for " controlName)
             summary .= (summary ? "`n" : "") controlName " FAILED"
         }
 
@@ -157,21 +166,27 @@ ApplyAccumulated() {
 GetControlSpecs() {
     global _BrightnessSpinner, _ContrastSpinner, _ScrollSpeedSpinner, _FontSizeSpinner
     global _ScrollViewportAutoId
+    rangeHandler := ApplyRangeValueDelta
+    scrollHandler := ApplyScrollDelta
     ; Each entry: name -> { AutoId, Handler }
     return Map(
-        "brightness", Map("AutoId", _BrightnessSpinner, "Handler", (root, id, d) => ApplyRangeValueDelta(root, id, d)),
-        "contrast", Map("AutoId", _ContrastSpinner, "Handler", (root, id, d) => ApplyRangeValueDelta(root, id, d)),
-        "scrollspeed", Map("AutoId", _ScrollSpeedSpinner, "Handler", (root, id, d) => ApplyRangeValueDelta(root, id, d)),
-        "fontsize", Map("AutoId", _FontSizeSpinner, "Handler", (root, id, d) => ApplyRangeValueDelta(root, id, d)),
-        "scroll", Map("AutoId", _ScrollViewportAutoId, "Handler", (root, id, d) => ApplyScrollDelta(root, id, d))
+        "brightness", Map("AutoId", _BrightnessSpinner, "Handler", rangeHandler),
+        "contrast", Map("AutoId", _ContrastSpinner, "Handler", rangeHandler),
+        "scrollspeed", Map("AutoId", _ScrollSpeedSpinner, "Handler", rangeHandler),
+        "fontsize", Map("AutoId", _FontSizeSpinner, "Handler", rangeHandler),
+        "scroll", Map("AutoId", _ScrollViewportAutoId, "Handler", scrollHandler)
     )
 }
 
 ; Apply a numeric delta to a RangeValue spinner
 ApplyRangeValueDelta(root, autoId, delta, uiRangeValueId := 10003) {
+    global DEBUG_VERBOSE_LOGGING
     el := FindByAutoId(root, autoId)
-    if !el
+    if !el {
+        if DEBUG_VERBOSE_LOGGING
+            Log("ApplyRangeValueDelta: element not found for autoId=" autoId)
         return false
+    }
     try {
         rvp := el.GetCurrentPattern(uiRangeValueId) ; RangeValuePattern = 10003
         if !rvp
@@ -179,7 +194,9 @@ ApplyRangeValueDelta(root, autoId, delta, uiRangeValueId := 10003) {
         cur := rvp.value              ; numeric value from UIA
         rvp.SetValue(cur + delta)     ; UIA clamps to [min,max]
         return true
-    } catch {
+    } catch as err {
+        if DEBUG_VERBOSE_LOGGING
+            Log("ApplyRangeValueDelta: pattern error autoId=" autoId " msg=" err.Message)
         return false
     }
 }
@@ -187,9 +204,13 @@ ApplyRangeValueDelta(root, autoId, delta, uiRangeValueId := 10003) {
 ; Apply a delta to the Prompter viewport using ScrollPattern (percent fallback when needed)
 ApplyScrollDelta(root, autoId, delta, uiScrollId := 10004) {
     global BASE_STEP
+    global DEBUG_VERBOSE_LOGGING
     vp := FindPrompterViewport(root, autoId)
-    if !vp
+    if !vp {
+        if DEBUG_VERBOSE_LOGGING
+            Log("ApplyScrollDelta: viewport not found autoId=" autoId)
         return false
+    }
 
     if (delta = 0)
         return false
@@ -207,7 +228,9 @@ ApplyScrollDelta(root, autoId, delta, uiScrollId := 10004) {
             Loop pulses
                 sp.Scroll(0, dir)
             return true
-        } catch {
+        } catch as err {
+            if DEBUG_VERBOSE_LOGGING
+                Log("ApplyScrollDelta: Scroll call failed dir=" dir " pulses=" pulses " msg=" err.Message)
         }
         ; Percent fallback
         try {
@@ -222,10 +245,16 @@ ApplyScrollDelta(root, autoId, delta, uiScrollId := 10004) {
                 return true
             }
         }
-        catch {
+        catch as err {
+            if DEBUG_VERBOSE_LOGGING
+                Log("ApplyScrollDelta: SetScrollPercent failed msg=" err.Message)
             return false
         }
     }
+    else if DEBUG_VERBOSE_LOGGING {
+        Log("ApplyScrollDelta: ScrollPattern unavailable for autoId=" autoId)
+    }
+    return false
 }
 
 ; Try to resolve the Prompter's scrolling viewport element
@@ -258,12 +287,15 @@ FindPrompterViewport(root, autoId) {
 
 ; Helper: find an element by AutomationId
 FindByAutoId(root, autoId) {
+    global DEBUG_VERBOSE_LOGGING
     if !root || !autoId
         return 0
     try {
         return root.FindElement({ AutomationId: autoId })
     }
-    catch {
+    catch as err {
+        if DEBUG_VERBOSE_LOGGING
+            Log("FindByAutoId: lookup failed autoId=" autoId " msg=" err.Message)
         return 0
     }
 }
@@ -299,6 +331,26 @@ ToggleProbeScans() {
     state := ENABLE_PROBE_SCANS ? "enabled" : "disabled"
     Tip("Probe scans " state)
     Log("ToggleProbeScans: " state)
+}
+
+ShowHelp() {
+    global INI, DEBUG_LOG
+    msg := "Elgato Prompter Hotkeys:`n"
+    msg .= "F13/F14  -> Scroll viewport slower/faster`n"
+    msg .= "F18/F19  -> Scroll speed spinner down/up`n"
+    msg .= "Ctrl+Alt+D/A -> Brightness down/up`n"
+    msg .= "Ctrl+Alt+E/Q -> Contrast down/up`n"
+    msg .= "Ctrl+Alt+S -> Save calibration point`n"
+    msg .= "Ctrl+Alt+Z -> Copy debug info`n"
+    msg .= "Ctrl+Alt+U/M/W/P -> Diagnostic dumps`n"
+    msg .= "Ctrl+Alt+F -> Quick scan counts`n"
+    msg .= "Ctrl+Alt+C -> List candidate windows`n"
+    msg .= "Ctrl+Alt+G -> Toggle probe scans`n"
+    msg .= "Ctrl+Alt+H -> Show this help`n"
+    msg .= "Ctrl+Alt+X -> Exit script`n`n"
+    msg .= "Config: " INI "`n"
+    msg .= "Log: " DEBUG_LOG
+    MsgBox(msg, "Elgato Prompter Help", "OK Iconi")
 }
 
 GetSavedPointText(hwnd) {
@@ -573,6 +625,7 @@ IniReadNumber(file, section, key, default) {
 LoadConfigOverrides() {
     global INI, APP_EXE, DEBUG_LOG, BASE_STEP, APPLY_DELAY_MS
     global MAX_ANCESTOR_DEPTH, SUBTREE_LIST_LIMIT, SCAN_LIST_LIMIT, SLIDER_SCAN_LIMIT, TOOLTIP_HIDE_DELAY_MS
+    global DEBUG_VERBOSE_LOGGING, ENABLE_PROBE_SCANS
     global _BrightnessSpinner, _ContrastSpinner, _ScrollSpeedSpinner, _FontSizeSpinner, _ScrollViewportAutoId
 
     APP_EXE := IniRead(INI, "App", "Executable", APP_EXE)
@@ -580,6 +633,9 @@ LoadConfigOverrides() {
 
     BASE_STEP := IniReadNumber(INI, "Behavior", "BaseStep", BASE_STEP)
     APPLY_DELAY_MS := IniReadNumber(INI, "Behavior", "ApplyDelayMs", APPLY_DELAY_MS)
+
+    ENABLE_PROBE_SCANS := IniReadBool(INI, "Debug", "ProbeScans", ENABLE_PROBE_SCANS)
+    DEBUG_VERBOSE_LOGGING := IniReadBool(INI, "Debug", "VerboseLogging", DEBUG_VERBOSE_LOGGING)
 
     MAX_ANCESTOR_DEPTH := IniReadNumber(INI, "Diagnostics", "MaxAncestorDepth", MAX_ANCESTOR_DEPTH)
     SUBTREE_LIST_LIMIT := IniReadNumber(INI, "Diagnostics", "SubtreeLimit", SUBTREE_LIST_LIMIT)

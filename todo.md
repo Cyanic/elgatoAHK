@@ -16,3 +16,8 @@
 - [FIXED] `elgatoPrompter.ahk:214-223`: narrow the QTextBrowser search inside `FindPrompterViewport` to avoid enumerating entire subtrees.
 - [FIXED] INI/Configuration: The script uses hard-coded values for spinner AutomationIds and file paths. Consider optionally reading these from the INI file for easier adjustment without editing the script.
 - [FIXED] Magic Numbers: Constants are defined at the top, which is good! Consider allowing BASE_STEP or APPLY_DELAY_MS to be set from the INI file for dynamic tuning.
+- [FIXED] For deeper diagnostics - log the nature of failures (e.g., which GetCurrentPattern failed with which code), only when a debug flag is set.
+- [FIXED] Logging which control lookups are missing if debug/diagnostic mode is enabled, to help with field mapping.
+- [FIXED] For even greater clarity around lambdas in GetControlSpecs, explicitly define named handler functions first, aiding readability and debugging.
+- [FIXED] Add a Help hotkey listing all control hotkeys and configuration files in a message box, for new users.
+- [FIXED] Add a Help hotkey listing all control hotkeys and configuration files in as a comment in the .ini file, for new users.
