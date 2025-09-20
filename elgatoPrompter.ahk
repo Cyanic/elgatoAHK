@@ -29,7 +29,7 @@ MAX_ANCESTOR_DEPTH := 10
 SUBTREE_LIST_LIMIT := 50
 SCAN_LIST_LIMIT := 25
 SLIDER_SCAN_LIMIT := 10
-TOOLTIP_HIDE_DELAY_MS := 1000
+TOOLTIP_HIDE_DELAY_MS := 900
 
 ; ---- Files ----
 INI := A_ScriptDir "\prompter.ini"
@@ -129,8 +129,7 @@ ApplyAccumulated() {
     ctrlSpecs := GetControlSpecs()
     summary := ""
 
-    for controlName in _pending.Keys() {
-        delta := _pending[controlName]
+    for controlName, delta in _pending {
         if !delta {
             _pending[controlName] := 0
             continue
