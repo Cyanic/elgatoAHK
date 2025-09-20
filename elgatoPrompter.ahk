@@ -18,12 +18,6 @@ SHOW_PATH_TIP := true
 ; ---- Debug toggles ----
 ENABLE_PROBE_SCANS := false
 
-; ---- Window candidate scoring ----
-CAMHUB_CLASS_BONUS := 1000
-CAMHUB_RENDERER_PENALTY := 1000
-CAMHUB_SCROLLAREA_BONUS := 50
-CAMHUB_TEXTWIDGET_PENALTY := 50
-
 ; ---- Diagnostics & UI ----
 MAX_ANCESTOR_DEPTH := 10
 SUBTREE_LIST_LIMIT := 50
@@ -440,65 +434,31 @@ GetCamHubUiaElement() {
 }
 
 GetCamHubHwnd() {
-    global APP_EXE
-    global ENABLE_PROBE_SCANS
-    global CAMHUB_CLASS_BONUS, CAMHUB_RENDERER_PENALTY, CAMHUB_SCROLLAREA_BONUS, CAMHUB_TEXTWIDGET_PENALTY
-    bestHwnd := 0, bestScore := -999999
+    global APP_EXE, WIN_CLASS_RX
+    hwnd := WinExist("ahk_class " WIN_CLASS_RX)
+    if !hwnd
+        hwnd := WinExist("ahk_exe " APP_EXE)
+    if !hwnd
+        return 0
 
-    ; Enumerate all top-level windows and pick the best candidate for Camera Hub
-    for hwnd in WinGetList() {
-        ; try-except guards for odd windows
+    ; If we latched onto the ToolSaveBits surface, try to promote the sibling icon window
+    cls := ""
+    try cls := WinGetClass("ahk_id " hwnd)
+    if InStr(cls, "ToolSaveBits") {
         try {
             pid := WinGetPID("ahk_id " hwnd)
-            exe := ProcessGetPath(pid)
-            if !exe || !InStr(exe, "\Camera Hub.exe")
-                continue
-
-            cls := WinGetClass("ahk_id " hwnd)
-            title := WinGetTitle("ahk_id " hwnd)
-
-            ; Score the candidate. Prefer QWindowIcon, penalize ToolSaveBits/renderer.
-            score := 0
-            if InStr(cls, "QWindowIcon")
-                score += CAMHUB_CLASS_BONUS
-            if InStr(cls, "ToolSaveBits") || InStr(cls, "Renderer")
-                score -= CAMHUB_RENDERER_PENALTY
-
-            ; Light UIA probe (cheap): presence of a QScrollArea suggests the real UI shell
-            root := UIA.ElementFromHandle(hwnd)
-            if root && ENABLE_PROBE_SCANS {
-                try score += (Scan(root, { ClassName: "QScrollArea" }, "probe:QScrollArea", 1) > 0) ? CAMHUB_SCROLLAREA_BONUS : 0
-                ; If we see EVHPrompterTextWidget (render surface), penalize further
-                try score -= (Scan(root, { ClassName: "EVHPrompterTextWidget" }, "probe:TextWidget", 1) > 0) ? CAMHUB_TEXTWIDGET_PENALTY : 0
+            for candidate in WinGetList("ahk_exe " APP_EXE) {
+                if WinGetPID("ahk_id " candidate) != pid
+                    continue
+                if InStr(WinGetClass("ahk_id " candidate), "QWindowIcon") {
+                    hwnd := candidate
+                    break
+                }
             }
-
-            ; Keep the best
-            if (score > bestScore)
-                bestScore := score, bestHwnd := hwnd
-
-            ; Log candidates for visibility
-            Log(Format("CamHub candidate hwnd={:#x} cls={} title={} score={}", hwnd, cls, title, score))
         }
     }
-
-    if bestHwnd {
-        Log(Format("GetCamHubHwnd: picked={:#x} score={}", bestHwnd, bestScore))
-        return bestHwnd
-    }
-
-    ; Last-resort fallback (shouldn’t be hit anymore)
-    Log("GetCamHubHwnd: fallback path hit")
-    return WinExist("ahk_exe " APP_EXE)
+    return hwnd
 }
-
-;GetCamHubHwnd() {
-;    global APP_EXE, WIN_CLASS_RX
-;    ; Prefer the real UI window (Icon), then fall back to exe
-;    hwnd := WinExist("ahk_class " WIN_CLASS_RX)
-;    if !hwnd
-;        hwnd := WinExist("ahk_exe " APP_EXE)
-;    return hwnd
-;}
 
 ; ======== Diagnostics & Logging (AHK v2) ========
 
@@ -701,7 +661,6 @@ IniReadNumber(file, section, key, default) {
 
 LoadConfigOverrides() {
     global INI, APP_EXE, DEBUG_LOG, BASE_STEP, APPLY_DELAY_MS
-    global CAMHUB_CLASS_BONUS, CAMHUB_RENDERER_PENALTY, CAMHUB_SCROLLAREA_BONUS, CAMHUB_TEXTWIDGET_PENALTY
     global MAX_ANCESTOR_DEPTH, SUBTREE_LIST_LIMIT, SCAN_LIST_LIMIT, SLIDER_SCAN_LIMIT, TOOLTIP_HIDE_DELAY_MS
     global _BrightnessSpinner, _ContrastSpinner, _ScrollSpeedSpinner, _FontSizeSpinner, _ScrollViewportAutoId
 
@@ -710,11 +669,6 @@ LoadConfigOverrides() {
 
     BASE_STEP := IniReadNumber(INI, "Behavior", "BaseStep", BASE_STEP)
     APPLY_DELAY_MS := IniReadNumber(INI, "Behavior", "ApplyDelayMs", APPLY_DELAY_MS)
-
-    CAMHUB_CLASS_BONUS := IniReadNumber(INI, "WindowScore", "ClassBonus", CAMHUB_CLASS_BONUS)
-    CAMHUB_RENDERER_PENALTY := IniReadNumber(INI, "WindowScore", "RendererPenalty", CAMHUB_RENDERER_PENALTY)
-    CAMHUB_SCROLLAREA_BONUS := IniReadNumber(INI, "WindowScore", "ScrollAreaBonus", CAMHUB_SCROLLAREA_BONUS)
-    CAMHUB_TEXTWIDGET_PENALTY := IniReadNumber(INI, "WindowScore", "TextWidgetPenalty", CAMHUB_TEXTWIDGET_PENALTY)
 
     MAX_ANCESTOR_DEPTH := IniReadNumber(INI, "Diagnostics", "MaxAncestorDepth", MAX_ANCESTOR_DEPTH)
     SUBTREE_LIST_LIMIT := IniReadNumber(INI, "Diagnostics", "SubtreeLimit", SUBTREE_LIST_LIMIT)
