@@ -126,6 +126,7 @@ ApplyAccumulated() {
     ctrlSpecs := GetControlSpecs()
     summary := ""
 
+    ; Drain the coalesced deltas and apply each to its target control
     for controlName, delta in _pending {
         if !delta {
             _pending[controlName] := 0
@@ -141,6 +142,7 @@ ApplyAccumulated() {
         }
 
         ok := false
+        ; Attempt to invoke the mapped handler (range/scroll) with the pending delta
         try ok := spec["Handler"].Call(uiaElement, spec["AutoId"], delta)
         catch as err {
             if DEBUG_VERBOSE_LOGGING
@@ -159,6 +161,7 @@ ApplyAccumulated() {
         _pending[controlName] := 0
     }
 
+    ; Show a tooltip reflecting the applied adjustments when enabled
     if SHOW_PATH_TIP && summary
         Tip("Applied:`n" summary)
 }
