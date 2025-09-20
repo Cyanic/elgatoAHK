@@ -19,11 +19,12 @@ SHOW_PATH_TIP := true
 ENABLE_PROBE_SCANS := false
 
 ; ---- Files ----
-INI := A_ScriptDir "\PrompterSpeed.ini"
+INI := A_ScriptDir "\prompter.ini"
 DEBUG_LOG := A_ScriptDir "\PrompterDebug.txt"
 
 ; Initialize runtime-configurable toggles
 ENABLE_PROBE_SCANS := IniReadBool(INI, "Debug", "ProbeScans", ENABLE_PROBE_SCANS)
+LoadConfigOverrides()
 
 ; ---- State & Globals----
 global _pending := Map()   ; controlName => delta
@@ -351,7 +352,7 @@ ApplyAccumulated() {
 */
 
 QuitApp() {
-    MsgBox "exit"
+    Tip("EXITING")
     ExitApp()
 }
 
@@ -674,6 +675,28 @@ IniReadBool(file, section, key, default := false) {
     val := IniRead(file, section, key, defStr)
     txt := StrLower(Trim(val))
     return (txt = "1" || txt = "true" || txt = "yes" || txt = "on")
+}
+
+IniReadNumber(file, section, key, default) {
+    val := Trim(IniRead(file, section, key, default))
+    return IsNumber(val) ? val + 0 : default
+}
+
+LoadConfigOverrides() {
+    global INI, APP_EXE, DEBUG_LOG, BASE_STEP, APPLY_DELAY_MS
+    global _BrightnessSpinner, _ContrastSpinner, _ScrollSpeedSpinner, _FontSizeSpinner, _ScrollViewportAutoId
+
+    APP_EXE := IniRead(INI, "App", "Executable", APP_EXE)
+    DEBUG_LOG := IniRead(INI, "Files", "DebugLog", DEBUG_LOG)
+
+    BASE_STEP := IniReadNumber(INI, "Behavior", "BaseStep", BASE_STEP)
+    APPLY_DELAY_MS := IniReadNumber(INI, "Behavior", "ApplyDelayMs", APPLY_DELAY_MS)
+
+    _BrightnessSpinner := IniRead(INI, "Automation", "Brightness", _BrightnessSpinner)
+    _ContrastSpinner := IniRead(INI, "Automation", "Contrast", _ContrastSpinner)
+    _ScrollSpeedSpinner := IniRead(INI, "Automation", "ScrollSpeed", _ScrollSpeedSpinner)
+    _FontSizeSpinner := IniRead(INI, "Automation", "FontSize", _FontSizeSpinner)
+    _ScrollViewportAutoId := IniRead(INI, "Automation", "ScrollViewport", _ScrollViewportAutoId)
 }
 
 Tip(t) {

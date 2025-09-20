@@ -14,3 +14,5 @@
 - [FIXED] `elgatoPrompter.ahk:18-19`: make `ENABLE_PROBE_SCANS` configurable at runtime (create INI toggle) so diagnostics can be enabled without editing the script.
 - [FIXED] `elgatoPrompter.ahk:668-672`: trim the INI value before lowercasing in `IniReadBool` so trailing spaces don’t break parsing.
 - [FIXED] `elgatoPrompter.ahk:214-223`: narrow the QTextBrowser search inside `FindPrompterViewport` to avoid enumerating entire subtrees.
+- [FIXED] INI/Configuration: The script uses hard-coded values for spinner AutomationIds and file paths. Consider optionally reading these from the INI file for easier adjustment without editing the script.
+- [FIXED] Magic Numbers: Constants are defined at the top, which is good! Consider allowing BASE_STEP or APPLY_DELAY_MS to be set from the INI file for dynamic tuning.
