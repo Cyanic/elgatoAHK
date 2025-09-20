@@ -18,6 +18,19 @@ SHOW_PATH_TIP := true
 ; ---- Debug toggles ----
 ENABLE_PROBE_SCANS := false
 
+; ---- Window candidate scoring ----
+CAMHUB_CLASS_BONUS := 1000
+CAMHUB_RENDERER_PENALTY := 1000
+CAMHUB_SCROLLAREA_BONUS := 50
+CAMHUB_TEXTWIDGET_PENALTY := 50
+
+; ---- Diagnostics & UI ----
+MAX_ANCESTOR_DEPTH := 10
+SUBTREE_LIST_LIMIT := 50
+SCAN_LIST_LIMIT := 25
+SLIDER_SCAN_LIMIT := 10
+TOOLTIP_HIDE_DELAY_MS := 1000
+
 ; ---- Files ----
 INI := A_ScriptDir "\prompter.ini"
 DEBUG_LOG := A_ScriptDir "\PrompterDebug.txt"
@@ -430,6 +443,7 @@ GetCamHubUiaElement() {
 GetCamHubHwnd() {
     global APP_EXE
     global ENABLE_PROBE_SCANS
+    global CAMHUB_CLASS_BONUS, CAMHUB_RENDERER_PENALTY, CAMHUB_SCROLLAREA_BONUS, CAMHUB_TEXTWIDGET_PENALTY
     bestHwnd := 0, bestScore := -999999
 
     ; Enumerate all top-level windows and pick the best candidate for Camera Hub
@@ -447,16 +461,16 @@ GetCamHubHwnd() {
             ; Score the candidate. Prefer QWindowIcon, penalize ToolSaveBits/renderer.
             score := 0
             if InStr(cls, "QWindowIcon")
-                score += 1000
+                score += CAMHUB_CLASS_BONUS
             if InStr(cls, "ToolSaveBits") || InStr(cls, "Renderer")
-                score -= 1000
+                score -= CAMHUB_RENDERER_PENALTY
 
             ; Light UIA probe (cheap): presence of a QScrollArea suggests the real UI shell
             root := UIA.ElementFromHandle(hwnd)
             if root && ENABLE_PROBE_SCANS {
-                try score += (Scan(root, { ClassName: "QScrollArea" }, "probe:QScrollArea", 1) > 0) ? 50 : 0
+                try score += (Scan(root, { ClassName: "QScrollArea" }, "probe:QScrollArea", 1) > 0) ? CAMHUB_SCROLLAREA_BONUS : 0
                 ; If we see EVHPrompterTextWidget (render surface), penalize further
-                try score -= (Scan(root, { ClassName: "EVHPrompterTextWidget" }, "probe:TextWidget", 1) > 0) ? 50 : 0
+                try score -= (Scan(root, { ClassName: "EVHPrompterTextWidget" }, "probe:TextWidget", 1) > 0) ? CAMHUB_TEXTWIDGET_PENALTY : 0
             }
 
             ; Keep the best
@@ -550,6 +564,7 @@ CheckElevationRisk() {
 
 ; Dump the element under the mouse and its ancestors
 DumpUnderMouse() {
+    global MAX_ANCESTOR_DEPTH
     try {
         MouseGetPos &mx, &my, &hwin
         el := UIA.ElementFromPoint(mx, my)
@@ -562,7 +577,7 @@ DumpUnderMouse() {
         DumpOne(el, "UNDER_MOUSE")
         Log("Ancestors:")
         p := el
-        loop 10 {
+        loop MAX_ANCESTOR_DEPTH {
             p := p.Parent
             if !p
                 break
@@ -594,24 +609,26 @@ DumpOne(el, prefix := "") {
 }
 
 ; Walk the subtree and list first N descendants
-DumpSubtree(uiaRoot, N := 50) {
+DumpSubtree(uiaRoot, limit := SUBTREE_LIST_LIMIT) {
+    global SUBTREE_LIST_LIMIT
     if !uiaRoot {
         Log("DumpSubtree: root is NULL")
         return
     }
-    Log("=== UIA Subtree (first " N ") ===")
+    Log("=== UIA Subtree (first " limit ") ===")
     cnt := 0
     for el in uiaRoot.FindElements({}) { ; empty condition == all descendants in this lib
         cnt += 1
         DumpOne(el, "#" cnt)
-        if (cnt >= N)
+        if (cnt >= limit)
             break
     }
-    Log("Subtree enumerated: " cnt " elements (displayed up to " N ")")
+    Log("Subtree enumerated: " cnt " elements (displayed up to " limit ")")
 }
 
 ; Count by a condition, list up to M
-Scan(uiaRoot, condObj, label := "", M := 25) {
+Scan(uiaRoot, condObj, label := "", limit := SCAN_LIST_LIMIT) {
+    global SCAN_LIST_LIMIT
     if !uiaRoot {
         Log("Scan[" label "]: root is NULL")
         return 0
@@ -620,7 +637,7 @@ Scan(uiaRoot, condObj, label := "", M := 25) {
     Log("=== Scan " label " ===")
     for el in uiaRoot.FindElements(condObj) {
         cnt += 1
-        if (cnt <= M)
+        if (cnt <= limit)
             DumpOne(el, "#" cnt)
     }
     Log("Scan " label ": total=" cnt)
@@ -629,6 +646,7 @@ Scan(uiaRoot, condObj, label := "", M := 25) {
 
 ; Convenience: run a full diagnostic pass
 FullDiag() {
+    global SUBTREE_LIST_LIMIT, SCAN_LIST_LIMIT, SLIDER_SCAN_LIMIT
     Log("===== FULL DIAGNOSTIC START =====")
     DumpMonitors()
     DumpWindows()
@@ -646,11 +664,11 @@ FullDiag() {
         return
     }
     DumpOne(root, "ROOT")
-    DumpSubtree(root, 50)
-    Scan(root, { ClassName: "EVHSpinBox" }, 'ClassName:"EVHSpinBox"', 25)
+    DumpSubtree(root, SUBTREE_LIST_LIMIT)
+    Scan(root, { ClassName: "EVHSpinBox" }, 'ClassName:"EVHSpinBox"', SCAN_LIST_LIMIT)
     ; Fallback: some builds expose spinners as ControlType: Spinner or Slider
-    Scan(root, { ControlType: "Spinner" }, 'ControlType:"Spinner"', 25)
-    Scan(root, { ControlType: "Slider" }, 'ControlType:"Slider"', 10)
+    Scan(root, { ControlType: "Spinner" }, 'ControlType:"Spinner"', SCAN_LIST_LIMIT)
+    Scan(root, { ControlType: "Slider" }, 'ControlType:"Slider"', SLIDER_SCAN_LIMIT)
     DumpUnderMouse()
     Log("===== FULL DIAGNOSTIC END =====")
 }
@@ -684,6 +702,8 @@ IniReadNumber(file, section, key, default) {
 
 LoadConfigOverrides() {
     global INI, APP_EXE, DEBUG_LOG, BASE_STEP, APPLY_DELAY_MS
+    global CAMHUB_CLASS_BONUS, CAMHUB_RENDERER_PENALTY, CAMHUB_SCROLLAREA_BONUS, CAMHUB_TEXTWIDGET_PENALTY
+    global MAX_ANCESTOR_DEPTH, SUBTREE_LIST_LIMIT, SCAN_LIST_LIMIT, SLIDER_SCAN_LIMIT, TOOLTIP_HIDE_DELAY_MS
     global _BrightnessSpinner, _ContrastSpinner, _ScrollSpeedSpinner, _FontSizeSpinner, _ScrollViewportAutoId
 
     APP_EXE := IniRead(INI, "App", "Executable", APP_EXE)
@@ -691,6 +711,17 @@ LoadConfigOverrides() {
 
     BASE_STEP := IniReadNumber(INI, "Behavior", "BaseStep", BASE_STEP)
     APPLY_DELAY_MS := IniReadNumber(INI, "Behavior", "ApplyDelayMs", APPLY_DELAY_MS)
+
+    CAMHUB_CLASS_BONUS := IniReadNumber(INI, "WindowScore", "ClassBonus", CAMHUB_CLASS_BONUS)
+    CAMHUB_RENDERER_PENALTY := IniReadNumber(INI, "WindowScore", "RendererPenalty", CAMHUB_RENDERER_PENALTY)
+    CAMHUB_SCROLLAREA_BONUS := IniReadNumber(INI, "WindowScore", "ScrollAreaBonus", CAMHUB_SCROLLAREA_BONUS)
+    CAMHUB_TEXTWIDGET_PENALTY := IniReadNumber(INI, "WindowScore", "TextWidgetPenalty", CAMHUB_TEXTWIDGET_PENALTY)
+
+    MAX_ANCESTOR_DEPTH := IniReadNumber(INI, "Diagnostics", "MaxAncestorDepth", MAX_ANCESTOR_DEPTH)
+    SUBTREE_LIST_LIMIT := IniReadNumber(INI, "Diagnostics", "SubtreeLimit", SUBTREE_LIST_LIMIT)
+    SCAN_LIST_LIMIT := IniReadNumber(INI, "Diagnostics", "ScanLimit", SCAN_LIST_LIMIT)
+    SLIDER_SCAN_LIMIT := IniReadNumber(INI, "Diagnostics", "SliderScanLimit", SLIDER_SCAN_LIMIT)
+    TOOLTIP_HIDE_DELAY_MS := IniReadNumber(INI, "UI", "TooltipHideDelayMs", TOOLTIP_HIDE_DELAY_MS)
 
     _BrightnessSpinner := IniRead(INI, "Automation", "Brightness", _BrightnessSpinner)
     _ContrastSpinner := IniRead(INI, "Automation", "Contrast", _ContrastSpinner)
@@ -700,6 +731,7 @@ LoadConfigOverrides() {
 }
 
 Tip(t) {
+    global TOOLTIP_HIDE_DELAY_MS
     ToolTip t
-    SetTimer(() => ToolTip(), -900)
+    SetTimer(() => ToolTip(), -TOOLTIP_HIDE_DELAY_MS)
 }
