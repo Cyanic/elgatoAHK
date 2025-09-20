@@ -302,6 +302,7 @@ FindByAutoId(root, autoId) {
 
 QuitApp() {
     Tip("EXITING")
+    Sleep 1000
     ExitApp()
 }
 
