@@ -262,10 +262,10 @@ FindByAutoId(root, autoId) {
         return 0
     try {
         return root.FindElement({ AutomationId: autoId })
-        }
+    }
     catch {
         return 0
-        }
+    }
 }
 
 QuitApp() {
