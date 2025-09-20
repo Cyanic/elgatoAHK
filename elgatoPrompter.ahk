@@ -22,6 +22,9 @@ ENABLE_PROBE_SCANS := false
 INI := A_ScriptDir "\PrompterSpeed.ini"
 DEBUG_LOG := A_ScriptDir "\PrompterDebug.txt"
 
+; Initialize runtime-configurable toggles
+ENABLE_PROBE_SCANS := IniReadBool(INI, "Debug", "ProbeScans", ENABLE_PROBE_SCANS)
+
 ; ---- State & Globals----
 global _pending := Map()   ; controlName => delta
 global _applyArmed := false
@@ -78,6 +81,8 @@ F19:: QueuePulse("scrollspeed", +1)
         }
     }
 }
+
+^!g:: ToggleProbeScans()   ; Toggle diagnostic UIA probe scans
 
 
 ; ===== Core accumulator =====
@@ -172,11 +177,14 @@ ApplyRangeValueDelta(root, autoId, delta, uiRangeValueId := 10003) {
     }
 }
 
-; Apply a delta to the Prompter viewport using ScrollPattern or wheel fallback
+; Apply a delta to the Prompter viewport using ScrollPattern (percent fallback when needed)
 ApplyScrollDelta(root, autoId, delta, uiScrollId := 10004) {
     global BASE_STEP
     vp := FindPrompterViewport(root, autoId)
     if !vp
+        return false
+
+    if (delta = 0)
         return false
 
     ; Try ScrollPattern
@@ -184,8 +192,13 @@ ApplyScrollDelta(root, autoId, delta, uiScrollId := 10004) {
     try sp := vp.GetCurrentPattern(uiScrollId) ; ScrollPattern = 10004
     if sp {
         ; Relative scroll if supported
+        pulses := Abs(Round(delta / (BASE_STEP ? BASE_STEP : 1)))
+        if (pulses < 1)
+            pulses := 1
+        dir := (delta > 0) ? 4 : 1 ; 4=LargeIncrement, 1=LargeDecrement
         try {
-            sp.Scroll(0, (delta > 0) ? 4 : 1) ; 4=LargeIncrement, 1=LargeDecrement
+            Loop pulses
+                sp.Scroll(0, dir)
             return true
         } catch {
         }
@@ -193,11 +206,12 @@ ApplyScrollDelta(root, autoId, delta, uiScrollId := 10004) {
         try {
             cur := sp.VerticalScrollPercent  ; -1 means unsupported
             if (cur >= 0) {
-                step := BASE_STEP * (delta > 0 ? +1 : -1)
-                newp := cur + step
-                if (newp < 0) newp := 0
-                    if (newp > 100) newp := 100
-                        sp.SetScrollPercent(sp.HorizontalScrollPercent, newp)
+                newp := cur + delta
+                if (newp < 0)
+                    newp := 0
+                else if (newp > 100)
+                    newp := 100
+                sp.SetScrollPercent(sp.HorizontalScrollPercent, newp)
                 return true
             }
         }
@@ -356,6 +370,15 @@ DebugProbe() {
     MsgBox("Debug copied to clipboard.`nSaved to: " DEBUG_LOG, "Prompter Debug", "OK Iconi")
 }
 
+ToggleProbeScans() {
+    global ENABLE_PROBE_SCANS, INI
+    ENABLE_PROBE_SCANS := !ENABLE_PROBE_SCANS
+    IniWrite(ENABLE_PROBE_SCANS ? 1 : 0, INI, "Debug", "ProbeScans")
+    state := ENABLE_PROBE_SCANS ? "enabled" : "disabled"
+    Tip("Probe scans " state)
+    Log("ToggleProbeScans: " state)
+}
+
 GetSavedPointText(hwnd) {
     global INI
     dx := IniRead(INI, "Spinner", "DX", "")
@@ -389,13 +412,11 @@ SaveCalibration() {
 GetCamHubUiaElement() {
     hwnd := GetCamHubHwnd()
     if !hwnd {
-        Tip("Camera Hub window not found.")
         Log("GetCamHubUiaElement: Camera Hub window not found")
         return
     }
     uiaElement := UIA.ElementFromHandle(hwnd)
     if !uiaElement {
-        Tip("UIA handle lookup failed")
         Log("GetCamHubUiaElement: UIA.ElementFromHandle returned NULL")
     }
     return uiaElement
@@ -642,6 +663,13 @@ JoinLines(arr) {
     for v in arr
         s .= v "`r`n"
     return RTrim(s, "`r`n")
+}
+
+IniReadBool(file, section, key, default := false) {
+    defStr := default ? "1" : "0"
+    val := IniRead(file, section, key, defStr)
+    txt := StrLower(val)
+    return (txt = "1" || txt = "true" || txt = "yes" || txt = "on")
 }
 
 Tip(t) {
