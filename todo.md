@@ -12,3 +12,5 @@
 - [FIXED] `elgatoPrompter.ahk:175-207`: update the comment describing a “wheel fallback” so it matches the current implementation.
 - [FIXED] `elgatoPrompter.ahk:392-407`: reduce redundant tooltips/logs when the Camera Hub window is missing (e.g., keep only logging in one location) to avoid repeated popups during polling.
 - [FIXED] `elgatoPrompter.ahk:18-19`: make `ENABLE_PROBE_SCANS` configurable at runtime (create INI toggle) so diagnostics can be enabled without editing the script.
+- [FIXED] `elgatoPrompter.ahk:668-672`: trim the INI value before lowercasing in `IniReadBool` so trailing spaces don’t break parsing.
+- [FIXED] `elgatoPrompter.ahk:214-223`: narrow the QTextBrowser search inside `FindPrompterViewport` to avoid enumerating entire subtrees.
