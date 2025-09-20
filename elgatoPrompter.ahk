@@ -32,9 +32,11 @@ global _ScrollSpeedSpinner :=
 global _FontSizeSpinner :=
     "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.prompterContainer.propertyGroup_com.elgato.vh-ui.prompter.group.appearance.contentFrame.propertyGroup.property_kPRPFontSize.spinBox_kPRPFontSize"
 
+global _ScrollViewportAutoId := "qt_scrollarea_viewport"
+
 ; ---- Hotkeys ----
-F16:: QueuePulse("scroll", -1)   ; up / slower
-F17:: QueuePulse("scroll", +1)   ; down / faster
+F13:: QueuePulse("scroll", -1)   ; up / slower
+F14:: QueuePulse("scroll", +1)   ; down / faster
 F18:: QueuePulse("scrollspeed", -1)
 F19:: QueuePulse("scrollspeed", +1)
 ^!d:: QueuePulse("brightness", -1)
@@ -88,6 +90,156 @@ QueuePulse(controlName, sign) {
     }
 }
 
+ApplyAccumulated() {
+    global _pending, _applyArmed, SHOW_PATH_TIP
+    _applyArmed := false
+    if (_pending.Count = 0)
+        return
+
+    uiaElement := GetCamHubUiaElement()
+    if !uiaElement {
+        Tip("Camera Hub window not found.")
+        _pending.Clear()
+        return
+    }
+
+    ctrlSpecs := GetControlSpecs()
+    summary := ""
+
+    for controlName, delta in _pending.Clone() {
+        if (delta = 0) {
+            _pending[controlName] := 0
+            continue
+        }
+        if !ctrlSpecs.Has(controlName) {
+            _pending[controlName] := 0
+            continue
+        }
+
+        spec := ctrlSpecs[controlName]
+        autoId := spec["AutoId"]
+        handler := spec["Handler"]
+
+        ok := false
+        try ok := handler.Call(uiaElement, autoId, delta)
+        catch {
+        }
+
+        if ok {
+            sign := (delta > 0 ? "+" : "")
+            summary .= (summary ? "`n" : "") controlName " " sign delta
+        } else {
+            summary .= (summary ? "`n" : "") controlName " FAILED"
+        }
+
+        _pending[controlName] := 0
+    }
+
+    if SHOW_PATH_TIP && summary
+        Tip("Applied:`n" summary)
+}
+
+GetControlSpecs() {
+    global _BrightnessSpinner, _ContrastSpinner, _ScrollSpeedSpinner, _FontSizeSpinner
+    global _ScrollViewportAutoId
+    ; Each entry: name -> { AutoId, Handler }
+    return Map(
+        "brightness", Map("AutoId", _BrightnessSpinner, "Handler", (root, id, d) => ApplyRangeValueDelta(root, id, d)),
+        "contrast", Map("AutoId", _ContrastSpinner, "Handler", (root, id, d) => ApplyRangeValueDelta(root, id, d)),
+        "scrollspeed", Map("AutoId", _ScrollSpeedSpinner, "Handler", (root, id, d) => ApplyRangeValueDelta(root, id, d)),
+        "fontsize", Map("AutoId", _FontSizeSpinner, "Handler", (root, id, d) => ApplyRangeValueDelta(root, id, d)),
+        "scroll", Map("AutoId", _ScrollViewportAutoId, "Handler", (root, id, d) => ApplyScrollDelta(root, id, d))
+    )
+}
+
+; Apply a numeric delta to a RangeValue spinner
+ApplyRangeValueDelta(root, autoId, delta, uiRangeValueId := 10003) {
+    el := FindByAutoId(root, autoId)
+    if !el
+        return false
+    try {
+        rvp := el.GetCurrentPattern(uiRangeValueId) ; RangeValuePattern = 10003
+        if !rvp
+            return false
+        cur := rvp.value              ; numeric value from UIA
+        rvp.SetValue(cur + delta)     ; UIA clamps to [min,max]
+        return true
+    } catch {
+        return false
+    }
+}
+
+; Apply a delta to the Prompter viewport using ScrollPattern or wheel fallback
+ApplyScrollDelta(root, autoId, delta, uiScrollId := 10004) {
+    global SCROLL_PERCENT_PER_STEP, SCROLL_WHEEL_PER_STEP
+    vp := FindPrompterViewport(root, autoId)
+    if !vp
+        return false
+
+    ; Try ScrollPattern
+    sp := 0
+    try sp := vp.GetCurrentPattern(uiScrollId) ; ScrollPattern = 10004
+    if sp {
+        ; Relative scroll if supported
+        try {
+            sp.Scroll(0, (delta > 0) ? 4 : 1) ; 4=LargeIncrement, 1=LargeDecrement
+            return true
+        } catch {
+        }
+        ; Percent fallback
+        try {
+            cur := sp.VerticalScrollPercent  ; -1 means unsupported
+            if (cur >= 0) {
+                step := BASE_STEP * (delta > 0 ? +1 : -1) ; SCROLL_PERCENT_PER_STEP
+                newp := cur + step
+                if (newp < 0) newp := 0
+                    if (newp > 100) newp := 100
+                        sp.SetScrollPercent(sp.HorizontalScrollPercent, newp)
+                return true
+            }
+        }
+        catch {
+            return false
+        }
+    }
+}
+
+; Try to resolve the Prompter's scrolling viewport element
+FindPrompterViewport(root, autoId) {
+    ; 1) Direct AutomationId match
+    el := FindByAutoId(root, autoId)
+    if el
+        return el
+
+    ; 2) Look inside QScrollArea for QTextBrowser child
+    for area in root.FindElements({ ClassName: "QScrollArea" }) {
+        for kid in area.FindElements({}) {
+            try if (kid.ClassName = "QTextBrowser")
+                return kid
+        }
+    }
+
+    ; 3) Fallback: first QTextBrowser anywhere
+    for kid in root.FindElements({ ClassName: "QTextBrowser" })
+        return kid
+
+    return 0  ; nothing found
+}
+
+; Helper: find an element by AutomationId
+FindByAutoId(root, autoId) {
+    if !root
+        return 0
+    if !autoId
+        return 0
+    try {
+        return root.FindElement({ AutomationId: autoId })
+    } catch {
+        return 0
+    }
+}
+
+/*
 ApplyAccumulated() {
     global _pending, _applyArmed, SHOW_PATH_TIP
     global _ScrollSpeedSpinner, _FontSizeSpinner, _BrightnessSpinner, _ContrastSpinner, _UIA_RangeValuePatternId
@@ -159,13 +311,6 @@ ApplyAccumulated() {
                 }
             }
         }
-        /*
-        catch as e {
-            MsgBox "Error in FindElement: " e.Message "`nWhat: " e.What "`nExtra: " e.Extra
-            A_Clipboard := "Message: " e.Message "`nWhat: " e.What "`nExtra: " e.Extra
-            ; Store the error message
-        }
-        */
         catch as e {
             Log("FindElement ERROR: " e.Message "  What=" e.What "  Extra=" e.Extra)
             MsgBox "Error in FindElement: " e.Message "`nWhat: " e.What "`nExtra: " e.Extra
@@ -182,6 +327,7 @@ ApplyAccumulated() {
         Tip("Applied:`n" summary)
     }
 }
+*/
 
 QuitApp() {
     MsgBox "exit"
