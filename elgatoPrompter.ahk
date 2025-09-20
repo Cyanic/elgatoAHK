@@ -37,7 +37,6 @@ DEBUG_LOG := A_ScriptDir "\PrompterDebug.txt"
 
 ; Initialize runtime-configurable toggles
 ENABLE_PROBE_SCANS := IniReadBool(INI, "Debug", "ProbeScans", ENABLE_PROBE_SCANS)
-LoadConfigOverrides()
 
 ; ---- State & Globals----
 global _pending := Map()   ; controlName => delta
@@ -53,6 +52,8 @@ global _FontSizeSpinner :=
     "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.prompterContainer.propertyGroup_com.elgato.vh-ui.prompter.group.appearance.contentFrame.propertyGroup.property_kPRPFontSize.spinBox_kPRPFontSize"
 
 global _ScrollViewportAutoId := "qt_scrollarea_viewport"
+
+LoadConfigOverrides()
 
 ; ---- Hotkeys ----
 F13:: QueuePulse("scroll", -1)   ; up / slower
