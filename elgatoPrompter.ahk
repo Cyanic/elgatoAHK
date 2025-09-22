@@ -19,7 +19,7 @@ ResolvePath(path, reference := "") {
     } else if DirExist(reference) {
         baseDir := reference
     } else {
-        SplitPath(reference,, &baseDir)
+        SplitPath(reference, , &baseDir)
         if !baseDir
             baseDir := A_ScriptDir
     }
@@ -734,7 +734,7 @@ LoadConfigOverrides() {
     global DEBUG_VERBOSE_LOGGING, ENABLE_PROBE_SCANS
     global _ControlSpecs
 
-    SplitPath(INI,, &iniDir)
+    SplitPath(INI, , &iniDir)
 
     APP_EXE := IniRead(INI, "App", "Executable", APP_EXE)
     WIN_CLASS_RX := IniRead(INI, "App", "ClassRegex", WIN_CLASS_RX)
