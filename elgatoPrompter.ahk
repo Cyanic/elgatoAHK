@@ -87,7 +87,6 @@ global _pending := Map()   ; controlName => pulse count
 global _applyArmed := false
 global _UIA_RangeValuePatternId := 10003
 global _ControlSpecs := Map()
-global _ControlElementCache := Map()
 global _CachedCamHubHwnd := 0
 
 LoadConfigOverrides()
@@ -448,12 +447,12 @@ SaveCalibration() {
 }
 
 GetCamHubUiaElement() {
-    global _CachedCamHubHwnd, _ControlElementCache
+    global _CachedCamHubHwnd
     hwnd := GetCamHubHwnd()
     if !hwnd {
         if _CachedCamHubHwnd {
             _CachedCamHubHwnd := 0
-            _ControlElementCache.Clear()
+            ; nothing cached to clear
         }
         Log("GetCamHubUiaElement: Camera Hub window not found")
         return
@@ -461,7 +460,7 @@ GetCamHubUiaElement() {
 
     if (_CachedCamHubHwnd != hwnd) {
         _CachedCamHubHwnd := hwnd
-        _ControlElementCache.Clear()
+        ; nothing cached to clear
     }
 
     uiaElement := UIA.ElementFromHandle(hwnd)
@@ -675,25 +674,6 @@ MonitorGetList() {
 }
 ; ---- Control helpers ----
 ResolveControlElement(root, spec) {
-    global _ControlElementCache
-    cacheKey := spec.Has("CacheKey") ? spec["CacheKey"]
-        : (spec.Has("AutoId") && spec["AutoId"] ? spec["AutoId"] : spec["Name"])
-
-    if cacheKey && _ControlElementCache.Has(cacheKey) {
-        cached := _ControlElementCache[cacheKey]
-        if cached {
-            try {
-                ; Probe a cheap property to ensure the element is still alive
-                cached.ClassName
-                return cached
-            } catch {
-                _ControlElementCache.Delete(cacheKey)
-            }
-        } else {
-            _ControlElementCache.Delete(cacheKey)
-        }
-    }
-
     el := 0
     if spec.Has("Resolver") {
         try el := spec["Resolver"].Call(root, spec)
@@ -703,18 +683,11 @@ ResolveControlElement(root, spec) {
     } else if spec.Has("AutoId") {
         el := FindByAutoId(root, spec["AutoId"])
     }
-
-    if el && cacheKey
-        _ControlElementCache[cacheKey] := el
     return el
 }
 
 InvalidateControlCache(spec) {
-    global _ControlElementCache
-    cacheKey := spec.Has("CacheKey") ? spec["CacheKey"]
-        : (spec.Has("AutoId") && spec["AutoId"] ? spec["AutoId"] : spec["Name"])
-    if cacheKey && _ControlElementCache.Has(cacheKey)
-        _ControlElementCache.Delete(cacheKey)
+    ; caching disabled (UIA elements proved unstable), nothing to invalidate
 }
 
 HandlerResult(success, detail := "") {
@@ -759,7 +732,7 @@ LoadConfigOverrides() {
     global INI, APP_EXE, WIN_CLASS_RX, DEBUG_LOG, BASE_STEP, APPLY_DELAY_MS, SHOW_PATH_TIP
     global MAX_ANCESTOR_DEPTH, SUBTREE_LIST_LIMIT, SCAN_LIST_LIMIT, SLIDER_SCAN_LIMIT, TOOLTIP_HIDE_DELAY_MS
     global DEBUG_VERBOSE_LOGGING, ENABLE_PROBE_SCANS
-    global _ControlSpecs, _ControlElementCache
+    global _ControlSpecs
 
     SplitPath(INI,, &iniDir)
 
@@ -822,7 +795,6 @@ LoadConfigOverrides() {
     }
 
     _ControlSpecs := specs
-    _ControlElementCache.Clear()
 }
 
 Tip(t) {
