@@ -29,3 +29,12 @@
 - [FIXED] `elgatoPrompter.ahk:169`: Let each control spec carry its own step size (and optional direction) sourced from the INI instead of reusing `BASE_STEP` for everything.
 - [FIXED] `elgatoPrompter.ahk:264`: Cache the resolved prompter viewport/spinner elements and invalidate on failure to avoid repeated full-tree UIA searches.
 - [FIXED] `elgatoPrompter.ahk:37` & `prompter.ini:37`: Treat the INI as the single source for AutomationIds (remove hard-coded defaults, honor `IniPath`, and drop the unused duplicate entry).
+
+## New Must Fix
+- `elgatoPrompter.ahk:180`: Replace the legacy command-style `SetTimer ApplyAccumulated, -APPLY_DELAY_MS` with the v2 call form `SetTimer(ApplyAccumulated, -APPLY_DELAY_MS)` so the script parses.
+- `elgatoPrompter.ahk:854`: Switch `ToolTip t` to `ToolTip(t)`; the current command syntax fails under AutoHotkey v2.
+- `elgatoPrompter.ahk:389`: Update `Sleep 1000` to `Sleep(1000)`; otherwise the quit hotkey throws a runtime error.
+- `elgatoPrompter.ahk:466` & `elgatoPrompter.ahk:586`: Change `MouseGetPos &mx, &my[, &hwin]` to the function form `MouseGetPos(&mx, &my, &hwin)` so calibration and diagnostics work.
+- `elgatoPrompter.ahk:451`: Call `WinGetPos(&wx, &wy, &ww, &wh, "ahk_id " hwnd)` instead of the command-style invocation; the current line stops the script in v2.
+- `elgatoPrompter.ahk:469-470`: Wrap the `IniWrite` calls with parentheses (e.g., `IniWrite(Round(dx), INI, "Spinner", "DX")`) so saving calibration succeeds.
+- `elgatoPrompter.ahk:411` & `elgatoPrompter.ahk:527`: Convert `FileAppend` to the function form `FileAppend(Text, File)`; the legacy syntax prevents debug logging.
