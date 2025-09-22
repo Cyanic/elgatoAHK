@@ -5,7 +5,6 @@
 
 ; ---- Path resolution helpers (must run before library includes) ----
 global _ResolvedIniPath := ""
-global _ResolvedUiaPath := ""
 
 ResolvePath(path, reference := "") {
     if (path = "")
@@ -56,37 +55,14 @@ GetIniPath() {
     return path
 }
 
-PickUiaIncludePath() {
-    global _ResolvedUiaPath
-    if (_ResolvedUiaPath != "")
-        return _ResolvedUiaPath
 
-    configPath := GetIniPath()
-    override := ""
-    try override := IniRead(configPath, "Files", "UIALib", "")
-    if override {
-        candidate := ResolvePath(override, configPath)
-        if FileExist(candidate) {
-            _ResolvedUiaPath := candidate
-            return candidate
-        }
-    }
+#Include *i %A_ScriptDir%\UIA-v2-main\Lib\UIA.ahk
+#Include *i %A_ScriptDir%\Lib\UIA.ahk
+#Include *i %A_ScriptDir%\UIA.ahk
 
-    for path in [
-        ResolvePath("UIA-v2-main\\Lib\\UIA.ahk"),
-        ResolvePath("Lib\\UIA.ahk"),
-        ResolvePath("UIA.ahk")
-    ] {
-        if FileExist(path) {
-            _ResolvedUiaPath := path
-            return path
-        }
-    }
-
-    throw Error("UIA library not found. Set Files.UIALib in the configuration file.")
+if !IsSet(UIA) {
+    throw Error("UIA library not found. Place UIA.ahk in a standard library location or alongside the script.")
 }
-
-#Include % PickUiaIncludePath()
 
 ; ---- Configuration defaults (overridden later) ----
 APP_EXE := "Camera Hub.exe"
