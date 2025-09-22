@@ -2,24 +2,100 @@
 
 #Requires AutoHotkey v2
 #SingleInstance Force
-#include C:\Cyanic\Tools\UIA-v2-main\Lib\UIA.ahk
 
-; ---- App targeting ----
+; ---- Path resolution helpers (must run before library includes) ----
+global _ResolvedIniPath := ""
+global _ResolvedUiaPath := ""
+
+ResolvePath(path, reference := "") {
+    if (path = "")
+        return ""
+    path := StrReplace(path, "/", "\")
+    if RegExMatch(path, "^[A-Za-z]:\\") || SubStr(path, 1, 2) = "\\\\"
+        return path
+
+    baseDir := ""
+    if (reference = "") {
+        baseDir := A_ScriptDir
+    } else if DirExist(reference) {
+        baseDir := reference
+    } else {
+        SplitPath(reference,, &baseDir)
+        if !baseDir
+            baseDir := A_ScriptDir
+    }
+    baseDir := RTrim(StrReplace(baseDir, "/", "\"), "\\")
+    if !baseDir
+        baseDir := A_ScriptDir
+
+    if SubStr(path, 1, 1) = "\\" {
+        drive := SubStr(baseDir, 1, 2)
+        return drive path
+    }
+    return baseDir "\" LTrim(path, "\\")
+}
+
+GetIniPath() {
+    global _ResolvedIniPath
+    if (_ResolvedIniPath != "")
+        return _ResolvedIniPath
+
+    defaultPath := A_ScriptDir "\prompter.ini"
+    path := defaultPath
+    try {
+        override := IniRead(defaultPath, "Files", "IniPath", "")
+        if override {
+            candidate := ResolvePath(override, defaultPath)
+            if FileExist(candidate)
+                path := candidate
+        }
+    } catch {
+        ; ignore and fall back to default
+    }
+    _ResolvedIniPath := path
+    return path
+}
+
+PickUiaIncludePath() {
+    global _ResolvedUiaPath
+    if (_ResolvedUiaPath != "")
+        return _ResolvedUiaPath
+
+    configPath := GetIniPath()
+    override := ""
+    try override := IniRead(configPath, "Files", "UIALib", "")
+    if override {
+        candidate := ResolvePath(override, configPath)
+        if FileExist(candidate) {
+            _ResolvedUiaPath := candidate
+            return candidate
+        }
+    }
+
+    for path in [
+        ResolvePath("UIA-v2-main\\Lib\\UIA.ahk"),
+        ResolvePath("Lib\\UIA.ahk"),
+        ResolvePath("UIA.ahk")
+    ] {
+        if FileExist(path) {
+            _ResolvedUiaPath := path
+            return path
+        }
+    }
+
+    throw Error("UIA library not found. Set Files.UIALib in the configuration file.")
+}
+
+#Include % PickUiaIncludePath()
+
+; ---- Configuration defaults (overridden later) ----
 APP_EXE := "Camera Hub.exe"
 WIN_CLASS_RX := "Qt\d+QWindowIcon" ; Qt673QWindowIcon
-
-; ---- Behavior tuning ----
-BASE_STEP := 1              ; 1% per knob detent
 APPLY_DELAY_MS := 40        ; coalesce fast pulses so no detents are dropped (40–90 typical)
-
-; ---- Path control ----
+BASE_STEP := 1              ; default value delta per detent (overridden per control later)
 SHOW_PATH_TIP := true
-
-; ---- Debug toggles ----
 ENABLE_PROBE_SCANS := false
 DEBUG_VERBOSE_LOGGING := false
-
-; ---- Diagnostics & UI ----
 MAX_ANCESTOR_DEPTH := 10
 SUBTREE_LIST_LIMIT := 50
 SCAN_LIST_LIMIT := 25
@@ -27,27 +103,16 @@ SLIDER_SCAN_LIMIT := 10
 TOOLTIP_HIDE_DELAY_MS := 900
 
 ; ---- Files ----
-INI := A_ScriptDir "\prompter.ini"
+INI := GetIniPath()
 DEBUG_LOG := A_ScriptDir "\PrompterDebug.txt"
 
-; Initialize runtime-configurable toggles
-ENABLE_PROBE_SCANS := IniReadBool(INI, "Debug", "ProbeScans", ENABLE_PROBE_SCANS)
-DEBUG_VERBOSE_LOGGING := IniReadBool(INI, "Debug", "VerboseLogging", DEBUG_VERBOSE_LOGGING)
-
-; ---- State & Globals----
-global _pending := Map()   ; controlName => delta
+; ---- State & Globals ----
+global _pending := Map()   ; controlName => pulse count
 global _applyArmed := false
 global _UIA_RangeValuePatternId := 10003
-global _BrightnessSpinner :=
-    "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.propertyContainer.propertyGroup_com.elgato.vh-ui.group.picture-camlink4k.contentFrame.propertyGroup.property_kPCBrightness.spinBox_kPCBrightness"
-global _ContrastSpinner :=
-    "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.propertyContainer.propertyGroup_com.elgato.vh-ui.group.picture-camlink4k.contentFrame.propertyGroup.property_kPCContrast.spinBox_kPCContrast"
-global _ScrollSpeedSpinner :=
-    "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.prompterContainer.propertyGroup_com.elgato.vh-ui.prompter.group.scrolling.contentFrame.propertyGroup.property_kPRPScrollSpeed.spinBox_kPRPScrollSpeed"
-global _FontSizeSpinner :=
-    "EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.prompterContainer.propertyGroup_com.elgato.vh-ui.prompter.group.appearance.contentFrame.propertyGroup.property_kPRPFontSize.spinBox_kPRPFontSize"
-
-global _ScrollViewportAutoId := "qt_scrollarea_viewport"
+global _ControlSpecs := Map()
+global _ControlElementCache := Map()
+global _CachedCamHubHwnd := 0
 
 LoadConfigOverrides()
 
@@ -99,10 +164,16 @@ F19:: QueuePulse("scrollspeed", +1)
 
 ; ===== Core accumulator =====
 QueuePulse(controlName, sign) {
-    global _pending, _applyArmed, BASE_STEP, APPLY_DELAY_MS
+    global _pending, _applyArmed, APPLY_DELAY_MS
+    if !sign
+        return
+
     if !_pending.Has(controlName)
         _pending[controlName] := 0
-    _pending[controlName] += (BASE_STEP * sign)
+    _pending[controlName] += sign
+
+    if (_pending[controlName] = 0)
+        _pending.Delete(controlName)
 
     if !_applyArmed {
         _applyArmed := true
@@ -124,168 +195,178 @@ ApplyAccumulated() {
     }
 
     ctrlSpecs := GetControlSpecs()
-    summary := ""
-
-    ; Drain the coalesced deltas and apply each to its target control
-    for controlName, delta in _pending {
-        if !delta {
-            _pending[controlName] := 0
-            continue
-        }
-
-        spec := ctrlSpecs.Has(controlName) ? ctrlSpecs[controlName] : 0
-        if !spec {
-            if DEBUG_VERBOSE_LOGGING
-                Log("ApplyAccumulated: missing control spec for " controlName)
-            _pending[controlName] := 0
-            continue
-        }
-
-        ok := false
-        ; Attempt to invoke the mapped handler (range/scroll) with the pending delta
-        try ok := spec["Handler"].Call(uiaElement, spec["AutoId"], delta)
-        catch as err {
-            if DEBUG_VERBOSE_LOGGING
-                Log("ApplyAccumulated: handler error for " controlName " -> " err.Message)
-        }
-
-        if ok {
-            sign := (delta > 0 ? "+" : "")
-            summary .= (summary ? "`n" : "") controlName " " sign delta
-        } else {
-            if DEBUG_VERBOSE_LOGGING
-                Log("ApplyAccumulated: handler returned false for " controlName)
-            summary .= (summary ? "`n" : "") controlName " FAILED"
-        }
-
-        _pending[controlName] := 0
+    if !ctrlSpecs || (ctrlSpecs.Count = 0) {
+        if DEBUG_VERBOSE_LOGGING
+            Log("ApplyAccumulated: control spec map is empty")
+        _pending.Clear()
+        return
     }
 
-    ; Show a tooltip reflecting the applied adjustments when enabled
-    if SHOW_PATH_TIP && summary
-        Tip("Applied:`n" summary)
+    names := []
+    for name in _pending
+        names.Push(name)
+
+    summaryLines := []
+
+    for name in names {
+        if !ctrlSpecs.Has(name) {
+            if DEBUG_VERBOSE_LOGGING
+                Log("ApplyAccumulated: missing control spec for " name)
+            _pending.Delete(name)
+            continue
+        }
+
+        pulses := _pending.Has(name) ? _pending[name] : 0
+        _pending.Delete(name)
+        if !pulses
+            continue
+
+        spec := ctrlSpecs[name]
+        effectivePulses := spec.Has("Invert") && spec["Invert"] ? -pulses : pulses
+
+        result := Map("Success", false, "Detail", "")
+        try result := spec["Handler"].Call(uiaElement, spec, effectivePulses)
+        catch as err {
+            if DEBUG_VERBOSE_LOGGING
+                Log("ApplyAccumulated: handler error for " name " -> " err.Message)
+        }
+
+        success := result.Has("Success") ? result["Success"] : !!result
+        if success {
+            detail := result.Has("Detail") ? result["Detail"] : FormatSigned(effectivePulses)
+            summaryLines.Push((spec.Has("DisplayName") ? spec["DisplayName"] : name) " " detail)
+        } else {
+            if DEBUG_VERBOSE_LOGGING
+                Log("ApplyAccumulated: handler returned false for " name)
+            summaryLines.Push((spec.Has("DisplayName") ? spec["DisplayName"] : name) " FAILED")
+        }
+    }
+
+    if SHOW_PATH_TIP && summaryLines.Length
+        Tip("Applied:`n" JoinLines(summaryLines))
 }
 
 GetControlSpecs() {
-    global _BrightnessSpinner, _ContrastSpinner, _ScrollSpeedSpinner, _FontSizeSpinner
-    global _ScrollViewportAutoId
-    rangeHandler := ApplyRangeValueDelta
-    scrollHandler := ApplyScrollDelta
-    ; Each entry: name -> { AutoId, Handler }
-    return Map(
-        "brightness", Map("AutoId", _BrightnessSpinner, "Handler", rangeHandler),
-        "contrast", Map("AutoId", _ContrastSpinner, "Handler", rangeHandler),
-        "scrollspeed", Map("AutoId", _ScrollSpeedSpinner, "Handler", rangeHandler),
-        "fontsize", Map("AutoId", _FontSizeSpinner, "Handler", rangeHandler),
-        "scroll", Map("AutoId", _ScrollViewportAutoId, "Handler", scrollHandler)
-    )
+    global _ControlSpecs
+    return _ControlSpecs
 }
 
 ; Apply a numeric delta to a RangeValue spinner
-ApplyRangeValueDelta(root, autoId, delta, uiRangeValueId := 10003) {
+ApplyRangeValueDelta(root, spec, pulses, uiRangeValueId := 10003) {
     global DEBUG_VERBOSE_LOGGING
-    el := FindByAutoId(root, autoId)
+    pulses := Round(pulses)
+    if (pulses = 0)
+        return HandlerResult(false)
+
+    step := spec.Has("Step") ? spec["Step"] : 1
+    delta := pulses * step
+    el := ResolveControlElement(root, spec)
     if !el {
         if DEBUG_VERBOSE_LOGGING
-            Log("ApplyRangeValueDelta: element not found for autoId=" autoId)
-        return false
+            Log("ApplyRangeValueDelta: element not found for " spec["Name"])
+        return HandlerResult(false)
     }
+
     try {
         rvp := el.GetCurrentPattern(uiRangeValueId) ; RangeValuePattern = 10003
         if !rvp
-            return false
-        cur := rvp.value              ; numeric value from UIA
-        rvp.SetValue(cur + delta)     ; UIA clamps to [min,max]
-        return true
+            return HandlerResult(false)
+        cur := rvp.value
+        rvp.SetValue(cur + delta)
+        return HandlerResult(true, FormatSigned(delta))
     } catch as err {
         if DEBUG_VERBOSE_LOGGING
-            Log("ApplyRangeValueDelta: pattern error autoId=" autoId " msg=" err.Message)
-        return false
+            Log("ApplyRangeValueDelta: pattern error " spec["Name"] " msg=" err.Message)
+        InvalidateControlCache(spec)
+        return HandlerResult(false)
     }
 }
 
 ; Apply a delta to the Prompter viewport using ScrollPattern (percent fallback when needed)
-ApplyScrollDelta(root, autoId, delta, uiScrollId := 10004) {
-    global BASE_STEP
+ApplyScrollDelta(root, spec, pulses, uiScrollId := 10004) {
     global DEBUG_VERBOSE_LOGGING
-    vp := FindPrompterViewport(root, autoId)
+    pulses := Round(pulses)
+    if (pulses = 0)
+        return HandlerResult(false)
+
+    vp := ResolveControlElement(root, spec)
     if !vp {
         if DEBUG_VERBOSE_LOGGING
-            Log("ApplyScrollDelta: viewport not found autoId=" autoId)
-        return false
+            Log("ApplyScrollDelta: viewport not found for " spec["Name"])
+        return HandlerResult(false)
     }
 
-    if (delta = 0)
-        return false
-
-    ; Try ScrollPattern
     sp := 0
     try sp := vp.GetCurrentPattern(uiScrollId) ; ScrollPattern = 10004
     if sp {
-        ; Relative scroll if supported
-        pulses := Abs(Round(delta / (BASE_STEP ? BASE_STEP : 1)))
-        if (pulses < 1)
-            pulses := 1
-        dir := (delta > 0) ? 4 : 1 ; 4=LargeIncrement, 1=LargeDecrement
-        try {
-            Loop pulses
-                sp.Scroll(0, dir)
-            return true
-        } catch as err {
-            if DEBUG_VERBOSE_LOGGING
-                Log("ApplyScrollDelta: Scroll call failed dir=" dir " pulses=" pulses " msg=" err.Message)
-        }
-        ; Percent fallback
-        try {
-            cur := sp.VerticalScrollPercent  ; -1 means unsupported
-            if (cur >= 0) {
-                newp := cur + delta
-                if (newp < 0)
-                    newp := 0
-                else if (newp > 100)
-                    newp := 100
-                sp.SetScrollPercent(sp.HorizontalScrollPercent, newp)
-                return true
+        pulsesToSend := Abs(pulses)
+        dir := (pulses > 0) ? 4 : 1 ; 4=LargeIncrement, 1=LargeDecrement
+        if (pulsesToSend > 0) {
+            try {
+                Loop pulsesToSend
+                    sp.Scroll(0, dir)
+                return HandlerResult(true, FormatSigned(pulsesToSend, " step" (pulsesToSend = 1 ? "" : "s")))
+            } catch as err {
+                if DEBUG_VERBOSE_LOGGING
+                    Log("ApplyScrollDelta: Scroll call failed dir=" dir " pulses=" pulsesToSend " msg=" err.Message)
+                InvalidateControlCache(spec)
             }
         }
-        catch as err {
-            if DEBUG_VERBOSE_LOGGING
-                Log("ApplyScrollDelta: SetScrollPercent failed msg=" err.Message)
-            return false
+
+        percentPer := spec.Has("PercentPerStep") ? spec["PercentPerStep"] : 0
+        if (percentPer != 0) {
+            try {
+                cur := sp.VerticalScrollPercent  ; -1 means unsupported
+                if (cur >= 0) {
+                    deltaPercent := pulses * percentPer
+                    newp := ClampPercent(cur + deltaPercent)
+                    sp.SetScrollPercent(sp.HorizontalScrollPercent, newp)
+                    return HandlerResult(true, FormatSigned(deltaPercent, "%"))
+                }
+            } catch as err {
+                if DEBUG_VERBOSE_LOGGING
+                    Log("ApplyScrollDelta: SetScrollPercent failed msg=" err.Message)
+                InvalidateControlCache(spec)
+            }
         }
+    } else if DEBUG_VERBOSE_LOGGING {
+        Log("ApplyScrollDelta: ScrollPattern unavailable for " spec["Name"])
     }
-    else if DEBUG_VERBOSE_LOGGING {
-        Log("ApplyScrollDelta: ScrollPattern unavailable for autoId=" autoId)
-    }
-    return false
+    return HandlerResult(false)
 }
 
 ; Try to resolve the Prompter's scrolling viewport element
-FindPrompterViewport(root, autoId) {
-    ; 1) Direct AutomationId match
-    el := FindByAutoId(root, autoId)
+FindPrompterViewport(root, spec) {
+    autoId := spec.Has("AutoId") ? spec["AutoId"] : ""
+    el := autoId ? FindByAutoId(root, autoId) : 0
     if el
         return el
 
-    ; 2) Look inside QScrollArea for first QTextBrowser child
-    for area in root.FindElements({ ClassName: "QScrollArea" }) {
-        try {
-            qb := area.FindElement({ ClassName: "QTextBrowser" })
-            if qb
-                return qb
+    ; Look for the first QTextBrowser underneath any visible QScrollArea
+    try {
+        areas := root.FindElements({ ClassName: "QScrollArea" })
+        for area in areas {
+            try {
+                qb := area.FindElement({ ClassName: "QTextBrowser" })
+                if qb
+                    return qb
+            }
         }
     }
+    catch as err {
+        ; ignore
+    }
 
-    ; 3) Fallback: first QTextBrowser anywhere
+    ; Fallback: first QTextBrowser anywhere
     try {
         qb := root.FindElement({ ClassName: "QTextBrowser" })
         if qb
             return qb
     }
-    catch {
+    catch as err {
     }
 
-    return 0  ; nothing found
+    return 0
 }
 
 ; Helper: find an element by AutomationId
@@ -319,8 +400,11 @@ DebugProbe() {
     lines.Push("AHK: v" A_AhkVersion "  (x" (A_PtrSize * 8) ")  Elevated: " (A_IsAdmin ? "Yes" : "No"))
     lines.Push("App hwnd: " (hwnd ? hwnd : "NOT FOUND"))
     lines.Push("Saved point: " GetSavedPointText(hwnd))
-    lines.Push("AutomationId (Brightness): " _BrightnessSpinner)
-    lines.Push("AutomationId (Contrast): " _ContrastSpinner)
+    specs := GetControlSpecs()
+    if specs.Has("brightness")
+        lines.Push("AutomationId (Brightness): " (specs["brightness"].Has("AutoId") ? specs["brightness"]["AutoId"] : "(missing)"))
+    if specs.Has("contrast")
+        lines.Push("AutomationId (Contrast): " (specs["contrast"].Has("AutoId") ? specs["contrast"]["AutoId"] : "(missing)"))
 
     txt := JoinLines(lines)
     A_Clipboard := txt
@@ -388,11 +472,22 @@ SaveCalibration() {
 }
 
 GetCamHubUiaElement() {
+    global _CachedCamHubHwnd, _ControlElementCache
     hwnd := GetCamHubHwnd()
     if !hwnd {
+        if _CachedCamHubHwnd {
+            _CachedCamHubHwnd := 0
+            _ControlElementCache.Clear()
+        }
         Log("GetCamHubUiaElement: Camera Hub window not found")
         return
     }
+
+    if (_CachedCamHubHwnd != hwnd) {
+        _CachedCamHubHwnd := hwnd
+        _ControlElementCache.Clear()
+    }
+
     uiaElement := UIA.ElementFromHandle(hwnd)
     if !uiaElement {
         Log("GetCamHubUiaElement: UIA.ElementFromHandle returned NULL")
@@ -602,6 +697,68 @@ MonitorGetList() {
         arr.Push(A_Index)
     return arr
 }
+; ---- Control helpers ----
+ResolveControlElement(root, spec) {
+    global _ControlElementCache
+    cacheKey := spec.Has("CacheKey") ? spec["CacheKey"]
+        : (spec.Has("AutoId") && spec["AutoId"] ? spec["AutoId"] : spec["Name"])
+
+    if cacheKey && _ControlElementCache.Has(cacheKey) {
+        cached := _ControlElementCache[cacheKey]
+        if cached {
+            try {
+                ; Probe a cheap property to ensure the element is still alive
+                cached.ClassName
+                return cached
+            } catch {
+                _ControlElementCache.Delete(cacheKey)
+            }
+        } else {
+            _ControlElementCache.Delete(cacheKey)
+        }
+    }
+
+    el := 0
+    if spec.Has("Resolver") {
+        try el := spec["Resolver"].Call(root, spec)
+        catch {
+            el := 0
+        }
+    } else if spec.Has("AutoId") {
+        el := FindByAutoId(root, spec["AutoId"])
+    }
+
+    if el && cacheKey
+        _ControlElementCache[cacheKey] := el
+    return el
+}
+
+InvalidateControlCache(spec) {
+    global _ControlElementCache
+    cacheKey := spec.Has("CacheKey") ? spec["CacheKey"]
+        : (spec.Has("AutoId") && spec["AutoId"] ? spec["AutoId"] : spec["Name"])
+    if cacheKey && _ControlElementCache.Has(cacheKey)
+        _ControlElementCache.Delete(cacheKey)
+}
+
+HandlerResult(success, detail := "") {
+    return Map("Success", !!success, "Detail", detail)
+}
+
+FormatSigned(value, suffix := "") {
+    if !IsNumber(value)
+        return value suffix
+    str := (Round(value) = value) ? Format("{:+d}", value) : Format("{:+.2f}", value)
+    return str suffix
+}
+
+ClampPercent(value) {
+    if (value < 0)
+        return 0
+    if (value > 100)
+        return 100
+    return value
+}
 ; ---- Small utilities ----
 JoinLines(arr) {
     s := ""
@@ -626,15 +783,19 @@ LoadConfigOverrides() {
     global INI, APP_EXE, WIN_CLASS_RX, DEBUG_LOG, BASE_STEP, APPLY_DELAY_MS, SHOW_PATH_TIP
     global MAX_ANCESTOR_DEPTH, SUBTREE_LIST_LIMIT, SCAN_LIST_LIMIT, SLIDER_SCAN_LIMIT, TOOLTIP_HIDE_DELAY_MS
     global DEBUG_VERBOSE_LOGGING, ENABLE_PROBE_SCANS
-    global _BrightnessSpinner, _ContrastSpinner, _ScrollSpeedSpinner, _FontSizeSpinner, _ScrollViewportAutoId
+    global _ControlSpecs, _ControlElementCache
+
+    SplitPath(INI,, &iniDir)
 
     APP_EXE := IniRead(INI, "App", "Executable", APP_EXE)
     WIN_CLASS_RX := IniRead(INI, "App", "ClassRegex", WIN_CLASS_RX)
-    DEBUG_LOG := IniRead(INI, "Files", "DebugLog", DEBUG_LOG)
 
-    BASE_STEP := IniReadNumber(INI, "Behavior", "BaseStep", BASE_STEP)
+    debugLogOverride := IniRead(INI, "Files", "DebugLog", DEBUG_LOG)
+    DEBUG_LOG := ResolvePath(debugLogOverride, iniDir ? iniDir : A_ScriptDir)
+
     APPLY_DELAY_MS := IniReadNumber(INI, "Behavior", "ApplyDelayMs", APPLY_DELAY_MS)
     SHOW_PATH_TIP := IniReadBool(INI, "Behavior", "ShowPathTip", SHOW_PATH_TIP)
+    BASE_STEP := IniReadNumber(INI, "Behavior", "BaseStep", BASE_STEP)
 
     ENABLE_PROBE_SCANS := IniReadBool(INI, "Debug", "ProbeScans", ENABLE_PROBE_SCANS)
     DEBUG_VERBOSE_LOGGING := IniReadBool(INI, "Debug", "VerboseLogging", DEBUG_VERBOSE_LOGGING)
@@ -645,11 +806,47 @@ LoadConfigOverrides() {
     SLIDER_SCAN_LIMIT := IniReadNumber(INI, "Diagnostics", "SliderScanLimit", SLIDER_SCAN_LIMIT)
     TOOLTIP_HIDE_DELAY_MS := IniReadNumber(INI, "UI", "TooltipHideDelayMs", TOOLTIP_HIDE_DELAY_MS)
 
-    _BrightnessSpinner := IniRead(INI, "Automation", "Brightness", _BrightnessSpinner)
-    _ContrastSpinner := IniRead(INI, "Automation", "Contrast", _ContrastSpinner)
-    _ScrollSpeedSpinner := IniRead(INI, "Automation", "ScrollSpeed", _ScrollSpeedSpinner)
-    _FontSizeSpinner := IniRead(INI, "Automation", "FontSize", _FontSizeSpinner)
-    _ScrollViewportAutoId := IniRead(INI, "Automation", "ScrollViewport", _ScrollViewportAutoId)
+    percentPerStep := IniReadNumber(INI, "Scroll", "PercentPerStep", 5)
+
+    controlMeta := [
+        Map("Name", "brightness", "AutoKey", "Brightness", "Label", "Brightness", "Handler", ApplyRangeValueDelta),
+        Map("Name", "contrast", "AutoKey", "Contrast", "Label", "Contrast", "Handler", ApplyRangeValueDelta),
+        Map("Name", "scrollspeed", "AutoKey", "ScrollSpeed", "Label", "Scroll speed", "Handler", ApplyRangeValueDelta),
+        Map("Name", "fontsize", "AutoKey", "FontSize", "Label", "Font size", "Handler", ApplyRangeValueDelta),
+        Map("Name", "scroll", "AutoKey", "ScrollViewport", "Label", "Scroll", "Handler", ApplyScrollDelta, "Resolver", FindPrompterViewport, "PercentPerStep", percentPerStep)
+    ]
+
+    stepsSection := "ControlSteps"
+    invertSection := "ControlInvert"
+
+    specs := Map()
+    for meta in controlMeta {
+        name := meta["Name"]
+        autoId := IniRead(INI, "Automation", meta["AutoKey"], "")
+        step := IniReadNumber(INI, stepsSection, name, BASE_STEP)
+        invert := IniReadBool(INI, invertSection, name, false)
+
+        spec := Map(
+            "Name", name,
+            "DisplayName", meta["Label"],
+            "Handler", meta["Handler"],
+            "Step", step
+        )
+
+        if autoId
+            spec["AutoId"] := autoId
+        if meta.Has("Resolver")
+            spec["Resolver"] := meta["Resolver"]
+        if meta.Has("PercentPerStep")
+            spec["PercentPerStep"] := meta["PercentPerStep"]
+        if invert
+            spec["Invert"] := true
+
+        specs[name] := spec
+    }
+
+    _ControlSpecs := specs
+    _ControlElementCache.Clear()
 }
 
 Tip(t) {

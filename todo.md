@@ -23,9 +23,9 @@
 - [FIXED] Add a Help hotkey listing all control hotkeys and configuration files in as a comment in the .ini file, for new users.
 
 ## Follow Up
-- [ ] `elgatoPrompter.ahk:5`: Resolve the UIA include path via `A_ScriptDir` (optionally overridable in the INI) so the script runs on machines beyond the primary dev box.
-- [ ] `elgatoPrompter.ahk:101`: Drop zeroed entries from `_pending` after each apply so the map stays small and the early-return fast path actually triggers.
-- [ ] `elgatoPrompter.ahk:207`: Scale the ScrollPattern percent fallback by a configurable percent-per-detent instead of applying raw `delta` values.
-- [ ] `elgatoPrompter.ahk:169`: Let each control spec carry its own step size (and optional direction) sourced from the INI instead of reusing `BASE_STEP` for everything.
-- [ ] `elgatoPrompter.ahk:264`: Cache the resolved prompter viewport/spinner elements and invalidate on failure to avoid repeated full-tree UIA searches.
-- [ ] `elgatoPrompter.ahk:37` & `prompter.ini:37`: Treat the INI as the single source for AutomationIds (remove hard-coded defaults, honor `IniPath`, and drop the unused duplicate entry).
+- [FIXED] `elgatoPrompter.ahk:5`: Resolve the UIA include path via `A_ScriptDir` (overridable in the INI) so the script runs on machines beyond the primary dev box.
+- [FIXED] `elgatoPrompter.ahk:101`: Drop zeroed entries from `_pending` after each apply so the map stays small and the early-return fast path actually triggers.
+- [FIXED] `elgatoPrompter.ahk:207`: Scale the ScrollPattern percent fallback by a configurable percent-per-detent instead of applying raw `delta` values.
+- [FIXED] `elgatoPrompter.ahk:169`: Let each control spec carry its own step size (and optional direction) sourced from the INI instead of reusing `BASE_STEP` for everything.
+- [FIXED] `elgatoPrompter.ahk:264`: Cache the resolved prompter viewport/spinner elements and invalidate on failure to avoid repeated full-tree UIA searches.
+- [FIXED] `elgatoPrompter.ahk:37` & `prompter.ini:37`: Treat the INI as the single source for AutomationIds (remove hard-coded defaults, honor `IniPath`, and drop the unused duplicate entry).
