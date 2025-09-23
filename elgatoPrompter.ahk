@@ -85,30 +85,20 @@ EnsureUiaInclude() {
         return false
     }
 
-    if (current != desired) {
-        if FileExist(shimPath)
-            try FileDelete(shimPath)
+    if (current = desired)
+        return false
+
+    if FileExist(shimPath)
+        try FileDelete(shimPath)
+
+    if (desired != "")
         FileAppend(desired, shimPath, "UTF-8")
-        return true
-    }
-    return false
+    return true
 }
 
 
 RestartForShim() {
-    if !(A_ScriptFullPath && FileExist(A_ScriptFullPath)) {
-        MsgBox("UIA include override updated. Please restart the script manually.", "Elgato Prompter", "OK Iconi")
-        ExitApp()
-    }
-
-    cmd := '"' A_AhkPath '" "' A_ScriptFullPath '"'
-    for arg in A_Args {
-        escaped := StrReplace(arg, '"', '""')
-        cmd .= ' "' escaped '"'
-    }
-
-    try Run(cmd)
-    ExitApp()
+    Reload()
 }
 
 
