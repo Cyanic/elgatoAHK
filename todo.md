@@ -38,3 +38,9 @@
 - [FIXED] `elgatoPrompter.ahk:451`: Call `WinGetPos(&wx, &wy, &ww, &wh, "ahk_id " hwnd)` instead of the command-style invocation; the current line stops the script in v2.
 - [FIXED] `elgatoPrompter.ahk:469-470`: Wrap the `IniWrite` calls with parentheses (e.g., `IniWrite(Round(dx), INI, "Spinner", "DX")`) so saving calibration succeeds.
 - [FIXED] `elgatoPrompter.ahk:411` & `elgatoPrompter.ahk:527`: Convert `FileAppend` to the function form `FileAppend(Text, File)`; the legacy syntax prevents debug logging.
+
+## Backlog
+- `elgatoPrompter.ahk:59-65`: Restore INI-driven UIA include resolution (e.g., emit a shim before the include or add `#Include <UIA>`) so `Files.UIALib` overrides are honored on v2.
+- `elgatoPrompter.ahk:88` & `elgatoPrompter.ahk:232`: Reconcile `_UIA_RangeValuePatternId`; use the global in `ApplyRangeValueDelta` or delete the unused constant.
+- `elgatoPrompter.ahk:255`, `elgatoPrompter.ahk:287`, `elgatoPrompter.ahk:304`, `elgatoPrompter.ahk:695-697`: Remove the no-op `InvalidateControlCache` (and calls).
+- `prompter.ini:21-22`: Update or drop `IniPath`/`UIALib` entries to match the current include strategy and avoid misleading operators.
