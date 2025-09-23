@@ -97,7 +97,9 @@ EnsureUiaInclude() {
 
 
 #Include *i %A_ScriptDir%\uiashim.ahk
-#Include <UIA>
+#Include *i %A_MyDocuments%\AutoHotkey\Lib\UIA.ahk
+#Include *i %A_AppDataCommon%\AutoHotkey\Lib\UIA.ahk
+#Include *i %A_ProgramFiles%\AutoHotkey\Lib\UIA.ahk
 #Include *i %A_ScriptDir%\UIA-v2-main\Lib\UIA.ahk
 #Include *i %A_ScriptDir%\Lib\UIA.ahk
 #Include *i %A_ScriptDir%\UIA.ahk
