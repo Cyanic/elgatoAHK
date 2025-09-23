@@ -152,7 +152,7 @@ QueuePulse(controlName, sign) {
 
     if !_applyArmed {
         _applyArmed := true
-        SetTimer ApplyAccumulated, -APPLY_DELAY_MS
+        SetTimer(ApplyAccumulated, -APPLY_DELAY_MS)
     }
 }
 
@@ -361,7 +361,7 @@ FindByAutoId(root, autoId) {
 
 QuitApp() {
     Tip("EXITING")
-    Sleep 1000
+    Sleep(1000)
     ExitApp()
 }
 
@@ -383,7 +383,10 @@ DebugProbe() {
 
     txt := JoinLines(lines)
     A_Clipboard := txt
-    try FileAppend(txt "`r`n`r`n", DEBUG_LOG)
+    try FileAppend(
+        txt "`r`n`r`n",
+        DEBUG_LOG
+    )
     MsgBox("Debug copied to clipboard.`nSaved to: " DEBUG_LOG, "Prompter Debug", "OK Iconi")
 }
 
@@ -423,7 +426,7 @@ GetSavedPointText(hwnd) {
     if (dx = "" || dy = "")
         return "MISSING (press Ctrl+Alt+S over the spinner)"
     if hwnd {
-        WinGetPos &wx, &wy, &ww, &wh, "ahk_id " hwnd
+        WinGetPos(&wx, &wy, &ww, &wh, "ahk_id " hwnd)
         return "DX=" dx " DY=" dy "  (screen " (wx + dx) "," (wy + dy) ")"
     } else {
         return "DX=" dx " DY=" dy
@@ -438,11 +441,11 @@ SaveCalibration() {
         Tip("Camera Hub not found.")
         return
     }
-    MouseGetPos &mx, &my
-    WinGetPos &wx, &wy, &ww, &wh, "ahk_id " hwnd
+    MouseGetPos(&mx, &my)
+    WinGetPos(&wx, &wy, &ww, &wh, "ahk_id " hwnd)
     dx := mx - wx, dy := my - wy
-    IniWrite Round(dx), INI, "Spinner", "DX"
-    IniWrite Round(dy), INI, "Spinner", "DY"
+    IniWrite(Round(dx), INI, "Spinner", "DX")
+    IniWrite(Round(dy), INI, "Spinner", "DY")
     Tip("Saved spinner @ (" Round(dx) "," Round(dy) ")")
 }
 
@@ -499,7 +502,10 @@ GetCamHubHwnd() {
 Log(line) {
     global DEBUG_LOG
     ts := FormatTime(, "yyyy-MM-dd HH:mm:ss")
-    try FileAppend(ts "  " line "`r`n", DEBUG_LOG)
+    try FileAppend(
+        ts "  " line "`r`n",
+        DEBUG_LOG
+    )
 }
 
 ; Dump monitor layout and DPI (per-monitor where supported)
@@ -558,7 +564,7 @@ CheckElevationRisk() {
 DumpUnderMouse() {
     global MAX_ANCESTOR_DEPTH
     try {
-        MouseGetPos &mx, &my, &hwin
+        MouseGetPos(&mx, &my, &hwin)
         el := UIA.ElementFromPoint(mx, my)
         Log("=== UIA UnderMouse ===")
         Log(Format("Screen @({},{})  hwnd={:#x}", mx, my, hwin))
@@ -799,6 +805,6 @@ LoadConfigOverrides() {
 
 Tip(t) {
     global TOOLTIP_HIDE_DELAY_MS
-    ToolTip t
+    ToolTip(t)
     SetTimer(() => ToolTip(), -TOOLTIP_HIDE_DELAY_MS)
 }
