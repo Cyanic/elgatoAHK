@@ -80,19 +80,35 @@ EnsureUiaInclude() {
     if (desired = "") {
         if (current != "") {
             try FileDelete(shimPath)
-            Reload()
-            ExitApp()
+            return true
         }
-        return
+        return false
     }
 
     if (current != desired) {
         if FileExist(shimPath)
             try FileDelete(shimPath)
         FileAppend(desired, shimPath, "UTF-8")
-        Reload()
+        return true
+    }
+    return false
+}
+
+
+RestartForShim() {
+    if !(A_ScriptFullPath && FileExist(A_ScriptFullPath)) {
+        MsgBox("UIA include override updated. Please restart the script manually.", "Elgato Prompter", "OK Iconi")
         ExitApp()
     }
+
+    cmd := '"' A_AhkPath '" "' A_ScriptFullPath '"'
+    for arg in A_Args {
+        escaped := StrReplace(arg, '"', '""')
+        cmd .= ' "' escaped '"'
+    }
+
+    try Run(cmd)
+    ExitApp()
 }
 
 
@@ -104,7 +120,8 @@ EnsureUiaInclude() {
 #Include *i %A_ScriptDir%\Lib\UIA.ahk
 #Include *i %A_ScriptDir%\UIA.ahk
 
-EnsureUiaInclude()
+if EnsureUiaInclude()
+    RestartForShim()
 
 if !IsSet(UIA) {
     throw Error("UIA library not found. Place UIA.ahk in a standard library location or alongside the script.")
