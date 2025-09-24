@@ -38,6 +38,9 @@ IniReadNumber(file, section, key, default) {
 
 Log(line) {
     global DEBUG_LOG
+    if !IsSet(DEBUG_LOG) || (Trim(DEBUG_LOG) = "") {
+        DEBUG_LOG := A_ScriptDir "\PrompterDebug.txt"
+    }
     ts := FormatTime(, "yyyy-MM-dd HH:mm:ss")
     try FileAppend(
         ts "  " line "`r`n",
@@ -56,4 +59,3 @@ QuitApp() {
     Sleep(1000)
     ExitApp()
 }
-
