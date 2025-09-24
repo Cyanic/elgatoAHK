@@ -50,6 +50,9 @@ Log(line) {
 
 Tip(t) {
     global TOOLTIP_HIDE_DELAY_MS
+    if !IsSet(TOOLTIP_HIDE_DELAY_MS) || (Trim(TOOLTIP_HIDE_DELAY_MS) = "") {
+        DEBUG_LOGTOOLTIP_HIDE_DELAY_MS := 1000
+    }
     ToolTip(t)
     SetTimer(() => ToolTip(), -TOOLTIP_HIDE_DELAY_MS)
 }
