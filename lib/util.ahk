@@ -1,7 +1,9 @@
+; Wraps handler outcomes in a consistent success/detail map.
 HandlerResult(success, detail := "") {
     return Map("Success", !!success, "Detail", detail)
 }
 
+; Formats numeric deltas with sign and optional suffix.
 FormatSigned(value, suffix := "") {
     if !IsNumber(value)
         return value suffix
@@ -9,6 +11,7 @@ FormatSigned(value, suffix := "") {
     return str suffix
 }
 
+; Limits scroll percentages to the UIA-valid 0-100 range.
 ClampPercent(value) {
     if (value < 0)
         return 0
@@ -17,6 +20,7 @@ ClampPercent(value) {
     return value
 }
 
+; Joins an array of strings with CRLF delimiters.
 JoinLines(arr) {
     s := ""
     for v in arr
@@ -24,6 +28,7 @@ JoinLines(arr) {
     return RTrim(s, "`r`n")
 }
 
+; Reads an INI field and normalizes common truthy values.
 IniReadBool(file, section, key, default := false) {
     defStr := default ? "1" : "0"
     val := IniRead(file, section, key, defStr)
@@ -31,11 +36,13 @@ IniReadBool(file, section, key, default := false) {
     return (txt = "1" || txt = "true" || txt = "yes" || txt = "on")
 }
 
+; Reads an INI field and coerces it to a number when possible.
 IniReadNumber(file, section, key, default) {
     val := Trim(IniRead(file, section, key, default))
     return IsNumber(val) ? val + 0 : default
 }
 
+; Appends a timestamped line to the configured debug log.
 Log(line) {
     global DEBUG_LOG
     if !IsSet(DEBUG_LOG) || (Trim(DEBUG_LOG) = "") {
@@ -48,6 +55,7 @@ Log(line) {
     )
 }
 
+; Shows a tooltip briefly for operator feedback.
 Tip(t) {
     global TOOLTIP_HIDE_DELAY_MS
     if !IsSet(TOOLTIP_HIDE_DELAY_MS) || (Trim(TOOLTIP_HIDE_DELAY_MS) = "") {
@@ -57,6 +65,7 @@ Tip(t) {
     SetTimer(() => ToolTip(), -TOOLTIP_HIDE_DELAY_MS)
 }
 
+; Displays an exit notice and terminates the script.
 QuitApp() {
     Tip("EXITING")
     Sleep(1000)

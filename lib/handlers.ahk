@@ -1,3 +1,4 @@
+; Accumulates detent input for a control and schedules processing.
 QueuePulse(controlName, sign) {
     global _pending, _applyArmed, APPLY_DELAY_MS
     if !sign
@@ -16,6 +17,7 @@ QueuePulse(controlName, sign) {
     }
 }
 
+; Processes queued pulses against Camera Hub UI elements.
 ApplyAccumulated() {
     global _pending, _applyArmed, SHOW_PATH_TIP, DEBUG_VERBOSE_LOGGING
     _applyArmed := false
@@ -81,6 +83,7 @@ ApplyAccumulated() {
         Tip("Applied:`n" JoinLines(summaryLines))
 }
 
+; Adjusts a spinner/slider via UIA RangeValue pattern.
 ApplyRangeValueDelta(root, spec, pulses, uiRangeValueId := _UIA_RangeValuePatternId) {
     global DEBUG_VERBOSE_LOGGING, _UIA_RangeValuePatternId
     pulses := Round(pulses)
@@ -110,8 +113,9 @@ ApplyRangeValueDelta(root, spec, pulses, uiRangeValueId := _UIA_RangeValuePatter
     }
 }
 
-ApplyScrollDelta(root, spec, pulses, uiScrollId := 10004) {
-    global DEBUG_VERBOSE_LOGGING
+; Scrolls the prompter viewport using UIA Scroll pattern fallbacks.
+ApplyScrollDelta(root, spec, pulses, uiScrollId := _UIA_ScrollId) {
+    global DEBUG_VERBOSE_LOGGING, _UIA_ScrollId
     pulses := Round(pulses)
     if (pulses = 0)
         return HandlerResult(false)

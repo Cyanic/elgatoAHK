@@ -1,3 +1,4 @@
+; Captures core diagnostics, copies them to clipboard, and logs.
 DebugProbe() {
     global DEBUG_LOG
     hwnd := GetCamHubHwnd()
@@ -22,6 +23,7 @@ DebugProbe() {
     MsgBox("Debug copied to clipboard.`nSaved to: " DEBUG_LOG, "Prompter Debug", "OK Iconi")
 }
 
+; Toggles UIA probing and persists the flag to the INI.
 ToggleProbeScans() {
     global ENABLE_PROBE_SCANS, INI
     ENABLE_PROBE_SCANS := !ENABLE_PROBE_SCANS
@@ -31,6 +33,7 @@ ToggleProbeScans() {
     Log("ToggleProbeScans: " state)
 }
 
+; Displays a help dialog listing available hotkeys and file paths.
 ShowHelp() {
     global INI, DEBUG_LOG
     msg := "Elgato Prompter Hotkeys:`n"
@@ -51,6 +54,7 @@ ShowHelp() {
     MsgBox(msg, "Elgato Prompter Help", "OK Iconi")
 }
 
+; Formats the stored spinner calibration offsets for display.
 GetSavedPointText(hwnd) {
     global INI
     dx := IniRead(INI, "Spinner", "DX", "")
@@ -65,6 +69,7 @@ GetSavedPointText(hwnd) {
     }
 }
 
+; Saves the mouse offset relative to Camera Hub for spinner targeting.
 SaveCalibration() {
     global INI
     hwnd := GetCamHubHwnd()
@@ -80,6 +85,7 @@ SaveCalibration() {
     Tip("Saved spinner @ (" Round(dx) "," Round(dy) ")")
 }
 
+; Logs monitor geometry and active window DPI for troubleshooting.
 DumpMonitors() {
     Log("=== Monitors ===")
     count := MonitorGetCount()
@@ -100,6 +106,7 @@ DumpMonitors() {
     }
 }
 
+; Enumerates windows and highlights the selected Camera Hub candidate.
 DumpWindows() {
     global APP_EXE, WIN_CLASS_RX
     Log("=== Windows ===")
@@ -115,6 +122,7 @@ DumpWindows() {
     }
 }
 
+; Records elevation status for the script and target process.
 CheckElevationRisk() {
     global APP_EXE
     hwnd := WinExist("ahk_exe " APP_EXE)
@@ -128,6 +136,7 @@ CheckElevationRisk() {
     Log("ElevationCheck: AHK IsAdmin=" (A_IsAdmin ? "Yes" : "No") "  TargetExe=" exe)
 }
 
+; Logs UIA element details for the control under the cursor.
 DumpUnderMouse() {
     global MAX_ANCESTOR_DEPTH
     try {
@@ -153,6 +162,7 @@ DumpUnderMouse() {
     }
 }
 
+; Writes a single UIA element summary with class, AutomationId, and rect.
 DumpOne(el, prefix := "") {
     if !el
         return
@@ -172,6 +182,7 @@ DumpOne(el, prefix := "") {
     Log(prefix "  Name=" name "  Class=" tempclass "  AutoId=" aid "  CtrlType=" ctype "  Rect=" rect)
 }
 
+; Logs the first N descendants of a UIA root element.
 DumpSubtree(uiaRoot, limit := SUBTREE_LIST_LIMIT) {
     global SUBTREE_LIST_LIMIT
     if !uiaRoot {
@@ -189,6 +200,7 @@ DumpSubtree(uiaRoot, limit := SUBTREE_LIST_LIMIT) {
     Log("Subtree enumerated: " cnt " elements (displayed up to " limit ")")
 }
 
+; Runs a UIA search with filters and logs each match up to a limit.
 Scan(uiaRoot, condObj, label := "", limit := SCAN_LIST_LIMIT) {
     global SCAN_LIST_LIMIT
     if !uiaRoot {
@@ -206,6 +218,7 @@ Scan(uiaRoot, condObj, label := "", limit := SCAN_LIST_LIMIT) {
     return cnt
 }
 
+; Performs the comprehensive diagnostic routine and logs results.
 FullDiag() {
     global SUBTREE_LIST_LIMIT, SCAN_LIST_LIMIT, SLIDER_SCAN_LIMIT
     Log("===== FULL DIAGNOSTIC START =====")
@@ -233,6 +246,7 @@ FullDiag() {
     Log("===== FULL DIAGNOSTIC END =====")
 }
 
+; Returns a 1-based array of available monitor indexes.
 MonitorGetList() {
     arr := []
     Loop MonitorGetCount()

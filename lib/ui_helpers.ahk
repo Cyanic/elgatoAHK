@@ -1,3 +1,4 @@
+; Locates the scrolling text viewport within Camera Hub using heuristics.
 FindPrompterViewport(root, spec) {
     autoId := spec.Has("AutoId") ? spec["AutoId"] : ""
     el := autoId ? FindByAutoId(root, autoId) : 0
@@ -28,6 +29,7 @@ FindPrompterViewport(root, spec) {
     return 0
 }
 
+; Helper that safely resolves a UIA element by AutomationId.
 FindByAutoId(root, autoId) {
     global DEBUG_VERBOSE_LOGGING
     if !root || !autoId
@@ -42,6 +44,7 @@ FindByAutoId(root, autoId) {
     }
 }
 
+; Resolves a UIA element via resolver callback or AutomationId.
 ResolveControlElement(root, spec) {
     el := 0
     if spec.Has("Resolver") {
@@ -55,6 +58,7 @@ ResolveControlElement(root, spec) {
     return el
 }
 
+; Retrieves and caches the UIA root for the Camera Hub window.
 GetCamHubUiaElement() {
     global _CachedCamHubHwnd
     hwnd := GetCamHubHwnd()
@@ -75,6 +79,7 @@ GetCamHubUiaElement() {
     return uiaElement
 }
 
+; Finds the target Camera Hub window handle by exe and class.
 GetCamHubHwnd() {
     global APP_EXE, WIN_CLASS_RX
 

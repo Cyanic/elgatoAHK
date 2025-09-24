@@ -45,6 +45,7 @@ DEBUG_LOG := A_ScriptDir "\PrompterDebug.txt"
 global _pending := Map()   ; controlName => pulse count
 global _applyArmed := false
 global _UIA_RangeValuePatternId := 10003
+global _UIA_ScrollId := 10004
 global _ControlSpecs := Map()
 global _CachedCamHubHwnd := 0
 

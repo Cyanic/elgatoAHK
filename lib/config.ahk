@@ -1,5 +1,6 @@
 global _ResolvedIniPath := ""
 
+; Converts a relative path to absolute based on a reference file or dir.
 ResolvePath(path, reference := "") {
     if (path = "")
         return ""
@@ -28,6 +29,7 @@ ResolvePath(path, reference := "") {
     return baseDir "\" LTrim(path, "\\")
 }
 
+; Resolves the ini file path, honoring overrides stored inside it.
 GetIniPath() {
     global _ResolvedIniPath
     if (_ResolvedIniPath != "")
@@ -49,6 +51,7 @@ GetIniPath() {
     return path
 }
 
+; Maintains a shim include file that redirects to a configured UIA library.
 EnsureUiaInclude() {
     shimPath := A_ScriptDir "\uiashim.ahk"
     configPath := GetIniPath()
@@ -88,10 +91,12 @@ EnsureUiaInclude() {
     return true
 }
 
+; Reloads the script when the UIA shim changes.
 RestartForShim() {
     Reload()
 }
 
+; Loads runtime configuration and builds control specs from the INI file.
 LoadConfigOverrides() {
     global INI, APP_EXE, WIN_CLASS_RX, DEBUG_LOG, BASE_STEP, APPLY_DELAY_MS, SHOW_PATH_TIP
     global MAX_ANCESTOR_DEPTH, SUBTREE_LIST_LIMIT, SCAN_LIST_LIMIT, SLIDER_SCAN_LIMIT, TOOLTIP_HIDE_DELAY_MS
@@ -161,6 +166,7 @@ LoadConfigOverrides() {
     _ControlSpecs := specs
 }
 
+; Returns the cached map of control specifications.
 GetControlSpecs() {
     global _ControlSpecs
     return _ControlSpecs
