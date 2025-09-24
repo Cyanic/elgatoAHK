@@ -206,6 +206,40 @@ GetHotkeyConfig() {
     return _HotkeyConfig
 }
 
+IsAutoHotkeyHeaderLine(line) {
+    static prefixes := [
+        "; [AUTO] Elgato Prompter hotkey summary",
+        "; Elgato Prompter configuration.",
+        "; Scroll viewport slower/faster:",
+        "; Scroll speed down/up:",
+        "; Brightness down/up:",
+        "; Contrast down/up:",
+        "; Edit the [Hotkeys] section below to customize bindings.",
+        "; Ctrl+Alt+S",
+        "; Ctrl+Alt+Z",
+        "; Ctrl+Alt+U/M/W/P",
+        "; Ctrl+Alt+F",
+        "; Ctrl+Alt+C",
+        "; Ctrl+Alt+G",
+        "; Ctrl+Alt+H",
+        "; Ctrl+Alt+X",
+        "; The help dialog also shows this file path and log location.",
+        "; Quick reference:",
+        ";   F13/F14",
+        ";   F18/F19",
+        ";   Ctrl+Alt+D/A",
+        ";   Ctrl+Alt+E/Q",
+        ";   Ctrl+Alt+S",
+        ";   Ctrl+Alt+Z",
+        ";   Ctrl+Alt+G"
+    ]
+    for prefix in prefixes {
+        if (prefix != "" && InStr(line, prefix) = 1)
+            return true
+    }
+    return false
+}
+
 ; Refreshes the prompter.ini header comment to list the active hotkeys.
 UpdateIniHotkeyComment(cfg) {
     global INI
@@ -213,26 +247,25 @@ UpdateIniHotkeyComment(cfg) {
         return
 
     commentLines := [
-        "Elgato Prompter configuration. Ctrl+Alt+H reflects these hotkeys.",
+        "[AUTO] Elgato Prompter hotkey summary",
         Format("Scroll viewport slower/faster: {}/{}", cfg["ScrollUp"], cfg["ScrollDown"]),
         Format("Scroll speed down/up: {}/{}", cfg["ScrollSpeedDown"], cfg["ScrollSpeedUp"]),
         Format("Brightness down/up: {}/{}", cfg["BrightnessDown"], cfg["BrightnessUp"]),
         Format("Contrast down/up: {}/{}", cfg["ContrastDown"], cfg["ContrastUp"]),
         "Edit the [Hotkeys] section below to customize bindings.",
-        "Ctrl+Alt+S         Save spinner calibration",
-        "Ctrl+Alt+Z         Copy debug info",
-        "Ctrl+Alt+U/M/W/P   Diagnostic dumps",
-        "Ctrl+Alt+F         Quick scan counts",
-        "Ctrl+Alt+C         List candidate windows",
-        "Ctrl+Alt+G         Toggle probe scans",
-        "Ctrl+Alt+H         Show help",
-        "Ctrl+Alt+X         Exit script",
+        "Ctrl+Alt+S -> Save spinner calibration",
+        "Ctrl+Alt+Z -> Copy debug info",
+        "Ctrl+Alt+U/M/W/P -> Diagnostic dumps",
+        "Ctrl+Alt+F -> Quick scan counts",
+        "Ctrl+Alt+C -> List candidate windows",
+        "Ctrl+Alt+G -> Toggle probe scans",
+        "Ctrl+Alt+H -> Show help",
+        "Ctrl+Alt+X -> Exit script",
         "The help dialog also shows this file path and log location."
     ]
 
-    newComment := "; " JoinLines(commentLines)
-    newComment := RegExReplace(newComment, "\R", "`r`n; ")
-    newComment := newComment "`r`n`r`n"
+    newBlock := "; " JoinLines(commentLines)
+    newBlock := RegExReplace(newBlock, "\R", "`r`n; ")
 
     try {
         txt := FileRead(INI, "UTF-8")
@@ -240,7 +273,56 @@ UpdateIniHotkeyComment(cfg) {
         return
     }
 
-    trimmed := RegExReplace(txt, "s)\A(?:;.*?\R)*(?=\[|$)", "")
-    try FileDelete(INI)
-    FileAppend(newComment trimmed, INI, "UTF-8")
+    delimiter := "`r`n`r`n"
+    pos := InStr(txt, delimiter)
+    header := pos ? SubStr(txt, 1, pos - 1) : ""
+    rest := pos ? SubStr(txt, pos + StrLen(delimiter)) : txt
+
+    if (header = "")
+        return
+
+    userLines := []
+    autoLinesFound := false
+    for rawLine in StrSplit(header, "`n") {
+        line := RTrim(rawLine, "`r")
+        if (line = "") {
+            userLines.Push(line)
+            continue
+        }
+        if IsAutoHotkeyHeaderLine(line) {
+            autoLinesFound := true
+        } else {
+            userLines.Push(line)
+        }
+    }
+
+    if !autoLinesFound
+        return
+
+    userHeader := ""
+    for line in userLines {
+        if (userHeader != "")
+            userHeader .= "`r`n"
+        userHeader .= line
+    }
+
+    finalHeader := userHeader
+    if (userHeader != "")
+        finalHeader .= "`r`n"
+    finalHeader .= newBlock
+
+    currentHeader := RTrim(header, "`r`n")
+    desiredHeader := RTrim(finalHeader, "`r`n")
+    if (currentHeader = desiredHeader)
+        return
+
+    newContent := finalHeader "`r`n`r`n" rest
+    tempPath := INI ".tmp"
+    try FileDelete(tempPath)
+    try {
+        FileAppend(newContent, tempPath, "UTF-8")
+        FileMove(tempPath, INI, true)
+    } catch {
+        try FileDelete(tempPath)
+    }
 }

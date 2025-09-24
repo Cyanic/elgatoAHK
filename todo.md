@@ -54,3 +54,8 @@
 - [FIXED] Make scroll/brightness/contrast hotkeys configurable via `[Hotkeys]` entries in `prompter.ini`; load defaults, validate user overrides, and bind with `Hotkey()` after config initialization.
 - [FIXED] Encapsulate dynamic binding in helper functions that also re-bind on config reload (turn old hotkeys off, then turn new ones on) and surface binding failures in logs/tooltips.
 - [FIXED] Update the in-app help tooltip and INI comments to read from the configured hotkeys so documentation stays in sync.
+
+## New Suggestions
+- [FIXED] Ensure `UpdateIniHotkeyComment` never deletes/rebuilds the INI without a verified write path; only update when the banner changes and avoid data loss on failure.
+- [FIXED] Revisit the INI header auto-rewrite so user comments survive and the file isn’t touched on every startup or reload.
+- [FIXED] Replace the repeated `BindConfiguredHotkey` calls with a table-driven loop so adding new controls stays maintainable.

@@ -97,14 +97,21 @@ InitializeControlHotkeys() {
     UnbindControlHotkeys()
 
     cfg := GetHotkeyConfig()
-    BindConfiguredHotkey(cfg.Has("ScrollUp") ? cfg["ScrollUp"] : "", "Scroll slower", (*) => QueuePulse("scroll", -1))
-    BindConfiguredHotkey(cfg.Has("ScrollDown") ? cfg["ScrollDown"] : "", "Scroll faster", (*) => QueuePulse("scroll", +1))
-    BindConfiguredHotkey(cfg.Has("ScrollSpeedDown") ? cfg["ScrollSpeedDown"] : "", "Scroll speed down", (*) => QueuePulse("scrollspeed", -1))
-    BindConfiguredHotkey(cfg.Has("ScrollSpeedUp") ? cfg["ScrollSpeedUp"] : "", "Scroll speed up", (*) => QueuePulse("scrollspeed", +1))
-    BindConfiguredHotkey(cfg.Has("BrightnessDown") ? cfg["BrightnessDown"] : "", "Brightness down", (*) => QueuePulse("brightness", -1))
-    BindConfiguredHotkey(cfg.Has("BrightnessUp") ? cfg["BrightnessUp"] : "", "Brightness up", (*) => QueuePulse("brightness", +1))
-    BindConfiguredHotkey(cfg.Has("ContrastDown") ? cfg["ContrastDown"] : "", "Contrast down", (*) => QueuePulse("contrast", -1))
-    BindConfiguredHotkey(cfg.Has("ContrastUp") ? cfg["ContrastUp"] : "", "Contrast up", (*) => QueuePulse("contrast", +1))
+    defs := [
+        Map("ConfigKey", "ScrollUp", "Label", "Scroll slower", "Callback", (*) => QueuePulse("scroll", -1)),
+        Map("ConfigKey", "ScrollDown", "Label", "Scroll faster", "Callback", (*) => QueuePulse("scroll", +1)),
+        Map("ConfigKey", "ScrollSpeedDown", "Label", "Scroll speed down", "Callback", (*) => QueuePulse("scrollspeed", -1)),
+        Map("ConfigKey", "ScrollSpeedUp", "Label", "Scroll speed up", "Callback", (*) => QueuePulse("scrollspeed", +1)),
+        Map("ConfigKey", "BrightnessDown", "Label", "Brightness down", "Callback", (*) => QueuePulse("brightness", -1)),
+        Map("ConfigKey", "BrightnessUp", "Label", "Brightness up", "Callback", (*) => QueuePulse("brightness", +1)),
+        Map("ConfigKey", "ContrastDown", "Label", "Contrast down", "Callback", (*) => QueuePulse("contrast", -1)),
+        Map("ConfigKey", "ContrastUp", "Label", "Contrast up", "Callback", (*) => QueuePulse("contrast", +1))
+    ]
+
+    for def in defs {
+        key := cfg.Has(def["ConfigKey"]) ? cfg[def["ConfigKey"]] : ""
+        BindConfiguredHotkey(key, def["Label"], def["Callback"])
+    }
 }
 
 ; Binds a single configured hotkey and tracks it for future unbinding.
