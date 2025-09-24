@@ -132,7 +132,7 @@ LoadConfigOverrides() {
         Map("Name", "contrast", "AutoKey", "Contrast", "Label", "Contrast", "Handler", ApplyRangeValueDelta),
         Map("Name", "scrollspeed", "AutoKey", "ScrollSpeed", "Label", "Scroll speed", "Handler", ApplyRangeValueDelta),
         Map("Name", "fontsize", "AutoKey", "FontSize", "Label", "Font size", "Handler", ApplyRangeValueDelta),
-        Map("Name", "scroll", "AutoKey", "ScrollViewport", "Label", "Scroll", "Handler", ApplyScrollDelta, "Resolver", FindPrompterViewport, "PercentPerStep", percentPerStep, "FallbackToParent", true)
+        Map("Name", "scroll", "AutoKey", "ScrollViewport", "Label", "Scroll", "Handler", ApplyScrollDelta, "Resolver", FindPrompterViewport, "PercentPerStep", percentPerStep, "FallbackToParent", true, "ToolClassRegexDefault", "Qt\\d+QWindowToolSaveBits")
     ]
 
     stepsSection := "ControlSteps"
@@ -158,6 +158,10 @@ LoadConfigOverrides() {
             spec["Resolver"] := meta["Resolver"]
         if meta.Has("PercentPerStep")
             spec["PercentPerStep"] := meta["PercentPerStep"]
+        if meta.Has("ToolClassRegexDefault") {
+            toolClass := IniRead(INI, "Automation", name "ToolClassRegex", "")
+            spec["ToolClassRegex"] := toolClass ? toolClass : meta["ToolClassRegexDefault"]
+        }
         if meta.Has("FallbackToParent")
             spec["FallbackToParent"] := meta["FallbackToParent"]
         if invert

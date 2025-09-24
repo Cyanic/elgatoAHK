@@ -1,9 +1,28 @@
 ; Locates the scrolling text viewport within Camera Hub using heuristics.
 FindPrompterViewport(root, spec) {
-    autoId := spec.Has("AutoId") ? spec["AutoId"] : ""
-    el := autoId ? FindByAutoId(root, autoId) : 0
+    el := LocatePrompterViewportInRoot(root, spec)
     if el
         return el
+
+    if spec.Has("ToolClassRegex") {
+        el := FindPrompterViewportInToolWindow(spec["ToolClassRegex"], spec)
+        if el
+            return el
+    }
+
+    return 0
+}
+
+LocatePrompterViewportInRoot(root, spec) {
+    if !root
+        return 0
+
+    autoId := spec.Has("AutoId") ? spec["AutoId"] : ""
+    if autoId {
+        el := FindByAutoId(root, autoId)
+        if el
+            return el
+    }
 
     try {
         areas := root.FindElements({ ClassName: "QScrollArea" })
@@ -26,6 +45,30 @@ FindPrompterViewport(root, spec) {
     catch as err {
     }
 
+    return 0
+}
+
+FindPrompterViewportInToolWindow(classRx, spec) {
+    global APP_EXE, DEBUG_VERBOSE_LOGGING
+    for hwnd in WinGetList("ahk_exe " APP_EXE) {
+        try {
+            cls := WinGetClass("ahk_id " hwnd)
+            if !RegExMatch(cls, classRx)
+                continue
+            toolRoot := UIA.ElementFromHandle(hwnd)
+            if !toolRoot {
+                if DEBUG_VERBOSE_LOGGING
+                    Log("FindPrompterViewport: UIA root NULL for tool hwnd=" Format("{:#x}", hwnd))
+                continue
+            }
+            vp := LocatePrompterViewportInRoot(toolRoot, spec)
+            if vp
+                return vp
+        } catch as err {
+            if DEBUG_VERBOSE_LOGGING
+                Log("FindPrompterViewport: tool window scan failed msg=" err.Message)
+        }
+    }
     return 0
 }
 
