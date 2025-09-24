@@ -46,6 +46,6 @@
 - [FIXED] `prompter.ini:21-22`: Update or drop `IniPath`/`UIALib` entries to match the current include strategy and avoid misleading operators.
 
 ## Refactor Plan
-- Split `elgatoPrompter.ahk` into modules: keep the entry script minimal and move helpers into `lib/config.ahk`, `lib/ui_helpers.ahk`, `lib/handlers.ahk`, `lib/diagnostics.ahk`, and `lib/util.ahk` (or similar). Ensure include order matches dependencies.
-- Expose shared state via explicit globals or objects; each module should declare any globals it mutates so cross-file dependencies stay clear.
-- After each extraction, run the script to confirm behavior; migrate modules incrementally (start with diagnostics, then config and handlers).
+- [FIXED] Split `elgatoPrompter.ahk` into modules: keep the entry script minimal and move helpers into `lib/config.ahk`, `lib/ui_helpers.ahk`, `lib/handlers.ahk`, `lib/diagnostics.ahk`, and `lib/util.ahk` (or similar). Ensure include order matches dependencies.
+- [FIXED] Expose shared state via explicit globals or objects; each module should declare any globals it mutates so cross-file dependencies stay clear.
+- [FIXED] After each extraction, run the script to confirm behavior; migrate modules incrementally (start with diagnostics, then config and handlers).
