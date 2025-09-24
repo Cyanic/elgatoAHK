@@ -129,6 +129,20 @@ ApplyScrollDelta(root, spec, pulses, uiScrollId := _UIA_ScrollId) {
 
     sp := 0
     try sp := vp.GetCurrentPattern(uiScrollId)
+    if (!sp && spec.Has("FallbackToParent") && spec["FallbackToParent"]) {
+        try {
+            parent := vp.Parent
+            if parent {
+                temp := parent.GetCurrentPattern(uiScrollId)
+                if temp {
+                    sp := temp
+                }
+            }
+        } catch as err {
+            if DEBUG_VERBOSE_LOGGING
+                Log("ApplyScrollDelta: parent fallback failed for " spec["Name"] " msg=" err.Message)
+        }
+    }
     if sp {
         pulsesToSend := Abs(pulses)
         dir := (pulses > 0) ? 4 : 1

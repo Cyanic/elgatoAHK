@@ -132,7 +132,7 @@ LoadConfigOverrides() {
         Map("Name", "contrast", "AutoKey", "Contrast", "Label", "Contrast", "Handler", ApplyRangeValueDelta),
         Map("Name", "scrollspeed", "AutoKey", "ScrollSpeed", "Label", "Scroll speed", "Handler", ApplyRangeValueDelta),
         Map("Name", "fontsize", "AutoKey", "FontSize", "Label", "Font size", "Handler", ApplyRangeValueDelta),
-        Map("Name", "scroll", "AutoKey", "ScrollViewport", "Label", "Scroll", "Handler", ApplyScrollDelta, "Resolver", FindPrompterViewport, "PercentPerStep", percentPerStep)
+        Map("Name", "scroll", "AutoKey", "ScrollViewport", "Label", "Scroll", "Handler", ApplyScrollDelta, "Resolver", FindPrompterViewport, "PercentPerStep", percentPerStep, "FallbackToParent", true)
     ]
 
     stepsSection := "ControlSteps"
@@ -158,6 +158,8 @@ LoadConfigOverrides() {
             spec["Resolver"] := meta["Resolver"]
         if meta.Has("PercentPerStep")
             spec["PercentPerStep"] := meta["PercentPerStep"]
+        if meta.Has("FallbackToParent")
+            spec["FallbackToParent"] := meta["FallbackToParent"]
         if invert
             spec["Invert"] := true
 
