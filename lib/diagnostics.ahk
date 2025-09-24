@@ -36,11 +36,12 @@ ToggleProbeScans() {
 ; Displays a help dialog listing available hotkeys and file paths.
 ShowHelp() {
     global INI, DEBUG_LOG
+    cfg := GetHotkeyConfig()
     msg := "Elgato Prompter Hotkeys:`n"
-    msg .= "F13/F14  -> Scroll viewport slower/faster`n"
-    msg .= "F18/F19  -> Scroll speed spinner down/up`n"
-    msg .= "Ctrl+Alt+D/A -> Brightness down/up`n"
-    msg .= "Ctrl+Alt+E/Q -> Contrast down/up`n"
+    msg .= Format("{} / {} -> Scroll viewport slower/faster`n", cfg["ScrollUp"], cfg["ScrollDown"])
+    msg .= Format("{} / {} -> Scroll speed spinner down/up`n", cfg["ScrollSpeedDown"], cfg["ScrollSpeedUp"])
+    msg .= Format("{} / {} -> Brightness down/up`n", cfg["BrightnessDown"], cfg["BrightnessUp"])
+    msg .= Format("{} / {} -> Contrast down/up`n", cfg["ContrastDown"], cfg["ContrastUp"])
     msg .= "Ctrl+Alt+S -> Save calibration point`n"
     msg .= "Ctrl+Alt+Z -> Copy debug info`n"
     msg .= "Ctrl+Alt+U/M/W/P -> Diagnostic dumps`n"

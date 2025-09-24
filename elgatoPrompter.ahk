@@ -48,18 +48,13 @@ global _UIA_RangeValuePatternId := 10003
 global _UIA_ScrollId := 10004
 global _ControlSpecs := Map()
 global _CachedCamHubHwnd := 0
+global _BoundControlHotkeys := []
 
 LoadConfigOverrides()
+InitializeControlHotkeys()
 
 ; ---- Hotkeys ----
-F13:: QueuePulse("scroll", -1)   ; up / slower
-F14:: QueuePulse("scroll", +1)   ; down / faster
-F18:: QueuePulse("scrollspeed", -1)
-F19:: QueuePulse("scrollspeed", +1)
-^!d:: QueuePulse("brightness", -1)
-^!a:: QueuePulse("brightness", +1)
-^!e:: QueuePulse("contrast", -1)
-^!q:: QueuePulse("contrast", +1)
+; Control hotkeys are configured at runtime from prompter.ini.
 ^!x:: QuitApp()
 ^!s:: SaveCalibration()
 ^!z:: DebugProbe()
@@ -95,3 +90,55 @@ F19:: QueuePulse("scrollspeed", +1)
 
 ^!g:: ToggleProbeScans()   ; Toggle diagnostic UIA probe scans
 ^!h:: ShowHelp()
+
+; Initializes or re-initializes configurable control hotkeys.
+InitializeControlHotkeys() {
+    global _BoundControlHotkeys
+    UnbindControlHotkeys()
+
+    cfg := GetHotkeyConfig()
+    BindConfiguredHotkey(cfg.Has("ScrollUp") ? cfg["ScrollUp"] : "", "Scroll slower", (*) => QueuePulse("scroll", -1))
+    BindConfiguredHotkey(cfg.Has("ScrollDown") ? cfg["ScrollDown"] : "", "Scroll faster", (*) => QueuePulse("scroll", +1))
+    BindConfiguredHotkey(cfg.Has("ScrollSpeedDown") ? cfg["ScrollSpeedDown"] : "", "Scroll speed down", (*) => QueuePulse("scrollspeed", -1))
+    BindConfiguredHotkey(cfg.Has("ScrollSpeedUp") ? cfg["ScrollSpeedUp"] : "", "Scroll speed up", (*) => QueuePulse("scrollspeed", +1))
+    BindConfiguredHotkey(cfg.Has("BrightnessDown") ? cfg["BrightnessDown"] : "", "Brightness down", (*) => QueuePulse("brightness", -1))
+    BindConfiguredHotkey(cfg.Has("BrightnessUp") ? cfg["BrightnessUp"] : "", "Brightness up", (*) => QueuePulse("brightness", +1))
+    BindConfiguredHotkey(cfg.Has("ContrastDown") ? cfg["ContrastDown"] : "", "Contrast down", (*) => QueuePulse("contrast", -1))
+    BindConfiguredHotkey(cfg.Has("ContrastUp") ? cfg["ContrastUp"] : "", "Contrast up", (*) => QueuePulse("contrast", +1))
+}
+
+; Binds a single configured hotkey and tracks it for future unbinding.
+BindConfiguredHotkey(key, label, callback) {
+    global _BoundControlHotkeys, DEBUG_VERBOSE_LOGGING
+    key := Trim(key)
+    if (key = "") {
+        if DEBUG_VERBOSE_LOGGING
+            Log("Hotkey skipped for " label ": no key configured")
+        return
+    }
+
+    try {
+        Hotkey(key, callback, "On")
+        _BoundControlHotkeys.Push(key)
+    } catch as err {
+        Log("Failed to bind hotkey " label " (" key "): " err.Message)
+        Tip("Hotkey error: " label)
+    }
+}
+
+; Turns off all previously bound configurable hotkeys.
+UnbindControlHotkeys() {
+    global _BoundControlHotkeys
+    if !_BoundControlHotkeys.Length
+        return
+    for key in _BoundControlHotkeys {
+        try Hotkey(key, "Off")
+    }
+    _BoundControlHotkeys := []
+}
+
+; Reloads the INI hotkey config and rebinds control hotkeys.
+ReloadControlHotkeys() {
+    LoadHotkeyConfig()
+    InitializeControlHotkeys()
+}

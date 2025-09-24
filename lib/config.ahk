@@ -1,4 +1,5 @@
 global _ResolvedIniPath := ""
+global _HotkeyConfig := Map()
 
 ; Converts a relative path to absolute based on a reference file or dir.
 ResolvePath(path, reference := "") {
@@ -164,10 +165,73 @@ LoadConfigOverrides() {
     }
 
     _ControlSpecs := specs
+
+    LoadHotkeyConfig()
 }
 
 ; Returns the cached map of control specifications.
 GetControlSpecs() {
     global _ControlSpecs
     return _ControlSpecs
+}
+
+; Loads hotkey overrides from the INI file and caches them.
+LoadHotkeyConfig() {
+    global INI, _HotkeyConfig
+    defaults := Map(
+        "ScrollUp", "F13",
+        "ScrollDown", "F14",
+        "ScrollSpeedDown", "F18",
+        "ScrollSpeedUp", "F19",
+        "BrightnessDown", "^!d",
+        "BrightnessUp", "^!a",
+        "ContrastDown", "^!e",
+        "ContrastUp", "^!q"
+    )
+
+    cfg := Map()
+    for key, defVal in defaults {
+        val := Trim(IniRead(INI, "Hotkeys", key, defVal))
+        cfg[key] := val
+    }
+
+    _HotkeyConfig := cfg
+    UpdateIniHotkeyComment(cfg)
+    return cfg
+}
+
+; Returns the currently cached hotkey configuration map.
+GetHotkeyConfig() {
+    global _HotkeyConfig
+    return _HotkeyConfig
+}
+
+; Refreshes the prompter.ini header comment to list the active hotkeys.
+UpdateIniHotkeyComment(cfg) {
+    global INI
+    if (INI = "")
+        return
+
+    commentLines := [
+        "Elgato Prompter configuration. Ctrl+Alt+H reflects these hotkeys.",
+        Format("Scroll viewport slower/faster: {}/{}", cfg["ScrollUp"], cfg["ScrollDown"]),
+        Format("Scroll speed down/up: {}/{}", cfg["ScrollSpeedDown"], cfg["ScrollSpeedUp"]),
+        Format("Brightness down/up: {}/{}", cfg["BrightnessDown"], cfg["BrightnessUp"]),
+        Format("Contrast down/up: {}/{}", cfg["ContrastDown"], cfg["ContrastUp"]),
+        "Edit the [Hotkeys] section below to customize bindings."
+    ]
+
+    newComment := "; " JoinLines(commentLines)
+    newComment := RegExReplace(newComment, "\R", "`r`n; ")
+    newComment := newComment "`r`n`r`n"
+
+    try {
+        txt := FileRead(INI, "UTF-8")
+    } catch {
+        return
+    }
+
+    trimmed := RegExReplace(txt, "s)\A(?:;.*?\R)*(?=\[|$)", "")
+    try FileDelete(INI)
+    FileAppend(newComment trimmed, INI, "UTF-8")
 }
