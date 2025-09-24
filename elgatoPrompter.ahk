@@ -1,4 +1,4 @@
-; ========= Elgato Prompter Scroll Speed (AHK v2) =========
+; ========= Elgato Prompter (AHK v2) =========
 
 #Requires AutoHotkey v2
 #SingleInstance Force
@@ -35,7 +35,7 @@ MAX_ANCESTOR_DEPTH := 10
 SUBTREE_LIST_LIMIT := 50
 SCAN_LIST_LIMIT := 25
 SLIDER_SCAN_LIMIT := 10
-TOOLTIP_HIDE_DELAY_MS := 900
+TOOLTIP_HIDE_DELAY_MS := 1000
 
 ; ---- Files ----
 INI := GetIniPath()
@@ -94,4 +94,3 @@ F19:: QueuePulse("scrollspeed", +1)
 
 ^!g:: ToggleProbeScans()   ; Toggle diagnostic UIA probe scans
 ^!h:: ShowHelp()
-
