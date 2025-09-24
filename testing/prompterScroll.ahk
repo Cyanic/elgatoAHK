@@ -1,6 +1,9 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
+global g_FindClassName := ""
+global g_FoundHwnd := 0
+
 ScrollCameraHub(direction := "down", steps := 1) {
     static WM_MOUSEWHEEL := 0x020A
     static WHEEL_DELTA := 120
@@ -35,19 +38,22 @@ ScrollCameraHub(direction := "down", steps := 1) {
 }
 
 GetChildByClass(parentHwnd, className) {
-    found := 0
-    buf := Buffer(A_PtrSize)
-    callback := CallbackCreate((childHwnd, lParam) => {
-        if WinGetClass("ahk_id " childHwnd) = className {
-            NumPut("ptr", childHwnd, lParam)
-            return false
-        }
-        return true
-    }, "Fast")
-
-    DllCall("EnumChildWindows", "ptr", parentHwnd, "ptr", callback, "ptr", buf)
+    global g_FindClassName, g_FoundHwnd
+    g_FindClassName := className
+    g_FoundHwnd := 0
+    callback := CallbackCreate(ChildEnumCallback, "Fast")
+    DllCall("EnumChildWindows", "ptr", parentHwnd, "ptr", callback, "ptr", 0)
     CallbackFree(callback)
-    return NumGet(buf, "ptr")
+    return g_FoundHwnd
+}
+
+ChildEnumCallback(hwnd, lParam) {
+    global g_FindClassName, g_FoundHwnd
+    if WinGetClass("ahk_id " hwnd) = g_FindClassName {
+        g_FoundHwnd := hwnd
+        return false
+    }
+    return true
 }
 
 ^!Down::ScrollCameraHub("down", 3)
