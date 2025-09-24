@@ -219,6 +219,10 @@ UpdateIniHotkeyComment(cfg) {
         Format("Brightness down/up: {}/{}", cfg["BrightnessDown"], cfg["BrightnessUp"]),
         Format("Contrast down/up: {}/{}", cfg["ContrastDown"], cfg["ContrastUp"]),
         "Edit the [Hotkeys] section below to customize bindings."
+        "Ctrl+Alt+S    Save spinner calibration"
+        "Ctrl+Alt+Z    Copy debug info"
+        "Ctrl+Alt+G    Toggle probe scans"
+        "The help dialog also shows this file path and log location."
     ]
 
     newComment := "; " JoinLines(commentLines)
