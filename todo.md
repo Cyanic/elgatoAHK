@@ -49,3 +49,8 @@
 - [FIXED] Split `elgatoPrompter.ahk` into modules: keep the entry script minimal and move helpers into `lib/config.ahk`, `lib/ui_helpers.ahk`, `lib/handlers.ahk`, `lib/diagnostics.ahk`, and `lib/util.ahk` (or similar). Ensure include order matches dependencies.
 - [FIXED] Expose shared state via explicit globals or objects; each module should declare any globals it mutates so cross-file dependencies stay clear.
 - [FIXED] After each extraction, run the script to confirm behavior; migrate modules incrementally (start with diagnostics, then config and handlers).
+
+## Future Ideas
+- Make scroll/brightness/contrast hotkeys configurable via `[Hotkeys]` entries in `prompter.ini`; load defaults, validate user overrides, and bind with `Hotkey()` after config initialization.
+- Encapsulate dynamic binding in helper functions that also re-bind on config reload (turn old hotkeys off, then turn new ones on) and surface binding failures in logs/tooltips.
+- Update the in-app help tooltip and INI comments to read from the configured hotkeys so documentation stays in sync.
