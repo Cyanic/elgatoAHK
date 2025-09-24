@@ -218,10 +218,15 @@ UpdateIniHotkeyComment(cfg) {
         Format("Scroll speed down/up: {}/{}", cfg["ScrollSpeedDown"], cfg["ScrollSpeedUp"]),
         Format("Brightness down/up: {}/{}", cfg["BrightnessDown"], cfg["BrightnessUp"]),
         Format("Contrast down/up: {}/{}", cfg["ContrastDown"], cfg["ContrastUp"]),
-        "Edit the [Hotkeys] section below to customize bindings."
-        "Ctrl+Alt+S    Save spinner calibration"
-        "Ctrl+Alt+Z    Copy debug info"
-        "Ctrl+Alt+G    Toggle probe scans"
+        "Edit the [Hotkeys] section below to customize bindings.",
+        "Ctrl+Alt+S         Save spinner calibration",
+        "Ctrl+Alt+Z         Copy debug info",
+        "Ctrl+Alt+U/M/W/P   Diagnostic dumps",
+        "Ctrl+Alt+F         Quick scan counts",
+        "Ctrl+Alt+C         List candidate windows",
+        "Ctrl+Alt+G         Toggle probe scans",
+        "Ctrl+Alt+H         Show help",
+        "Ctrl+Alt+X         Exit script",
         "The help dialog also shows this file path and log location."
     ]
 
