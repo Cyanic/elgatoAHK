@@ -5,35 +5,49 @@ ScrollCameraHub(direction := "down", steps := 1) {
     static WM_MOUSEWHEEL := 0x020A
     static WHEEL_DELTA := 120
     static metrics := {offsetX: 408, offsetY: 216, width: 208, height: 168}
-    hwnd := WinExist("Camera Hub ahk_class Qt673QWindowToolSaveBits ahk_exe Camera Hub.exe")
-    if !hwnd {
+
+    hwndMain := WinExist("Camera Hub ahk_class Qt673QWindowToolSaveBits ahk_exe Camera Hub.exe")
+    if !hwndMain {
         MsgBox "Camera Hub window not found."
         return false
     }
 
-    steps := Max(1, Round(steps))
-    direction := StrLower(direction)
-    delta := direction = "up" ? WHEEL_DELTA : -WHEEL_DELTA
+    hwndScroll := GetChildByClass(hwndMain, "QScrollArea")
+    if !hwndScroll {
+        MsgBox "Scroll area not found."
+        return false
+    }
 
-    WinGetPos(&winX, &winY,,, "ahk_id " hwnd)
+    steps := Max(1, Round(steps))
+    delta := (StrLower(direction) = "up") ? WHEEL_DELTA : -WHEEL_DELTA
+
+    WinGetPos(&winX, &winY,,, "ahk_id " hwndMain)
     targetX := winX + metrics.offsetX + metrics.width // 2
     targetY := winY + metrics.offsetY + metrics.height // 2
 
     Loop steps {
-        wParam := MakeWParam(0, delta)
-        lParam := MakeLParam(targetX, targetY)
-        DllCall("SendMessageW", "ptr", hwnd, "uint", WM_MOUSEWHEEL, "ptr", wParam, "ptr", lParam)
+        wParam := (delta & 0xFFFF) << 16
+        lParam := ((targetY & 0xFFFF) << 16) | (targetX & 0xFFFF)
+        DllCall("PostMessageW", "ptr", hwndScroll, "uint", WM_MOUSEWHEEL, "ptr", wParam, "ptr", lParam)
         Sleep 80
     }
     return true
 }
 
-MakeWParam(keys, delta) {
-    return ((delta & 0xFFFF) << 16) | (keys & 0xFFFF)
-}
+GetChildByClass(parentHwnd, className) {
+    found := 0
+    buf := Buffer(A_PtrSize)
+    callback := CallbackCreate((childHwnd, lParam) => {
+        if WinGetClass("ahk_id " childHwnd) = className {
+            NumPut("ptr", childHwnd, lParam)
+            return false
+        }
+        return true
+    }, "Fast")
 
-MakeLParam(x, y) {
-    return ((y & 0xFFFF) << 16) | (x & 0xFFFF)
+    DllCall("EnumChildWindows", "ptr", parentHwnd, "ptr", callback, "ptr", buf)
+    CallbackFree(callback)
+    return NumGet(buf, "ptr")
 }
 
 ^!Down::ScrollCameraHub("down", 3)
