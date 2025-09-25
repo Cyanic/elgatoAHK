@@ -126,7 +126,7 @@ CaptureUnderCursor(*) {
         return
     }
 
-    MouseGetPos(&mx, &my, &winHwnd, &ctrlInfo, 2)
+    MouseGetPos(&mx, &my, &winHwnd, &ctrlInfo, 1)
     winHwnd := NormalizeHwnd(winHwnd)
     ctrlHwnd := NormalizeHwnd(ctrlInfo)
     target := ctrlHwnd ? ctrlHwnd : winHwnd
@@ -159,7 +159,15 @@ CaptureUnderCursor(*) {
     path := A_ScriptDir "\" dateStamp "-cloutput.txt"
     timestamp := FormatTime(, "HH:mm:ss")
 
-    line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tPos: ({5}, {6})", timestamp, automationId, className, winClass, mx, my)
+    line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tWinHWND: {5}`tCtrlHWND: {6}`tPos: ({7}, {8})",
+        timestamp,
+        automationId,
+        className,
+        winClass,
+        Format("0x{1:X}", winHwnd),
+        ctrlHwnd ? Format("0x{1:X}", ctrlHwnd) : "<none>",
+        mx,
+        my)
     FileAppend(line "`n", path, "UTF-8")
     MsgBox "Captured AutomationId: " automationId "`nClassName: " className "`nLogged to " path
 }
@@ -195,7 +203,7 @@ UIAGetProperty(elementPtr, propertyId) {
         return ""
     variantSize := (A_PtrSize = 8) ? 24 : 16
     variant := Buffer(variantSize, 0)
-    static GET_CURRENT_PROPERTY_VALUE := 11 ; ComCall uses 1-based index for IUIAutomationElement::GetCurrentPropertyValue
+    static GET_CURRENT_PROPERTY_VALUE := 10 ; ComCall uses 1-based index for IUIAutomationElement::GetCurrentPropertyValue
     hr := ComCall(GET_CURRENT_PROPERTY_VALUE, elementPtr, "int", propertyId, "ptr", variant.Ptr)
     if hr != 0
         return ""
