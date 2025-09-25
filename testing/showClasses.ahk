@@ -120,7 +120,11 @@ WriteResults(path, results) {
 }
 
 CaptureUnderCursor(*) {
-    static uia := ComObject("UIAutomationClient.CUIAutomation")
+    uia := GetUIAutomation()
+    if !uia {
+        MsgBox "UI Automation interface not available on this system."
+        return
+    }
 
     MouseGetPos(&mx, &my, &winHwnd, &ctrlHwnd)
     target := ctrlHwnd ? ctrlHwnd : winHwnd
@@ -160,6 +164,21 @@ CaptureUnderCursor(*) {
     line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tPos: ({5}, {6})", timestamp, automationId, className, winClass, mx, my)
     FileAppend(line "`n", path, "UTF-8")
     MsgBox "Captured AutomationId: " automationId "`nClassName: " className "`nLogged to " path
+}
+
+GetUIAutomation() {
+    static uia := ""
+    if IsObject(uia)
+        return uia
+
+    try uia := ComObject("UIAutomationClient.CUIAutomation")
+    catch {
+        try uia := ComObject("{FF48DBA4-60EF-4201-AA87-54103EEF594E}", "{30CBE57D-D9D0-452A-AB13-7AC5AC4825EE}")
+        catch {
+            return ""
+        }
+    }
+    return uia
 }
 
 JoinLines(arr) {
