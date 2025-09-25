@@ -126,6 +126,7 @@ CaptureUnderCursor(*) {
         return
     }
 
+    CoordMode("Mouse", "Screen") ; ensure cursor coordinates are in virtual screen space
     MouseGetPos(&mx, &my, &winHwnd, &ctrlInfo)
     winHwnd := NormalizeHwnd(winHwnd)
     if !winHwnd {
