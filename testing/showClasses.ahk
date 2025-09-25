@@ -127,16 +127,15 @@ CaptureUnderCursor(*) {
     }
 
     CoordMode("Mouse", "Screen") ; ensure cursor coordinates are in virtual screen space
-    MouseGetPos(&mx, &my, &winHwnd, &ctrlInfo)
+    MouseGetPos(&logicalX, &logicalY, &winHwnd, &ctrlInfo)
     ; DPI virtualization can skew logical mouse coordinates on secondary
-    ; displays. Swap in the physical cursor position when available so UIA
-    ; hit-testing sees the correct screen point.
-    px := mx
-    py := my
-    if GetPhysicalCursorPos(&px, &py) {
-        mx := px
-        my := py
-    }
+    ; displays. Capture the physical cursor when available so we can try both
+    ; coordinate spaces for hit-testing.
+    physX := logicalX
+    physY := logicalY
+    hasPhysical := GetPhysicalCursorPos(&physX, &physY)
+    mx := hasPhysical ? physX : logicalX
+    my := hasPhysical ? physY : logicalY
     winHwnd := NormalizeHwnd(winHwnd)
     if !winHwnd {
         MsgBox "Could not determine the hovered control."
@@ -159,25 +158,71 @@ CaptureUnderCursor(*) {
     winClass := ""
     try winClass := WinGetClass("ahk_id " winHwnd)
 
-    element := 0
+    candidates := []
     if ctrlHwnd
-        element := UIAElementFromHandle(uia, ctrlHwnd)
-    if !element
-        element := UIAElementFromPoint(uia, mx, my)
-    if !element
-        element := UIAElementFromHandle(uia, winHwnd)
+        candidates.Push(Map("Kind", "Handle", "Value", ctrlHwnd))
+    candidates.Push(Map("Kind", "Point", "X", logicalX, "Y", logicalY))
+    if hasPhysical && (physX != logicalX || physY != logicalY)
+        candidates.Push(Map("Kind", "Point", "X", physX, "Y", physY))
+    candidates.Push(Map("Kind", "Handle", "Value", winHwnd))
 
     automationId := ""
     className := ""
-    if element {
-        automationId := UIAGetProperty(element, 30011)
-        className := UIAGetProperty(element, 30012)
+    uiaClass := ""
+    fallbackAuto := ""
+    fallbackClass := ""
+
+    for candidate in candidates {
+        element := 0
+        pointX := candidate.Has("X") ? candidate["X"] : mx
+        pointY := candidate.Has("Y") ? candidate["Y"] : my
+        switch candidate["Kind"] {
+            case "Handle":
+                element := UIAElementFromHandle(uia, candidate["Value"])
+            case "Point":
+                element := UIAElementFromPoint(uia, pointX, pointY)
+        }
+        if !element
+            continue
+
+        refined := UIARefineElementAtPoint(uia, element, pointX, pointY)
+        if refined && refined != element {
+            UIARelease(element)
+            element := refined
+        }
+
+        candAuto := UIAGetProperty(element, 30011)
+        candClass := UIAGetProperty(element, 30012)
         UIARelease(element)
+
+        if candClass != "" {
+            if candClass != winClass
+                uiaClass := candClass
+            else if uiaClass = ""
+                uiaClass := candClass
+        }
+        if fallbackClass = "" && candClass != ""
+            fallbackClass := candClass
+        if fallbackAuto = "" && candAuto != ""
+            fallbackAuto := candAuto
+
+        if candClass != "" && candClass != "#32769" && candClass != winClass {
+            automationId := (candAuto != "") ? candAuto : automationId
+            className := candClass
+            break
+        }
+
+        if automationId = "" && candAuto != ""
+            automationId := candAuto
+        if className = "" && candClass != ""
+            className := candClass
     }
 
-    ; Record the UIA class so we can fall back to it later if the automation
-    ; class name comes back empty.
-    uiaClass := className
+    if className = "" && fallbackClass != ""
+        className := fallbackClass
+    if automationId = "" && fallbackAuto != ""
+        automationId := fallbackAuto
+
     if automationId = ""
         automationId := "<none>"
     if className = "" || className = "#32769" {
@@ -276,6 +321,149 @@ UIAElementFromPoint(uia, x, y) {
     } catch {
     }
     return 0
+}
+
+UIARefineElementAtPoint(uia, elementPtr, x, y) {
+    if !uia || !elementPtr
+        return 0
+
+    refined := UIAHitTestElement(uia, elementPtr, x, y)
+    return refined ? refined : elementPtr
+}
+
+UIAHitTestElement(uia, elementPtr, x, y) {
+    if !elementPtr
+        return 0
+
+    rect := UIAGetBoundingRect(elementPtr)
+    if rect && !UIAPointInRect(rect, x, y)
+        return 0
+
+    children := UIAFindChildren(uia, elementPtr)
+    if !children
+        return elementPtr
+
+    count := UIAElementArrayLength(children)
+    loop count {
+        child := UIAElementArrayGet(children, A_Index - 1)
+        if !child
+            continue
+        childRect := UIAGetBoundingRect(child)
+        if childRect && UIAPointInRect(childRect, x, y) {
+            deeper := UIAHitTestElement(uia, child, x, y)
+            if deeper {
+                if deeper != child
+                    UIARelease(child)
+                UIARelease(children)
+                return deeper
+            }
+        }
+        UIARelease(child)
+    }
+    UIARelease(children)
+    return elementPtr
+}
+
+UIAFindChildren(uia, elementPtr) {
+    if !uia || !elementPtr
+        return 0
+    cond := UIAGetTrueCondition(uia)
+    if !cond
+        return 0
+    children := 0
+    try {
+        if ComCall(7, elementPtr, "int", 2, "ptr", cond, "ptr*", &children) = 0 && children
+            return children
+    } catch {
+    }
+    if children
+        UIARelease(children)
+    return 0
+}
+
+UIAElementArrayLength(arrayPtr) {
+    if !arrayPtr
+        return 0
+    length := 0
+    try ComCall(4, arrayPtr, "int*", &length)
+    return length
+}
+
+UIAElementArrayGet(arrayPtr, index) {
+    if !arrayPtr
+        return 0
+    element := 0
+    try ComCall(5, arrayPtr, "int", index, "ptr*", &element)
+    return element
+}
+
+UIAGetTrueCondition(uia) {
+    static cond := 0
+    if cond
+        return cond
+    try {
+        if ComCall(22, uia, "ptr*", &cond) = 0 && cond
+            return cond
+    } catch {
+    }
+    cond := 0
+    return 0
+}
+
+UIAGetBoundingRect(elementPtr) {
+    if !elementPtr
+        return 0
+    variantSize := (A_PtrSize = 8) ? 24 : 16
+    static GET_CURRENT_PROPERTY_VALUE := 10
+    static GET_CURRENT_PROPERTY_VALUE_EX := 11
+    rectVariant := Buffer(variantSize, 0)
+
+    attempt := ComCall(GET_CURRENT_PROPERTY_VALUE, elementPtr, "int", 30001, "ptr", rectVariant.Ptr)
+    if attempt != 0
+        attempt := ComCall(GET_CURRENT_PROPERTY_VALUE_EX, elementPtr, "int", 30001, "int", true, "ptr", rectVariant.Ptr)
+    if attempt != 0 {
+        DllCall("OleAut32\\VariantClear", "ptr", rectVariant.Ptr)
+        return 0
+    }
+
+    vt := NumGet(rectVariant, 0, "ushort")
+    static VT_ARRAY := 0x2000
+    static VT_R8 := 5
+    if vt != (VT_ARRAY | VT_R8) {
+        DllCall("OleAut32\\VariantClear", "ptr", rectVariant.Ptr)
+        return 0
+    }
+
+    psa := NumGet(rectVariant, 8, "ptr")
+    if !psa {
+        DllCall("OleAut32\\VariantClear", "ptr", rectVariant.Ptr)
+        return 0
+    }
+
+    dataPtr := 0
+    if DllCall("OleAut32\\SafeArrayAccessData", "ptr", psa, "ptr*", &dataPtr) != 0 {
+        DllCall("OleAut32\\VariantClear", "ptr", rectVariant.Ptr)
+        return 0
+    }
+
+    left := NumGet(dataPtr, 0, "double")
+    top := NumGet(dataPtr, 8, "double")
+    width := NumGet(dataPtr, 16, "double")
+    height := NumGet(dataPtr, 24, "double")
+    DllCall("OleAut32\\SafeArrayUnaccessData", "ptr", psa)
+    DllCall("OleAut32\\VariantClear", "ptr", rectVariant.Ptr)
+
+    return Map("x", left, "y", top, "w", width, "h", height)
+}
+
+UIAPointInRect(rect, x, y) {
+    if !IsObject(rect)
+        return false
+    if x < rect["x"] || y < rect["y"]
+        return false
+    if x > rect["x"] + rect["w"] || y > rect["y"] + rect["h"]
+        return false
+    return true
 }
 
 UIAGetProperty(elementPtr, propertyId) {
