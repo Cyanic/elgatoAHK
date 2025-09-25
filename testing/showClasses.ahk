@@ -126,21 +126,21 @@ CaptureUnderCursor(*) {
         return
     }
 
-    MouseGetPos(&mx, &my, &winHwnd, &ctrlInfo, 1)
+    MouseGetPos(&mx, &my, &winHwnd, &ctrlInfo, 2)
     winHwnd := NormalizeHwnd(winHwnd)
-    ctrlHwnd := NormalizeHwnd(ctrlInfo)
-    target := ctrlHwnd ? ctrlHwnd : winHwnd
-    if !target {
+    ctrlHwnd := NormalizeHwnd(ctrlInfo, winHwnd)
+    if !winHwnd
         MsgBox "Could not determine the hovered control."
         return
-    }
 
     winClass := ""
     try winClass := WinGetClass("ahk_id " winHwnd)
 
-    element := UIAElementFromHandle(uia, target)
-    if !element
-        element := UIAElementFromPoint(uia, mx, my)
+    element := UIAElementFromPoint(uia, mx, my)
+    if !element && ctrlHwnd
+        element := UIAElementFromHandle(uia, ctrlHwnd)
+    if !element && winHwnd
+        element := UIAElementFromHandle(uia, winHwnd)
 
     automationId := ""
     className := ""
@@ -172,12 +172,19 @@ CaptureUnderCursor(*) {
     MsgBox "Captured AutomationId: " automationId "`nClassName: " className "`nLogged to " path
 }
 
-NormalizeHwnd(value) {
+NormalizeHwnd(value, baseWin := 0) {
     if value is Integer
         return value
     if value is String {
         if RegExMatch(value, "^0x[0-9A-Fa-f]+$")
             return value + 0
+        if baseWin && value != "" {
+            try {
+                hwnd := ControlGetHwnd(value, "ahk_id " baseWin)
+                if hwnd
+                    return hwnd
+            }
+        }
         return 0
     }
     return 0
