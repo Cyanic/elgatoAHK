@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
+; Global state for recursive child enumeration
 global gEnumFilter := ""
 global gEnumMatches := []
 global gEnumCallback := 0
@@ -32,8 +33,7 @@ Main() {
     WriteResults(outPath, matches)
     MsgBox Format("Found {1} matching controls. Details written to:`n{2}", matches.Length, outPath)
 
-    MsgBox "Click anywhere on the screen to capture that control's class name."
-    WaitForClickAndLog(dateStamp)
+    MsgBox "Hover any control and press Ctrl+Alt+D to log its class. This script will keep running until you exit it." "`nOutput file: " dateStamp "-cloutput.txt"
 }
 
 EnsureConfig() {
@@ -119,15 +119,12 @@ WriteResults(path, results) {
     FileAppend(JoinLines(lines) "`n", path, "UTF-8")
 }
 
-WaitForClickAndLog(dateStamp) {
-    KeyWait("LButton")
-    KeyWait("LButton", "D")
+CaptureUnderCursor(*) {
+    KeyWait("Ctrl", "T0.1") ; ensure modifier state is clean after hotkey
     MouseGetPos(&mx, &my, &winHwnd, &ctrlHwnd)
-    KeyWait("LButton")
-
     target := ctrlHwnd ? ctrlHwnd : winHwnd
     if !target {
-        MsgBox "Could not determine the clicked control."
+        MsgBox "Could not determine the hovered control."
         return
     }
 
@@ -136,12 +133,12 @@ WaitForClickAndLog(dateStamp) {
     try class := WinGetClass("ahk_id " target)
     try title := WinGetTitle("ahk_id " winHwnd)
 
-    output := dateStamp "-cloutput.txt"
-    path := A_ScriptDir "\" output
+    dateStamp := FormatTime(, "yyyy-MM-dd")
+    path := A_ScriptDir "\" dateStamp "-cloutput.txt"
     timestamp := FormatTime(, "HH:mm:ss")
     line := Format("{1}`tClass: {2}`tWindow: {3}`tPos: ({4}, {5})", timestamp, class, title, mx, my)
     FileAppend(line "`n", path, "UTF-8")
-    MsgBox "Captured class " class " -> " path
+    MsgBox "Captured class " class "`nLogged to " path
 }
 
 JoinLines(arr) {
@@ -153,5 +150,7 @@ JoinLines(arr) {
     }
     return out
 }
+
+^!d::CaptureUnderCursor()
 
 Main()
