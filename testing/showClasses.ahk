@@ -149,9 +149,11 @@ CaptureUnderCursor(*) {
     winClass := ""
     try winClass := WinGetClass("ahk_id " winHwnd)
 
-    element := UIAElementFromPoint(uia, mx, my)
-    if !element && ctrlHwnd
+    element := 0
+    if ctrlHwnd
         element := UIAElementFromHandle(uia, ctrlHwnd)
+    if !element
+        element := UIAElementFromPoint(uia, mx, my)
     if !element
         element := UIAElementFromHandle(uia, winHwnd)
 
@@ -231,7 +233,10 @@ UIAElementFromHandle(uia, hwnd) {
 
 UIAElementFromPoint(uia, x, y) {
     elementPtr := 0
-    hr := ComCall(8, uia, "int", x, "int", y, "ptr*", &elementPtr)
+    point := Buffer(8, 0)
+    NumPut("int", x, point, 0)
+    NumPut("int", y, point, 4)
+    hr := ComCall(8, uia, "int64", NumGet(point, 0, "int64"), "ptr*", &elementPtr)
     return hr = 0 ? elementPtr : 0
 }
 
