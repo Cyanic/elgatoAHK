@@ -129,7 +129,6 @@ CaptureUnderCursor(*) {
     MouseGetPos(&mx, &my, &winHwnd, &ctrlInfo, 2)
     winHwnd := NormalizeHwnd(winHwnd)
     ctrlHwnd := NormalizeHwnd(ctrlInfo)
-
     target := ctrlHwnd ? ctrlHwnd : winHwnd
     if !target {
         MsgBox "Could not determine the hovered control."
@@ -140,14 +139,15 @@ CaptureUnderCursor(*) {
     try winClass := WinGetClass("ahk_id " winHwnd)
 
     element := UIAElementFromHandle(uia, target)
-    if !IsObject(element)
+    if !element
         element := UIAElementFromPoint(uia, mx, my)
 
     automationId := ""
     className := ""
-    if IsObject(element) {
+    if element {
         automationId := UIAGetProperty(element, 30011)
         className := UIAGetProperty(element, 30012)
+        UIARelease(element)
     }
 
     if automationId = ""
@@ -178,30 +178,38 @@ NormalizeHwnd(value) {
 UIAElementFromHandle(uia, hwnd) {
     elementPtr := 0
     hr := ComCall(7, uia, "ptr", hwnd, "ptr*", &elementPtr)
-    if hr != 0 || !elementPtr
-        return ""
-    return ComValue(13, elementPtr, false)
+    return hr = 0 ? elementPtr : 0
 }
 
 UIAElementFromPoint(uia, x, y) {
-    buf := Buffer(8, 0)
-    NumPut("int", x, buf, 0)
-    NumPut("int", y, buf, 4)
     elementPtr := 0
-    hr := ComCall(8, uia, "int64", NumGet(buf, 0, "int64"), "ptr*", &elementPtr)
-    if hr != 0 || !elementPtr
-        return ""
-    return ComValue(13, elementPtr, false)
+    point := Buffer(8, 0)
+    NumPut("int", x, point, 0)
+    NumPut("int", y, point, 4)
+    hr := ComCall(8, uia, "int64", NumGet(point, 0, "int64"), "ptr*", &elementPtr)
+    return hr = 0 ? elementPtr : 0
 }
 
-UIAGetProperty(element, propertyId) {
+UIAGetProperty(elementPtr, propertyId) {
+    if !elementPtr
+        return ""
     variant := Buffer(24, 0)
-    hr := ComCall(11, element, "int", propertyId, "ptr", variant.Ptr)
+    vtable := NumGet(elementPtr, 0, "ptr")
+    fn := NumGet(vtable, (42 + (propertyId = 30012 ? 0 : 0)) * A_PtrSize, "ptr") ; index 42 assumed
+    hr := DllCall(fn, "ptr", elementPtr, "int", propertyId, "ptr", variant.Ptr, "int")
     if hr != 0
         return ""
     value := UIAVariantToText(variant)
     DllCall("OleAut32\VariantClear", "ptr", variant.Ptr)
     return value
+}
+
+UIARelease(elementPtr) {
+    if !elementPtr
+        return
+    vtable := NumGet(elementPtr, 0, "ptr")
+    fn := NumGet(vtable, 2 * A_PtrSize, "ptr")
+    DllCall(fn, "ptr", elementPtr, "uint")
 }
 
 UIAVariantToText(varBuf) {
