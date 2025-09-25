@@ -193,10 +193,10 @@ UIAElementFromPoint(uia, x, y) {
 UIAGetProperty(elementPtr, propertyId) {
     if !elementPtr
         return ""
-    variant := Buffer(24, 0)
-    vtable := NumGet(elementPtr, 0, "ptr")
-    fn := NumGet(vtable, (42 + (propertyId = 30012 ? 0 : 0)) * A_PtrSize, "ptr") ; index 42 assumed
-    hr := DllCall(fn, "ptr", elementPtr, "int", propertyId, "ptr", variant.Ptr, "int")
+    variantSize := (A_PtrSize = 8) ? 24 : 16
+    variant := Buffer(variantSize, 0)
+    static GET_CURRENT_PROPERTY_VALUE := 44 ; vtable index for IUIAutomationElement::GetCurrentPropertyValue
+    hr := ComCall(GET_CURRENT_PROPERTY_VALUE, elementPtr, "int", propertyId, "ptr", variant.Ptr)
     if hr != 0
         return ""
     value := UIAVariantToText(variant)
