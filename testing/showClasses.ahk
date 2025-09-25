@@ -234,11 +234,15 @@ UIAElementFromHandle(uia, hwnd) {
 
 UIAElementFromPoint(uia, x, y) {
     elementPtr := 0
-    ; ElementFromPoint takes a POINT struct (two LONGs). Supplying the
-    ; coordinates as consecutive ints avoids packing the struct manually and
-    ; prevents access violations that occur on some systems when treating the
-    ; POINT as a 64-bit integer blob.
-    hr := ComCall(8, uia, "int", x, "int", y, "ptr*", &elementPtr)
+    point := Buffer(8, 0)
+    NumPut("int", x, point, 0)
+    NumPut("int", y, point, 4)
+    ; Marshal POINT(x, y) and pass by pointer; UIA tolerates this and avoids
+    ; the crashes observed when attempting to pack the struct as an int64.
+    try hr := ComCall(8, uia, "ptr", point.Ptr, "ptr*", &elementPtr)
+    catch {
+        return 0
+    }
     return hr = 0 ? elementPtr : 0
 }
 
