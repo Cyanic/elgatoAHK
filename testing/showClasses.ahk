@@ -244,14 +244,34 @@ UIAGetProperty(elementPtr, propertyId) {
     if !elementPtr
         return ""
     variantSize := (A_PtrSize = 8) ? 24 : 16
-    variant := Buffer(variantSize, 0)
-    static GET_CURRENT_PROPERTY_VALUE := 10 ; ComCall uses 1-based index for IUIAutomationElement::GetCurrentPropertyValue
-    hr := ComCall(GET_CURRENT_PROPERTY_VALUE, elementPtr, "int", propertyId, "ptr", variant.Ptr)
-    if hr != 0
-        return ""
-    value := UIAVariantToText(variant)
-    DllCall("OleAut32\VariantClear", "ptr", variant.Ptr)
-    return value
+    static GET_CURRENT_PROPERTY_VALUE := 10
+    static GET_CURRENT_PROPERTY_VALUE_EX := 11
+
+    attempts := [
+        {index: GET_CURRENT_PROPERTY_VALUE, extra: []},
+        {index: GET_CURRENT_PROPERTY_VALUE_EX, extra: [true]}
+    ]
+
+    for attempt in attempts {
+        variant := Buffer(variantSize, 0)
+        params := [attempt.index, elementPtr, "int", propertyId]
+        for param in attempt.extra {
+            params.Push("int")
+            params.Push(param)
+        }
+        params.Push("ptr")
+        params.Push(variant.Ptr)
+
+        hr := ComCall(params*)
+        if hr = 0 {
+            value := UIAVariantToText(variant)
+            DllCall("OleAut32\VariantClear", "ptr", variant.Ptr)
+            if value != ""
+                return value
+        }
+    }
+
+    return ""
 }
 
 UIARelease(elementPtr) {
