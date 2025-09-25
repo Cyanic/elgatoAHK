@@ -126,20 +126,30 @@ CaptureUnderCursor(*) {
         return
     }
 
-    MouseGetPos(&mx, &my, &winHwnd, &ctrlInfo, 2)
+    MouseGetPos(&mx, &my, &winHwnd)
     winHwnd := NormalizeHwnd(winHwnd)
-    ctrlHwnd := NormalizeHwnd(ctrlInfo, winHwnd)
-    if !winHwnd
+    if !winHwnd {
         MsgBox "Could not determine the hovered control."
         return
+    }
+
+    ctrlHwnd := NormalizeHwnd(WindowFromPoint(mx, my))
+    if ctrlHwnd = winHwnd
+        ctrlHwnd := 0
+    else if ctrlHwnd {
+        static GA_ROOT := 2 ; GetAncestor(..., GA_ROOT)
+        root := DllCall("User32\\GetAncestor", "ptr", ctrlHwnd, "uint", GA_ROOT, "ptr")
+        if root != winHwnd
+            ctrlHwnd := 0
+    }
+
+    target := ctrlHwnd ? ctrlHwnd : winHwnd
 
     winClass := ""
     try winClass := WinGetClass("ahk_id " winHwnd)
 
-    element := UIAElementFromPoint(uia, mx, my)
-    if !element && ctrlHwnd
-        element := UIAElementFromHandle(uia, ctrlHwnd)
-    if !element && winHwnd
+    element := UIAElementFromHandle(uia, target)
+    if !element && target != winHwnd
         element := UIAElementFromHandle(uia, winHwnd)
 
     automationId := ""
@@ -178,16 +188,16 @@ NormalizeHwnd(value, baseWin := 0) {
     if value is String {
         if RegExMatch(value, "^0x[0-9A-Fa-f]+$")
             return value + 0
-        if baseWin && value != "" {
-            try {
-                hwnd := ControlGetHwnd(value, "ahk_id " baseWin)
-                if hwnd
-                    return hwnd
-            }
-        }
         return 0
     }
     return 0
+}
+
+WindowFromPoint(x, y) {
+    point := Buffer(8, 0)
+    NumPut("int", x, point, 0)
+    NumPut("int", y, point, 4)
+    return DllCall("User32\\WindowFromPoint", "int64", NumGet(point, 0, "int64"), "ptr")
 }
 
 UIAElementFromHandle(uia, hwnd) {
