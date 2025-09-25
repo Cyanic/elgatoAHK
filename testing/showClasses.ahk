@@ -128,6 +128,15 @@ CaptureUnderCursor(*) {
 
     CoordMode("Mouse", "Screen") ; ensure cursor coordinates are in virtual screen space
     MouseGetPos(&mx, &my, &winHwnd, &ctrlInfo)
+    ; DPI virtualization can skew logical mouse coordinates on secondary
+    ; displays. Swap in the physical cursor position when available so UIA
+    ; hit-testing sees the correct screen point.
+    px := mx
+    py := my
+    if GetPhysicalCursorPos(&px, &py) {
+        mx := px
+        my := py
+    }
     winHwnd := NormalizeHwnd(winHwnd)
     if !winHwnd {
         MsgBox "Could not determine the hovered control."
@@ -216,6 +225,15 @@ WindowFromPoint(x, y) {
     NumPut("int", x, point, 0)
     NumPut("int", y, point, 4)
     return DllCall("WindowFromPoint", "int64", NumGet(point, 0, "int64"), "ptr")
+}
+
+GetPhysicalCursorPos(&x, &y) {
+    point := Buffer(8, 0)
+    if !DllCall("User32\\GetCursorPos", "ptr", point.Ptr)
+        return false
+    x := NumGet(point, 0, "int")
+    y := NumGet(point, 4, "int")
+    return true
 }
 
 GetWindowClassName(hwnd) {
