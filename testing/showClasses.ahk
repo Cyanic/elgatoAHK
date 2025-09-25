@@ -440,8 +440,8 @@ UIAGetBoundingRect(elementPtr) {
         return 0
     }
 
-    dataPtr := 0
-    if DllCall("OleAut32\\SafeArrayAccessData", "ptr", psa, "ptr*", &dataPtr) != 0 {
+    dataPtr := NumGet(psa, (A_PtrSize = 8) ? 16 : 12, "ptr")
+    if !dataPtr {
         DllCall("OleAut32\\VariantClear", "ptr", rectVariant.Ptr)
         return 0
     }
@@ -450,7 +450,6 @@ UIAGetBoundingRect(elementPtr) {
     top := NumGet(dataPtr, 8, "double")
     width := NumGet(dataPtr, 16, "double")
     height := NumGet(dataPtr, 24, "double")
-    DllCall("OleAut32\\SafeArrayUnaccessData", "ptr", psa)
     DllCall("OleAut32\\VariantClear", "ptr", rectVariant.Ptr)
 
     return Map("x", left, "y", top, "w", width, "h", height)
