@@ -233,10 +233,11 @@ UIAElementFromHandle(uia, hwnd) {
 
 UIAElementFromPoint(uia, x, y) {
     elementPtr := 0
-    point := Buffer(8, 0)
-    NumPut("int", x, point, 0)
-    NumPut("int", y, point, 4)
-    hr := ComCall(8, uia, "int64", NumGet(point, 0, "int64"), "ptr*", &elementPtr)
+    ; ElementFromPoint takes a POINT struct (two LONGs). Supplying the
+    ; coordinates as consecutive ints avoids packing the struct manually and
+    ; prevents access violations that occur on some systems when treating the
+    ; POINT as a 64-bit integer blob.
+    hr := ComCall(8, uia, "int", x, "int", y, "ptr*", &elementPtr)
     return hr = 0 ? elementPtr : 0
 }
 
