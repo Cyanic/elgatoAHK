@@ -1,0 +1,2 @@
+﻿00:00:39	AutomationId: <none>	ClassName: Microsoft.UI.Content.DesktopChildSiteBridge	WinClass: Notepad	WinHWND: 0x8C10C0	CtrlHWND: 0xC412F2	Pos: (81, 60)
+00:00:59	AutomationId: <none>	ClassName: Microsoft.UI.Content.DesktopChildSiteBridge	WinClass: Notepad	WinHWND: 0x8C10C0	CtrlHWND: 0xC412F2	Pos: (71, 60)
