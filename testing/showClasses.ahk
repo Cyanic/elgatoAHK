@@ -175,6 +175,9 @@ CaptureUnderCursor(*) {
         UIARelease(element)
     }
 
+    ; Record the UIA class so we can fall back to it later if the automation
+    ; class name comes back empty.
+    uiaClass := className
     if automationId = ""
         automationId := "<none>"
     if className = "" || className = "#32769" {
@@ -182,6 +185,8 @@ CaptureUnderCursor(*) {
         if nativeClass != ""
             className := nativeClass
     }
+    if (className = "" || className = winClass) && (uiaClass != "")
+        className := uiaClass
     if className = ""
         className := "<none>"
 
@@ -229,7 +234,7 @@ WindowFromPoint(x, y) {
 
 GetPhysicalCursorPos(&x, &y) {
     point := Buffer(8, 0)
-    if !DllCall("User32\\GetCursorPos", "ptr", point.Ptr)
+    if !DllCall("GetCursorPos", "ptr", point.Ptr)
         return false
     x := NumGet(point, 0, "int")
     y := NumGet(point, 4, "int")
