@@ -2,3 +2,7 @@
 00:00:59	AutomationId: <none>	ClassName: Microsoft.UI.Content.DesktopChildSiteBridge	WinClass: Notepad	WinHWND: 0x8C10C0	CtrlHWND: 0xC412F2	Pos: (71, 60)
 00:09:32	AutomationId: <none>	ClassName: Microsoft.UI.Content.DesktopChildSiteBridge	WinClass: Notepad	WinHWND: 0x8C10C0	CtrlHWND: 0xC412F2	Pos: (83, 59)
 09:07:07	AutomationId: <none>	ClassName: Intermediate D3D Window	WinClass: Chrome_WidgetWin_1	WinHWND: 0x131094	CtrlHWND: 0x120090	Pos: (2416, 658)
+10:05:29	AutomationId: <none>	ClassName: RichEditD2DPT	WinClass: Notepad	WinHWND: 0x8C10C0	CtrlHWND: 0x8A0F48	Pos: (1001, 659)
+10:05:36	AutomationId: <none>	ClassName: Scintilla	WinClass: Notepad++	WinHWND: 0x6780F06	CtrlHWND: 0x78C0FA8	Pos: (1183, -518)
+10:05:49	AutomationId: <none>	ClassName: Qt673QWindowIcon	WinClass: Qt673QWindowIcon	WinHWND: 0xA1682	CtrlHWND: <none>	Pos: (675, -775)
+10:06:09	AutomationId: <none>	ClassName: Qt673QWindowToolSaveBits	WinClass: Qt673QWindowToolSaveBits	WinHWND: 0x5B0B12	CtrlHWND: <none>	Pos: (-385, -318)
