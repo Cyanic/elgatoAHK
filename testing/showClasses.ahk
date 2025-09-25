@@ -33,7 +33,7 @@ Main() {
     WriteResults(outPath, matches)
     MsgBox Format("Found {1} matching controls. Details written to:`n{2}", matches.Length, outPath)
 
-    MsgBox "Hover any control and press Ctrl+Alt+D to log its class. This script will keep running until you exit it." "`nOutput file: " dateStamp "-cloutput.txt"
+    MsgBox "Hover any control and press Ctrl+Alt+D to log its AutomationId and ClassName." "`nOutput file: " dateStamp "-cloutput.txt"
 }
 
 EnsureConfig() {
@@ -120,7 +120,8 @@ WriteResults(path, results) {
 }
 
 CaptureUnderCursor(*) {
-    KeyWait("Ctrl", "T0.1") ; ensure modifier state is clean after hotkey
+    static uia := ComObject("UIAutomationClient.CUIAutomation")
+
     MouseGetPos(&mx, &my, &winHwnd, &ctrlHwnd)
     target := ctrlHwnd ? ctrlHwnd : winHwnd
     if !target {
@@ -128,17 +129,37 @@ CaptureUnderCursor(*) {
         return
     }
 
-    class := ""
-    title := ""
-    try class := WinGetClass("ahk_id " target)
-    try title := WinGetTitle("ahk_id " winHwnd)
+    winClass := ""
+    try winClass := WinGetClass("ahk_id " winHwnd)
+
+    element := 0
+    try element := uia.ElementFromHandle(target)
+    if !element {
+        pt := Buffer(8, 0)
+        NumPut("int", mx, pt, 0)
+        NumPut("int", my, pt, 4)
+        try element := uia.ElementFromPoint(pt)
+    }
+
+    automationId := ""
+    className := ""
+    if element {
+        try automationId := element.CurrentAutomationId
+        try className := element.CurrentClassName
+    }
+
+    if automationId = ""
+        automationId := "<none>"
+    if className = ""
+        className := "<none>"
 
     dateStamp := FormatTime(, "yyyy-MM-dd")
     path := A_ScriptDir "\" dateStamp "-cloutput.txt"
     timestamp := FormatTime(, "HH:mm:ss")
-    line := Format("{1}`tClass: {2}`tWindow: {3}`tPos: ({4}, {5})", timestamp, class, title, mx, my)
+
+    line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tPos: ({5}, {6})", timestamp, automationId, className, winClass, mx, my)
     FileAppend(line "`n", path, "UTF-8")
-    MsgBox "Captured class " class "`nLogged to " path
+    MsgBox "Captured AutomationId: " automationId "`nClassName: " className "`nLogged to " path
 }
 
 JoinLines(arr) {
