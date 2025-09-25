@@ -126,7 +126,10 @@ CaptureUnderCursor(*) {
         return
     }
 
-    MouseGetPos(&mx, &my, &winHwnd, &ctrlHwnd)
+    MouseGetPos(&mx, &my, &winHwnd, &ctrlInfo, 2)
+    winHwnd := NormalizeHwnd(winHwnd)
+    ctrlHwnd := NormalizeHwnd(ctrlInfo)
+
     target := ctrlHwnd ? ctrlHwnd : winHwnd
     if !target {
         MsgBox "Could not determine the hovered control."
@@ -159,6 +162,17 @@ CaptureUnderCursor(*) {
     line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tPos: ({5}, {6})", timestamp, automationId, className, winClass, mx, my)
     FileAppend(line "`n", path, "UTF-8")
     MsgBox "Captured AutomationId: " automationId "`nClassName: " className "`nLogged to " path
+}
+
+NormalizeHwnd(value) {
+    if value is Integer
+        return value
+    if value is String {
+        if RegExMatch(value, "^0x[0-9A-Fa-f]+$")
+            return value + 0
+        return 0
+    }
+    return 0
 }
 
 UIAElementFromHandle(uia, hwnd) {
