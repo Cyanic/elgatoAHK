@@ -421,18 +421,37 @@ UIAGetBoundingRect(elementPtr) {
     attempt := ComCall(GET_CURRENT_PROPERTY_VALUE, elementPtr, "int", 30001, "ptr", rectVariant.Ptr)
     if attempt != 0
         attempt := ComCall(GET_CURRENT_PROPERTY_VALUE_EX, elementPtr, "int", 30001, "int", true, "ptr", rectVariant.Ptr)
-    if attempt != 0
+    if attempt != 0 {
+        UIATryVariantClear(rectVariant)
         return 0
+    }
 
     vt := NumGet(rectVariant, 0, "ushort")
+    static VT_ARRAY := 0x2000
     static VT_R8 := 5
-    if vt != VT_R8
+    if vt != (VT_ARRAY | VT_R8) {
+        UIATryVariantClear(rectVariant)
         return 0
+    }
 
-    left := NumGet(rectVariant, 8, "double")
-    top := NumGet(rectVariant, 16, "double")
-    width := NumGet(rectVariant, 24, "double")
-    height := NumGet(rectVariant, 32, "double")
+    psa := NumGet(rectVariant, 8, "ptr")
+    if !psa {
+        UIATryVariantClear(rectVariant)
+        return 0
+    }
+
+    dataPtr := NumGet(psa, (A_PtrSize = 8) ? 16 : 12, "ptr")
+    if !dataPtr {
+        UIATryVariantClear(rectVariant)
+        return 0
+    }
+
+    left := NumGet(dataPtr, 0, "double")
+    top := NumGet(dataPtr, 8, "double")
+    width := NumGet(dataPtr, 16, "double")
+    height := NumGet(dataPtr, 24, "double")
+    UIATryVariantClear(rectVariant)
+
     return Map("x", left, "y", top, "w", width, "h", height)
 }
 
@@ -471,7 +490,7 @@ UIAGetProperty(elementPtr, propertyId) {
         hr := ComCall(params*)
         if hr = 0 {
             value := UIAVariantToText(variant)
-            DllCall("OleAut32.dll\\VariantClear", "ptr", variant.Ptr)
+            UIATryVariantClear(variant)
             if value != ""
                 return value
         }
@@ -503,6 +522,14 @@ UIAVariantToText(varBuf) {
         default:
             return ""
     }
+}
+
+UIATryVariantClear(varBuf) {
+    if !IsObject(varBuf)
+        ptr := varBuf
+    else
+        ptr := varBuf.Ptr
+    try DllCall("OleAut32\\VariantClear", "ptr", ptr)
 }
 
 GetUIAutomation() {
