@@ -136,20 +136,15 @@ CaptureUnderCursor(*) {
     winClass := ""
     try winClass := WinGetClass("ahk_id " winHwnd)
 
-    element := 0
-    try element := uia.ElementFromHandle(target)
-    if !element {
-        pt := Buffer(8, 0)
-        NumPut("int", mx, pt, 0)
-        NumPut("int", my, pt, 4)
-        try element := uia.ElementFromPoint(pt)
-    }
+    element := UIAElementFromHandle(uia, target)
+    if !IsObject(element)
+        element := UIAElementFromPoint(uia, mx, my)
 
     automationId := ""
     className := ""
-    if element {
-        try automationId := element.CurrentAutomationId
-        try className := element.CurrentClassName
+    if IsObject(element) {
+        automationId := UIAGetProperty(element, 30011)
+        className := UIAGetProperty(element, 30012)
     }
 
     if automationId = ""
@@ -166,6 +161,52 @@ CaptureUnderCursor(*) {
     MsgBox "Captured AutomationId: " automationId "`nClassName: " className "`nLogged to " path
 }
 
+UIAElementFromHandle(uia, hwnd) {
+    elementPtr := 0
+    hr := ComCall(7, uia, "ptr", hwnd, "ptr*", &elementPtr)
+    if hr != 0 || !elementPtr
+        return ""
+    return ComValue(13, elementPtr, false)
+}
+
+UIAElementFromPoint(uia, x, y) {
+    buf := Buffer(8, 0)
+    NumPut("int", x, buf, 0)
+    NumPut("int", y, buf, 4)
+    elementPtr := 0
+    hr := ComCall(8, uia, "int64", NumGet(buf, 0, "int64"), "ptr*", &elementPtr)
+    if hr != 0 || !elementPtr
+        return ""
+    return ComValue(13, elementPtr, false)
+}
+
+UIAGetProperty(element, propertyId) {
+    variant := Buffer(24, 0)
+    hr := ComCall(11, element, "int", propertyId, "ptr", variant.Ptr)
+    if hr != 0
+        return ""
+    value := UIAVariantToText(variant)
+    DllCall("OleAut32\VariantClear", "ptr", variant.Ptr)
+    return value
+}
+
+UIAVariantToText(varBuf) {
+    vt := NumGet(varBuf, 0, "ushort")
+    switch vt {
+        case 0, 1:
+            return ""
+        case 8:
+            bstr := NumGet(varBuf, 8, "ptr")
+            return bstr ? StrGet(bstr, "UTF-16") : ""
+        case 3:
+            return Format("{1}", NumGet(varBuf, 8, "int"))
+        case 7:
+            return Format("{1}", NumGet(varBuf, 8, "double"))
+        default:
+            return ""
+    }
+}
+
 GetUIAutomation() {
     static uia := ""
     if IsObject(uia)
@@ -175,7 +216,7 @@ GetUIAutomation() {
     catch {
         try uia := ComObject("{FF48DBA4-60EF-4201-AA87-54103EEF594E}", "{30CBE57D-D9D0-452A-AB13-7AC5AC4825EE}")
         catch {
-            return ""
+            uia := ""
         }
     }
     return uia
