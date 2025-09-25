@@ -237,13 +237,22 @@ UIAElementFromPoint(uia, x, y) {
     point := Buffer(8, 0)
     NumPut("int", x, point, 0)
     NumPut("int", y, point, 4)
-    ; Marshal POINT(x, y) and pass by pointer; UIA tolerates this and avoids
-    ; the crashes observed when attempting to pack the struct as an int64.
-    try hr := ComCall(8, uia, "ptr", point.Ptr, "ptr*", &elementPtr)
-    catch {
-        return 0
+    ; Try passing POINT by value (preferred) and fall back to pointer form if
+    ; the provider rejects it. Both paths are wrapped so UIA quirks on specific
+    ; monitors/windows don't crash the script.
+    try {
+        hr := ComCall(8, uia, "int64", NumGet(point, 0, "int64"), "ptr*", &elementPtr)
+        if hr = 0
+            return elementPtr
+    } catch {
     }
-    return hr = 0 ? elementPtr : 0
+    try {
+        hr := ComCall(8, uia, "ptr", point.Ptr, "ptr*", &elementPtr)
+        if hr = 0
+            return elementPtr
+    } catch {
+    }
+    return 0
 }
 
 UIAGetProperty(elementPtr, propertyId) {
