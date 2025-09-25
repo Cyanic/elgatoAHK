@@ -126,19 +126,22 @@ CaptureUnderCursor(*) {
         return
     }
 
-    MouseGetPos(&mx, &my, &winHwnd)
+    MouseGetPos(&mx, &my, &winHwnd, &ctrlInfo)
     winHwnd := NormalizeHwnd(winHwnd)
     if !winHwnd {
         MsgBox "Could not determine the hovered control."
         return
     }
 
-    ctrlHwnd := NormalizeHwnd(WindowFromPoint(mx, my))
-    if ctrlHwnd = winHwnd
-        ctrlHwnd := 0
-    else if ctrlHwnd {
+    ctrlHwnd := NormalizeHwnd(ctrlInfo, winHwnd)
+    if !ctrlHwnd {
+        ctrlHwnd := NormalizeHwnd(WindowFromPoint(mx, my), winHwnd)
+        if ctrlHwnd = winHwnd
+            ctrlHwnd := 0
+    }
+    if ctrlHwnd {
         static GA_ROOT := 2 ; GetAncestor(..., GA_ROOT)
-        root := DllCall("User32\\GetAncestor", "ptr", ctrlHwnd, "uint", GA_ROOT, "ptr")
+        root := DllCall("GetAncestor", "ptr", ctrlHwnd, "uint", GA_ROOT, "ptr")
         if root != winHwnd
             ctrlHwnd := 0
     }
@@ -151,6 +154,8 @@ CaptureUnderCursor(*) {
     element := UIAElementFromHandle(uia, target)
     if !element && target != winHwnd
         element := UIAElementFromHandle(uia, winHwnd)
+    if !element
+        element := UIAElementFromPoint(uia, mx, my)
 
     automationId := ""
     className := ""
@@ -162,6 +167,11 @@ CaptureUnderCursor(*) {
 
     if automationId = ""
         automationId := "<none>"
+    if className = "" || className = "#32769" {
+        nativeClass := GetWindowClassName(ctrlHwnd ? ctrlHwnd : winHwnd)
+        if nativeClass != ""
+            className := nativeClass
+    }
     if className = ""
         className := "<none>"
 
@@ -188,6 +198,13 @@ NormalizeHwnd(value, baseWin := 0) {
     if value is String {
         if RegExMatch(value, "^0x[0-9A-Fa-f]+$")
             return value + 0
+        if baseWin && value != "" {
+            try {
+                hwnd := ControlGetHwnd(value, "ahk_id " baseWin)
+                if hwnd
+                    return hwnd
+            }
+        }
         return 0
     }
     return 0
@@ -197,7 +214,15 @@ WindowFromPoint(x, y) {
     point := Buffer(8, 0)
     NumPut("int", x, point, 0)
     NumPut("int", y, point, 4)
-    return DllCall("User32\\WindowFromPoint", "int64", NumGet(point, 0, "int64"), "ptr")
+    return DllCall("WindowFromPoint", "int64", NumGet(point, 0, "int64"), "ptr")
+}
+
+GetWindowClassName(hwnd) {
+    if !hwnd
+        return ""
+    buf := Buffer(512 * 2, 0)
+    len := DllCall("GetClassNameW", "ptr", hwnd, "ptr", buf, "int", 512)
+    return len ? StrGet(buf, "UTF-16") : ""
 }
 
 UIAElementFromHandle(uia, hwnd) {
