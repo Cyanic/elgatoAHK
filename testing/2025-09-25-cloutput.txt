@@ -1,2 +1,4 @@
 ﻿00:00:39	AutomationId: <none>	ClassName: Microsoft.UI.Content.DesktopChildSiteBridge	WinClass: Notepad	WinHWND: 0x8C10C0	CtrlHWND: 0xC412F2	Pos: (81, 60)
 00:00:59	AutomationId: <none>	ClassName: Microsoft.UI.Content.DesktopChildSiteBridge	WinClass: Notepad	WinHWND: 0x8C10C0	CtrlHWND: 0xC412F2	Pos: (71, 60)
+00:09:32	AutomationId: <none>	ClassName: Microsoft.UI.Content.DesktopChildSiteBridge	WinClass: Notepad	WinHWND: 0x8C10C0	CtrlHWND: 0xC412F2	Pos: (83, 59)
+09:07:07	AutomationId: <none>	ClassName: Intermediate D3D Window	WinClass: Chrome_WidgetWin_1	WinHWND: 0x131094	CtrlHWND: 0x120090	Pos: (2416, 658)
