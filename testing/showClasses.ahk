@@ -195,7 +195,7 @@ UIAGetProperty(elementPtr, propertyId) {
         return ""
     variantSize := (A_PtrSize = 8) ? 24 : 16
     variant := Buffer(variantSize, 0)
-    static GET_CURRENT_PROPERTY_VALUE := 10 ; vtable index for IUIAutomationElement::GetCurrentPropertyValue
+    static GET_CURRENT_PROPERTY_VALUE := 11 ; ComCall uses 1-based index for IUIAutomationElement::GetCurrentPropertyValue
     hr := ComCall(GET_CURRENT_PROPERTY_VALUE, elementPtr, "int", propertyId, "ptr", variant.Ptr)
     if hr != 0
         return ""
