@@ -1,0 +1,28 @@
+﻿=== UIA Debug Capture ===
+Timestamp: 2025-09-25 23:04:37
+LogicalPos: (589, 281)  PhysicalPos: (589, 281)
+Window: hwnd=0xD3073C class=Notepad title=*DdddDDDDDDDDDDDDDDDDDDD - Notepad
+ControlHWND: 0xA1636
+Resolved: AutoId='<none>' Class='Microsoft.UI.Content.DesktopChildSiteBridge' Source=Element Candidate=Control handle UIAClass=#32769 
+-- Resolved Element Details --
+  Name='Desktop 1' ControlType=50033 (Pane) Localized='pane' Framework='Win32'
+  Rect=(0.0, 0.0, 1920.0, 1200.0)
+-- Notes --
+  Used native class fallback
+-- Candidates --
+  [1] Kind=Point Label=Logical point Element=No Refined=No Used=No
+    Point=(589, 281)
+    Error=No element
+  [2] Kind=Handle Label=Control handle Element=Yes Refined=No Used=Yes
+    Handle=0xA1636
+    AutoId='' Class='#32769' Source=Element
+    Name='Desktop 1' Localized='pane' Framework='Win32'
+    ControlType=50033 (Pane)
+    Rect=(0.0, 0.0, 1920.0, 1200.0)
+  [3] Kind=Handle Label=Window handle Element=Yes Refined=No Used=No
+    Handle=0xD3073C
+    AutoId='' Class='#32769' Source=Element
+    Name='Desktop 1' Localized='pane' Framework='Win32'
+    ControlType=50033 (Pane)
+    Rect=(0.0, 0.0, 1920.0, 1200.0)
+

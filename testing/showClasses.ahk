@@ -716,9 +716,9 @@ UIAGetDirectElementInfo(elementPtr) {
 }
 
 UIAControlTypeToName(id) {
-    static map := ""
-    if map = "" {
-        map := Map(
+    static typeMap := ""
+    if typeMap = "" {
+        typeMap := Map(
             50000, "Button",
             50001, "Calendar",
             50002, "CheckBox",
@@ -764,10 +764,10 @@ UIAControlTypeToName(id) {
     }
 
     if id is Integer
-        return map.Has(id) ? map[id] : Format("ControlType({})", id)
+        return typeMap.Has(id) ? typeMap[id] : Format("ControlType({})", id)
     if id != "" && RegExMatch(id, "^-?\d+$") {
         num := id + 0
-        return map.Has(num) ? map[num] : Format("ControlType({})", num)
+        return typeMap.Has(num) ? typeMap[num] : Format("ControlType({})", num)
     }
     return id
 }
@@ -880,9 +880,7 @@ UIAGetProperty(elementPtr, propertyId) {
     static GET_CURRENT_PROPERTY_VALUE := 10
     static GET_CURRENT_PROPERTY_VALUE_EX := 11
 
-    attempts := [
-        {index: GET_CURRENT_PROPERTY_VALUE, extra: []},
-        {index: GET_CURRENT_PROPERTY_VALUE_EX, extra: [true]}
+    attempts := [{ index: GET_CURRENT_PROPERTY_VALUE, extra: [] }, { index: GET_CURRENT_PROPERTY_VALUE_EX, extra: [true] }
     ]
 
     for attempt in attempts {
@@ -965,7 +963,7 @@ JoinLines(arr) {
     return out
 }
 
-^!a::CaptureAutomationDebug()
-^!d::CaptureUnderCursor()
+^!a:: CaptureAutomationDebug()
+^!d:: CaptureUnderCursor()
 
 Main()

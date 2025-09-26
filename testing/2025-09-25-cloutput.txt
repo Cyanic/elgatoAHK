@@ -18,3 +18,5 @@
 22:44:35	AutomationId: <none>	ClassName: Scintilla	WinClass: Notepad++	WinHWND: 0xAD01DA	CtrlHWND: 0x5B0E30	Pos: (697, 552)
 22:44:50	AutomationId: <none>	ClassName: RichEditD2DPT	WinClass: Notepad	WinHWND: 0xD3073C	CtrlHWND: 0x500C94	Pos: (859, 645)
 22:45:02	AutomationId: <none>	ClassName: Microsoft.UI.Content.DesktopChildSiteBridge	WinClass: Notepad	WinHWND: 0xD3073C	CtrlHWND: 0xA1636	Pos: (604, 283)
+23:04:30	AutomationId: <none>	ClassName: RichEditD2DPT	WinClass: Notepad	WinHWND: 0xD3073C	CtrlHWND: 0x500C94	Pos: (882, 564)
+23:04:33	AutomationId: <none>	ClassName: Microsoft.UI.Content.DesktopChildSiteBridge	WinClass: Notepad	WinHWND: 0xD3073C	CtrlHWND: 0xA1636	Pos: (591, 282)
