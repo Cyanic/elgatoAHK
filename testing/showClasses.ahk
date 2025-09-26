@@ -484,6 +484,7 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
                 if bestDescendant.Has("Class") && bestDescendant["Class"] != ""
                     className := bestDescendant["Class"]
                 selectedDetails := bestDescendant
+                bestDetails := bestDescendant
                 if selectedSource = ""
                     selectedSource := bestDescendant.Has("Source") ? bestDescendant["Source"] : "Descendant"
                 if bestCandidateLabel != ""
@@ -1037,8 +1038,9 @@ UIANormalizeRect(rect, x, y, ctx := 0) {
     if !IsObject(rect)
         return 0
 
+    screenRectRaw := Map("x", rect["x"], "y", rect["y"], "w", rect["w"], "h", rect["h"])
     result := Map()
-    result["Screen"] := rect
+    result["Screen"] := screenRectRaw
     result["RectSource"] := "Unknown"
 
     if IsObject(ctx) {
@@ -1053,7 +1055,7 @@ UIANormalizeRect(rect, x, y, ctx := 0) {
         rawX := rect["x"]
         rawY := rect["y"]
 
-        screenRect := rect
+        screenRect := Map("x", rect["x"], "y", rect["y"], "w", rect["w"], "h", rect["h"])
         localRect := Map("x", rect["x"] - winLeft, "y", rect["y"] - winTop, "w", rect["w"], "h", rect["h"])
         adjustedRect := Map("x", rect["x"] + winLeft, "y", rect["y"] + winTop, "w", rect["w"], "h", rect["h"])
 
