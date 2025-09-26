@@ -72,3 +72,24 @@ Resolved: AutoId='<none>' Class='Notepad++' Source=Descendant Candidate=Control 
     ControlType=50033 (Pane)
     Rect=(0.0, 0.0, 1920.0, 1200.0)
 
+=== UIA Debug Capture ===
+Timestamp: 2025-09-25 23:43:03
+LogicalPos: (565, 469)  PhysicalPos: (565, 469)
+Window: hwnd=0x2E162E class=Qt673QWindowIcon title=Camera Hub
+WindowRect: left=241 top=145 width=1438 height=839
+ControlHWND: <none>
+Resolved: AutoId='EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.propertyContainer.propertyGroup_com.elgato.vh-ui.group.device-camlink4k.contentFrame' Class='EVHPropertyGroupContent' Source=Element Candidate=Window handle UIAClass=EVHPropertyGroupContent 
+-- Resolved Element Details --
+  Name='' ControlType=50025 (Custom) Localized='custom' Framework='Qt'
+  Rect=(258.0, 254.0, 364.0, 74.0)
+-- Candidates --
+  [1] Kind=Point Label=Logical point Element=No Refined=No Used=No
+    Point=(565, 469)
+    Error=No element
+  [2] Kind=Handle Label=Window handle Element=Yes Refined=Yes Used=Yes
+    Handle=0x2E162E
+    AutoId='EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport.sidebarContainer.propertyContainer.propertyGroup_com.elgato.vh-ui.group.device-camlink4k.contentFrame' Class='EVHPropertyGroupContent' Source=Element
+    Name='' Localized='custom' Framework='Qt'
+    ControlType=50025 (Custom)
+    Rect=(258.0, 254.0, 364.0, 74.0)
+
