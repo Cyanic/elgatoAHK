@@ -1,0 +1,21 @@
+﻿=== UIA Debug Capture ===
+Timestamp: 2025-09-26 09:03:48
+LogicalPos: (-347, -323)  PhysicalPos: (-347, -323)
+Window: hwnd=0xC009C8 class=Qt673QWindowToolSaveBits title=Camera Hub
+WindowRect: left=-867 top=-618 width=1024 height=600
+ControlHWND: <none>
+Resolved: AutoId='<none>' Class='QWidget' Source=Element Candidate= UIAClass=QWidget 
+-- Resolved Element Details --
+  Name='' ControlType=50026 (Group) Localized='group' Framework='Qt'
+  Rect=(-867.0, -618.0, 1024.0, 600.0) [Screen]
+-- Candidates --
+  [1] Kind=Point Label=Logical point Element=No Refined=No Used=No
+    Point=(-347, -323)
+    Error=No element
+  [2] Kind=Handle Label=Window handle Element=Yes Refined=Yes Used=No
+    Handle=0xC009C8
+    AutoId='' Class='QWidget' Source=Element
+    Name='' Localized='group' Framework='Qt'
+    ControlType=50026 (Group)
+    Rect=(-867.0, -618.0, 1024.0, 600.0) [Screen]
+

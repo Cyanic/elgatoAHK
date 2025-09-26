@@ -134,7 +134,7 @@ CaptureUnderCursor(*) {
     if IsObject(detail) && detail.Has("Rect") && IsObject(detail["Rect"]) {
         rect := detail["Rect"]
         rectText := Format("`tRect: ({},{},{},{})", rect["x"], rect["y"], rect["w"], rect["h"])
-        if detail.Has("RectSource"){
+        if detail.Has("RectSource") {
             rectSource := " (" detail["RectSource"] " coords)"
         }
     }
@@ -627,14 +627,14 @@ UIACollectElementDetails(uia, elementPtr, x, y, ctx) {
 
     if info.Has("Rect") && IsObject(info["Rect"])
         normalized := UIANormalizeRect(info["Rect"], x, y, ctx)
-        if IsObject(normalized) {
-            if normalized.Has("Screen")
-                info["Rect"] := normalized["Screen"]
-            if normalized.Has("Local")
-                info["RectLocal"] := normalized["Local"]
-            if normalized.Has("RectSource")
-                info["RectSource"] := normalized["RectSource"]
-        }
+    if IsObject(normalized) {
+        if normalized.Has("Screen")
+            info["Rect"] := normalized["Screen"]
+        if normalized.Has("Local")
+            info["RectLocal"] := normalized["Local"]
+        if normalized.Has("RectSource")
+            info["RectSource"] := normalized["RectSource"]
+    }
 
     if (info["Auto"] != "" && info["Class"] != "" && info["Class"] != "#32769")
         return info
@@ -1006,7 +1006,7 @@ UIACandidateScore(info, x, y, ctx) {
     }
     score += pointScore
 
-    if info.Has("Auto") && info["Auto"] != "" 
+    if info.Has("Auto") && info["Auto"] != ""
         score += 1000
     if info.Has("Class") && info["Class"] != "" && info["Class"] != "#32769"
         score += 500
