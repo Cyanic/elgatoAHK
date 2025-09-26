@@ -1,0 +1,1 @@
+﻿00:17:37	AutomationId: 907440	ClassName: Chrome_RenderWidgetHostHWND	WinClass: Chrome_WidgetWin_1	WinHWND: 0x340B4E	CtrlHWND: 0x710F00	Pos: (1168, 565)
