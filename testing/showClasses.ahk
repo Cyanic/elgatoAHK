@@ -672,7 +672,7 @@ UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 256, ctx := 0) {
             hasData := (info["Auto"] != "") || (info["Class"] != "" && info["Class"] != "#32769")
             if matches && hasData {
                 info["Source"] := "Descendant"
-                score := UIACandidateScore(info)
+                score := UIACandidateScore(info, x, y, ctx)
                 if score > bestScore {
                     best := info
                     bestScore := score
