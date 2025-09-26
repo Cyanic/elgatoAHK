@@ -632,7 +632,7 @@ UIACollectElementDetails(uia, elementPtr, x, y, ctx) {
     return info
 }
 
-UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 128, ctx := 0) {
+UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 256, ctx := 0) {
     if !uia || !elementPtr
         return 0
 
@@ -649,7 +649,8 @@ UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 128, ctx := 0) {
     }
 
     processed := 0
-    result := 0
+    best := 0
+    bestScore := -1
     while queue.Length {
         element := queue.RemoveAt(1)
         processed += 1
@@ -664,9 +665,11 @@ UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 128, ctx := 0) {
             hasData := (info["Auto"] != "") || (info["Class"] != "" && info["Class"] != "#32769")
             if matches && hasData {
                 info["Source"] := "Descendant"
-                result := info
-                UIARelease(element)
-                break
+                score := UIACandidateScore(info)
+                if score > bestScore {
+                    best := info
+                    bestScore := score
+                }
             }
         }
 
@@ -694,7 +697,7 @@ UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 128, ctx := 0) {
         UIARelease(ptr)
     }
 
-    return result
+    return best
 }
 
 UIAGetDirectElementInfo(elementPtr) {
@@ -901,6 +904,25 @@ UIAPointMatchesRect(rect, x, y, ctx := 0) {
             return true
     }
     return false
+}
+
+UIACandidateScore(info) {
+    score := 0
+    if info.Has("Auto") && info["Auto"] != ""
+        score += 100
+    if info.Has("Class") && info["Class"] != "" && info["Class"] != "#32769"
+        score += 25
+    area := 0
+    if info.Has("Rect") && IsObject(info["Rect"]) {
+        rect := info["Rect"]
+        area := Abs(rect["w"]) * Abs(rect["h"])
+        ; Smaller areas get higher scores; avoid division by zero.
+        if area > 0
+            score += Max(0, 1000 - Min(area, 1000))
+        else
+            score += 1000
+    }
+    return score
 }
 
 UIAGetProperty(elementPtr, propertyId) {
