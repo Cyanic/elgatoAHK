@@ -476,7 +476,7 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
         descendants := UIASnapshotDescendants(uia, bestCandidate, hitContext, 3, pointerX, pointerY)
         bestChildSnapshots := descendants
         if descendants.Length {
-            bestDescendant := UIASelectBestSnapshot(descendants, pointerX, pointerY, hitContext, bestScore)
+            bestDescendant := UIASelectBestSnapshot(descendants, pointerX, pointerY, hitContext, bestScore, bestDetails)
             if IsObject(bestDescendant) {
                 if bestDescendant.Has("Auto") && bestDescendant["Auto"] != ""
                     automationId := bestDescendant["Auto"]
@@ -1116,14 +1116,31 @@ UIACloneMap(source) {
     return clone
 }
 
-UIASelectBestSnapshot(snapshots, x, y, ctx, baselineScore := -1) {
+UIASelectBestSnapshot(snapshots, x, y, ctx, baselineScore := -1, baselineDetails := 0) {
     best := 0
     bestScore := baselineScore
+    baseHasAuto := IsObject(baselineDetails) && baselineDetails.Has("Auto") && baselineDetails["Auto"] != ""
+    baseHasGoodClass := IsObject(baselineDetails) && baselineDetails.Has("Class") && baselineDetails["Class"] != "" && baselineDetails["Class"] != "#32769"
     for snapshot in snapshots {
         score := UIACandidateScore(snapshot, x, y, ctx)
-        if score > bestScore {
-            bestScore := score
+        hasAuto := snapshot.Has("Auto") && snapshot["Auto"] != ""
+        hasGoodClass := snapshot.Has("Class") && snapshot["Class"] != "" && snapshot["Class"] != "#32769"
+
+        prefer := false
+        if score > bestScore
+            prefer := true
+        else if !baseHasAuto && hasAuto
+            prefer := true
+        else if !baseHasGoodClass && hasGoodClass && score >= bestScore - 500
+            prefer := true
+        else if !best
+            prefer := true
+
+        if prefer {
+            bestScore := Max(score, bestScore)
             best := snapshot
+            baseHasAuto := hasAuto
+            baseHasGoodClass := hasGoodClass
         }
     }
     return best
