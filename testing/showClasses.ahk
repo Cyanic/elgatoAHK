@@ -159,11 +159,11 @@ CaptureUnderCursor(*) {
     try winClass := WinGetClass("ahk_id " winHwnd)
 
     candidates := []
-    if ctrlHwnd
-        candidates.Push(Map("Kind", "Handle", "Value", ctrlHwnd))
     candidates.Push(Map("Kind", "Point", "X", logicalX, "Y", logicalY))
     if hasPhysical && (physX != logicalX || physY != logicalY)
         candidates.Push(Map("Kind", "Point", "X", physX, "Y", physY))
+    if ctrlHwnd
+        candidates.Push(Map("Kind", "Handle", "Value", ctrlHwnd))
     candidates.Push(Map("Kind", "Handle", "Value", winHwnd))
 
     automationId := ""
@@ -171,6 +171,7 @@ CaptureUnderCursor(*) {
     uiaClass := ""
     fallbackAuto := ""
     fallbackClass := ""
+    preferredClass := ""
 
     for candidate in candidates {
         element := 0
@@ -208,9 +209,13 @@ CaptureUnderCursor(*) {
             fallbackAuto := candAuto
 
         if candClass != "" && candClass != "#32769" && candClass != winClass {
-            automationId := (candAuto != "") ? candAuto : automationId
-            className := candClass
-            break
+            if candAuto != "" {
+                automationId := candAuto
+                className := candClass
+                break
+            }
+            if preferredClass = ""
+                preferredClass := candClass
         }
 
         if automationId = "" && candAuto != ""
@@ -219,6 +224,8 @@ CaptureUnderCursor(*) {
             className := candClass
     }
 
+    if className = "" && preferredClass != ""
+        className := preferredClass
     if className = "" && fallbackClass != ""
         className := fallbackClass
     if automationId = "" && fallbackAuto != ""
