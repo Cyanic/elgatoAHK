@@ -780,7 +780,7 @@ UIAFindChildren(uia, elementPtr) {
         return 0
     children := 0
     try {
-        if ComCall(7, elementPtr, "int", 2, "ptr", cond, "ptr*", &children) = 0 && children
+        if ComCall(6, elementPtr, "int", 2, "ptr", cond, "ptr*", &children) = 0 && children
             return children
     } catch {
     }
@@ -793,7 +793,7 @@ UIAElementArrayLength(arrayPtr) {
     if !arrayPtr
         return 0
     length := 0
-    try ComCall(4, arrayPtr, "int*", &length)
+    try ComCall(3, arrayPtr, "int*", &length)
     return length
 }
 
@@ -801,7 +801,7 @@ UIAElementArrayGet(arrayPtr, index) {
     if !arrayPtr
         return 0
     element := 0
-    try ComCall(5, arrayPtr, "int", index, "ptr*", &element)
+    try ComCall(4, arrayPtr, "int", index, "ptr*", &element)
     return element
 }
 
@@ -810,7 +810,7 @@ UIAGetTrueCondition(uia) {
     if cond
         return cond
     try {
-        if ComCall(22, uia, "ptr*", &cond) = 0 && cond
+        if ComCall(21, uia, "ptr*", &cond) = 0 && cond
             return cond
     } catch {
     }
