@@ -191,8 +191,9 @@ CaptureUnderCursor(*) {
             element := refined
         }
 
-        candAuto := UIAGetProperty(element, 30011)
-        candClass := UIAGetProperty(element, 30012)
+        details := UIACollectElementDetails(uia, element, pointX, pointY)
+        candAuto := details.Has("Auto") ? details["Auto"] : ""
+        candClass := details.Has("Class") ? details["Class"] : ""
         UIARelease(element)
 
         if candClass != "" {
@@ -362,6 +363,94 @@ UIAHitTestElement(uia, elementPtr, x, y) {
     }
     UIARelease(children)
     return elementPtr
+}
+
+UIACollectElementDetails(uia, elementPtr, x, y) {
+    info := Map("Auto", "", "Class", "")
+    if !elementPtr
+        return info
+
+    auto := UIAGetProperty(elementPtr, 30011)
+    class := UIAGetProperty(elementPtr, 30012)
+    info["Auto"] := auto
+    info["Class"] := class
+
+    if (auto != "" && class != "")
+        return info
+
+    if auto = "" || class = "" || class = "#32769" {
+        deeper := UIAFindDescendantWithAutomation(uia, elementPtr, x, y)
+        if IsObject(deeper) {
+            if deeper.Has("Auto") && deeper["Auto"] != ""
+                info["Auto"] := deeper["Auto"]
+            if deeper.Has("Class") && deeper["Class"] != ""
+                info["Class"] := deeper["Class"]
+        }
+    }
+
+    return info
+}
+
+UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 128) {
+    if !uia || !elementPtr
+        return 0
+
+    queue := []
+    children := UIAFindChildren(uia, elementPtr)
+    if children {
+        count := UIAElementArrayLength(children)
+        Loop count {
+            child := UIAElementArrayGet(children, A_Index - 1)
+            if child
+                queue.Push(child)
+        }
+        UIARelease(children)
+    }
+
+    processed := 0
+    result := 0
+    while queue.Length {
+        element := queue.RemoveAt(1)
+        processed += 1
+
+        auto := UIAGetProperty(element, 30011)
+        class := UIAGetProperty(element, 30012)
+        rect := UIAGetBoundingRect(element)
+        matches := true
+        if rect
+            matches := UIAPointInRect(rect, x, y)
+
+        if matches && (auto != "" || (class != "" && class != "#32769")) {
+            result := Map("Auto", auto, "Class", class)
+            UIARelease(element)
+            break
+        }
+
+        if processed < limit {
+            children := UIAFindChildren(uia, element)
+            if children {
+                count := UIAElementArrayLength(children)
+                Loop count {
+                    child := UIAElementArrayGet(children, A_Index - 1)
+                    if child
+                        queue.Push(child)
+                }
+                UIARelease(children)
+            }
+        }
+
+        UIARelease(element)
+        if processed >= limit
+            break
+    }
+
+    ; Release any remaining enqueued elements.
+    while queue.Length {
+        ptr := queue.Pop()
+        UIARelease(ptr)
+    }
+
+    return result
 }
 
 UIAFindChildren(uia, elementPtr) {
