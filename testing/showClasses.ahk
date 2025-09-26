@@ -120,26 +120,140 @@ WriteResults(path, results) {
 }
 
 CaptureUnderCursor(*) {
-    uia := GetUIAutomation()
-    if !uia {
-        MsgBox "UI Automation interface not available on this system."
+    info := GatherCursorUIAInfo(true, false)
+    if !IsObject(info)
         return
+
+    dateStamp := FormatTime(, "yyyy-MM-dd")
+    path := A_ScriptDir "\" dateStamp "-cloutput.txt"
+    timestamp := FormatTime(, "HH:mm:ss")
+
+    line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tWinHWND: {5}`tCtrlHWND: {6}`tPos: ({7}, {8})",
+        timestamp,
+        info["AutomationId"],
+        info["ClassName"],
+        info["WinClass"],
+        Format("0x{1:X}", info["WinHWND"]),
+        info["CtrlHWND"] ? Format("0x{1:X}", info["CtrlHWND"]) : "<none>",
+        info["PhysicalX"],
+        info["PhysicalY"])
+    FileAppend(line "`n", path, "UTF-8")
+    MsgBox "Captured AutomationId: " info["AutomationId"] "`nClassName: " info["ClassName"] "`nLogged to " path
+}
+
+CaptureAutomationDebug(*) {
+    info := GatherCursorUIAInfo(true, true)
+    if !IsObject(info)
+        return
+
+    dateStamp := FormatTime(, "yyyy-MM-dd")
+    path := A_ScriptDir "\" dateStamp "-uia-debug.txt"
+    timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
+
+    lines := []
+    lines.Push("=== UIA Debug Capture ===")
+    lines.Push("Timestamp: " timestamp)
+    lines.Push(Format("LogicalPos: ({}, {})  PhysicalPos: ({}, {})", info["LogicalX"], info["LogicalY"], info["PhysicalX"], info["PhysicalY"]))
+    lines.Push(Format("Window: hwnd={} class={} title={}", Format("0x{1:X}", info["WinHWND"]), info["WinClass"], info.Has("WinTitle") ? info["WinTitle"] : ""))
+    lines.Push(Format("ControlHWND: {}", info["CtrlHWND"] ? Format("0x{1:X}", info["CtrlHWND"]) : "<none>"))
+    lines.Push(Format("Resolved: AutoId='{}' Class='{}' Source={} Candidate={} UIAClass={} ",
+        info["AutomationId"], info["ClassName"], info.Has("SelectedSource") ? info["SelectedSource"] : "",
+        info.Has("SelectedCandidate") ? info["SelectedCandidate"] : "",
+        info.Has("UIAClass") ? info["UIAClass"] : ""))
+
+    detail := info.Has("Details") ? info["Details"] : 0
+    if IsObject(detail) && detail.Count {
+        lines.Push("-- Resolved Element Details --")
+        lines.Push(Format("  Name='{}' ControlType={} ({}) Localized='{}' Framework='{}'"
+            , detail.Has("Name") ? detail["Name"] : ""
+            , detail.Has("ControlTypeId") ? detail["ControlTypeId"] : ""
+            , detail.Has("ControlType") ? detail["ControlType"] : ""
+            , detail.Has("LocalizedControlType") ? detail["LocalizedControlType"] : ""
+            , detail.Has("FrameworkId") ? detail["FrameworkId"] : ""))
+        if detail.Has("Rect") && IsObject(detail["Rect"]) {
+            rect := detail["Rect"]
+            lines.Push(Format("  Rect=({}, {}, {}, {})", rect["x"], rect["y"], rect["w"], rect["h"]))
+        }
     }
 
-    CoordMode("Mouse", "Screen") ; ensure cursor coordinates are in virtual screen space
+    if info.Has("Notes") && info["Notes"].Length {
+        lines.Push("-- Notes --")
+        for note in info["Notes"]
+            lines.Push("  " note)
+    }
+
+    if info.Has("Candidates") && IsObject(info["Candidates"]) {
+        lines.Push("-- Candidates --")
+        idx := 0
+        for cand in info["Candidates"] {
+            idx += 1
+            line := Format("  [{}] Kind={} Label={} Element={} Refined={} Used={}"
+                , idx
+                , cand.Has("Kind") ? cand["Kind"] : ""
+                , cand.Has("Label") ? cand["Label"] : ""
+                , cand.Has("ElementFound") ? (cand["ElementFound"] ? "Yes" : "No") : "Unknown"
+                , cand.Has("Refined") ? (cand["Refined"] ? "Yes" : "No") : "No"
+                , cand.Has("Used") ? (cand["Used"] ? "Yes" : "No") : "No")
+            lines.Push(line)
+            if cand.Has("Point")
+                lines.Push(Format("    Point=({}, {})", cand["Point"]["x"], cand["Point"]["y"]))
+            if cand.Has("Handle")
+                lines.Push(Format("    Handle={}", Format("0x{1:X}", cand["Handle"])))
+            if cand.Has("Details") {
+                det := cand["Details"]
+                lines.Push(Format("    AutoId='{}' Class='{}' Source={}"
+                    , det.Has("Auto") ? det["Auto"] : ""
+                    , det.Has("Class") ? det["Class"] : ""
+                    , det.Has("Source") ? det["Source"] : ""))
+                if det.Has("Name") || det.Has("LocalizedControlType") || det.Has("FrameworkId")
+                    lines.Push(Format("    Name='{}' Localized='{}' Framework='{}'"
+                        , det.Has("Name") ? det["Name"] : ""
+                        , det.Has("LocalizedControlType") ? det["LocalizedControlType"] : ""
+                        , det.Has("FrameworkId") ? det["FrameworkId"] : ""))
+                if det.Has("ControlType")
+                    lines.Push(Format("    ControlType={} ({})"
+                        , det.Has("ControlTypeId") ? det["ControlTypeId"] : ""
+                        , det["ControlType"]))
+                if det.Has("Rect") && IsObject(det["Rect"]) {
+                    rect := det["Rect"]
+                    lines.Push(Format("    Rect=({}, {}, {}, {})", rect["x"], rect["y"], rect["w"], rect["h"]))
+                }
+            }
+            if cand.Has("Error")
+                lines.Push("    Error=" cand["Error"])
+        }
+    }
+
+    lines.Push("")
+    FileAppend(JoinLines(lines) "`n", path, "UTF-8")
+    MsgBox "UIA debug written to: " path
+}
+
+GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
+    info := Map()
+    notes := []
+    debugCandidates := collectDebug ? [] : ""
+
+    uia := GetUIAutomation()
+    if !uia {
+        if showMessages
+            MsgBox "UI Automation interface not available on this system."
+        return 0
+    }
+
+    CoordMode("Mouse", "Screen")
     MouseGetPos(&logicalX, &logicalY, &winHwnd, &ctrlInfo)
-    ; DPI virtualization can skew logical mouse coordinates on secondary
-    ; displays. Capture the physical cursor when available so we can try both
-    ; coordinate spaces for hit-testing.
     physX := logicalX
     physY := logicalY
     hasPhysical := GetPhysicalCursorPos(&physX, &physY)
     mx := hasPhysical ? physX : logicalX
     my := hasPhysical ? physY : logicalY
+
     winHwnd := NormalizeHwnd(winHwnd)
     if !winHwnd {
-        MsgBox "Could not determine the hovered control."
-        return
+        if showMessages
+            MsgBox "Could not determine the hovered control."
+        return 0
     }
 
     ctrlHwnd := NormalizeHwnd(ctrlInfo, winHwnd)
@@ -149,22 +263,27 @@ CaptureUnderCursor(*) {
             ctrlHwnd := 0
     }
     if ctrlHwnd {
-        static GA_ROOT := 2 ; GetAncestor(..., GA_ROOT)
+        static GA_ROOT := 2
         root := DllCall("GetAncestor", "ptr", ctrlHwnd, "uint", GA_ROOT, "ptr")
-        if root != winHwnd
+        if root != winHwnd {
+            if collectDebug
+                notes.Push("Control hwnd rejected because root mismatch")
             ctrlHwnd := 0
+        }
     }
 
     winClass := ""
+    winTitle := ""
     try winClass := WinGetClass("ahk_id " winHwnd)
+    try winTitle := WinGetTitle("ahk_id " winHwnd)
 
     candidates := []
-    candidates.Push(Map("Kind", "Point", "X", logicalX, "Y", logicalY))
+    candidates.Push(Map("Kind", "Point", "X", logicalX, "Y", logicalY, "Label", "Logical point"))
     if hasPhysical && (physX != logicalX || physY != logicalY)
-        candidates.Push(Map("Kind", "Point", "X", physX, "Y", physY))
+        candidates.Push(Map("Kind", "Point", "X", physX, "Y", physY, "Label", "Physical point"))
     if ctrlHwnd
-        candidates.Push(Map("Kind", "Handle", "Value", ctrlHwnd))
-    candidates.Push(Map("Kind", "Handle", "Value", winHwnd))
+        candidates.Push(Map("Kind", "Handle", "Value", ctrlHwnd, "Label", "Control handle"))
+    candidates.Push(Map("Kind", "Handle", "Value", winHwnd, "Label", "Window handle"))
 
     automationId := ""
     className := ""
@@ -172,29 +291,67 @@ CaptureUnderCursor(*) {
     fallbackAuto := ""
     fallbackClass := ""
     preferredClass := ""
+    fallbackAutoDetails := 0
+    fallbackClassDetails := 0
+    preferredClassDetails := 0
+    selectedDetails := 0
+    selectedSource := ""
+    selectedCandidate := ""
+    chosenIndex := 0
 
     for candidate in candidates {
         element := 0
         pointX := candidate.Has("X") ? candidate["X"] : mx
         pointY := candidate.Has("Y") ? candidate["Y"] : my
+
+        candDebug := Map()
+        if collectDebug {
+            candDebug["Kind"] := candidate["Kind"]
+            if candidate.Has("Label")
+                candDebug["Label"] := candidate["Label"]
+            if candidate["Kind"] = "Point"
+                candDebug["Point"] := Map("x", pointX, "y", pointY)
+            else if candidate["Kind"] = "Handle"
+                candDebug["Handle"] := candidate["Value"]
+        }
+
         switch candidate["Kind"] {
             case "Handle":
                 element := UIAElementFromHandle(uia, candidate["Value"])
             case "Point":
                 element := UIAElementFromPoint(uia, pointX, pointY)
         }
-        if !element
+
+        if collectDebug
+            candDebug["ElementFound"] := element ? true : false
+
+        if !element {
+            if collectDebug {
+                candDebug["Error"] := "No element"
+                debugCandidates.Push(candDebug)
+            }
             continue
+        }
 
         refined := UIARefineElementAtPoint(uia, element, pointX, pointY)
         if refined && refined != element {
+            if collectDebug
+                candDebug["Refined"] := true
             UIARelease(element)
             element := refined
+        } else if collectDebug {
+            candDebug["Refined"] := false
         }
 
         details := UIACollectElementDetails(uia, element, pointX, pointY)
         candAuto := details.Has("Auto") ? details["Auto"] : ""
         candClass := details.Has("Class") ? details["Class"] : ""
+
+        if collectDebug {
+            candDebug["Details"] := details
+            debugCandidates.Push(candDebug)
+        }
+
         UIARelease(element)
 
         if candClass != "" {
@@ -203,61 +360,126 @@ CaptureUnderCursor(*) {
             else if uiaClass = ""
                 uiaClass := candClass
         }
-        if fallbackClass = "" && candClass != ""
+        if fallbackClass = "" && candClass != "" {
             fallbackClass := candClass
-        if fallbackAuto = "" && candAuto != ""
+            fallbackClassDetails := details
+        }
+        if fallbackAuto = "" && candAuto != "" {
             fallbackAuto := candAuto
+            fallbackAutoDetails := details
+        }
 
         if candClass != "" && candClass != "#32769" && candClass != winClass {
             if candAuto != "" {
                 automationId := candAuto
                 className := candClass
+                selectedDetails := details
+                selectedSource := details.Has("Source") ? details["Source"] : "Element"
+                selectedCandidate := candidate.Has("Label") ? candidate["Label"] : candidate["Kind"]
+                chosenIndex := collectDebug ? debugCandidates.Length : 0
                 break
             }
-            if preferredClass = ""
+            if preferredClass = "" {
                 preferredClass := candClass
+                preferredClassDetails := details
+            }
         }
 
-        if automationId = "" && candAuto != ""
+        if automationId = "" && candAuto != "" {
             automationId := candAuto
-        if className = "" && candClass != ""
+            if !selectedDetails
+                selectedDetails := details
+            if selectedSource = ""
+                selectedSource := details.Has("Source") ? details["Source"] : "Element"
+            if selectedCandidate = ""
+                selectedCandidate := candidate.Has("Label") ? candidate["Label"] : candidate["Kind"]
+            if collectDebug
+                chosenIndex := debugCandidates.Length
+        }
+
+        if className = "" && candClass != "" {
             className := candClass
+            if !selectedDetails
+                selectedDetails := details
+            if selectedSource = ""
+                selectedSource := details.Has("Source") ? details["Source"] : "Element"
+            if selectedCandidate = ""
+                selectedCandidate := candidate.Has("Label") ? candidate["Label"] : candidate["Kind"]
+            if collectDebug
+                chosenIndex := debugCandidates.Length
+        }
     }
 
-    if className = "" && preferredClass != ""
+    if className = "" && preferredClass != "" {
         className := preferredClass
-    if className = "" && fallbackClass != ""
+        if !selectedDetails
+            selectedDetails := preferredClassDetails
+        if selectedSource = ""
+            selectedSource := preferredClassDetails && preferredClassDetails.Has("Source") ? preferredClassDetails["Source"] : ""
+    }
+    if className = "" && fallbackClass != "" {
         className := fallbackClass
-    if automationId = "" && fallbackAuto != ""
+        if !selectedDetails
+            selectedDetails := fallbackClassDetails
+        if selectedSource = ""
+            selectedSource := fallbackClassDetails && fallbackClassDetails.Has("Source") ? fallbackClassDetails["Source"] : ""
+    }
+    if automationId = "" && fallbackAuto != "" {
         automationId := fallbackAuto
+        if !selectedDetails
+            selectedDetails := fallbackAutoDetails
+        if selectedSource = ""
+            selectedSource := fallbackAutoDetails && fallbackAutoDetails.Has("Source") ? fallbackAutoDetails["Source"] : ""
+    }
 
     if automationId = ""
         automationId := "<none>"
+    nativeUsed := false
     if className = "" || className = "#32769" {
         nativeClass := GetWindowClassName(ctrlHwnd ? ctrlHwnd : winHwnd)
-        if nativeClass != ""
+        if nativeClass != "" {
             className := nativeClass
+            nativeUsed := true
+            if selectedSource = ""
+                selectedSource := "Native"
+        }
     }
-    if (className = "" || className = winClass) && (uiaClass != "")
+    if (className = "" || className = winClass) && (uiaClass != "") {
         className := uiaClass
+        if selectedSource = ""
+            selectedSource := "FallbackUIA"
+    }
     if className = ""
         className := "<none>"
 
-    dateStamp := FormatTime(, "yyyy-MM-dd")
-    path := A_ScriptDir "\" dateStamp "-cloutput.txt"
-    timestamp := FormatTime(, "HH:mm:ss")
+    if collectDebug && chosenIndex {
+        if chosenIndex <= debugCandidates.Length
+            debugCandidates[chosenIndex]["Used"] := true
+    }
 
-    line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tWinHWND: {5}`tCtrlHWND: {6}`tPos: ({7}, {8})",
-        timestamp,
-        automationId,
-        className,
-        winClass,
-        Format("0x{1:X}", winHwnd),
-        ctrlHwnd ? Format("0x{1:X}", ctrlHwnd) : "<none>",
-        mx,
-        my)
-    FileAppend(line "`n", path, "UTF-8")
-    MsgBox "Captured AutomationId: " automationId "`nClassName: " className "`nLogged to " path
+    if nativeUsed
+        notes.Push("Used native class fallback")
+    if selectedSource = ""
+        selectedSource := nativeUsed ? "Native" : "Unknown"
+
+    info["AutomationId"] := automationId
+    info["ClassName"] := className
+    info["WinClass"] := winClass
+    info["WinTitle"] := winTitle
+    info["WinHWND"] := winHwnd
+    info["CtrlHWND"] := ctrlHwnd
+    info["LogicalX"] := logicalX
+    info["LogicalY"] := logicalY
+    info["PhysicalX"] := mx
+    info["PhysicalY"] := my
+    info["UIAClass"] := uiaClass
+    info["SelectedSource"] := selectedSource
+    info["SelectedCandidate"] := selectedCandidate
+    info["Details"] := IsObject(selectedDetails) ? selectedDetails : 0
+    info["Notes"] := notes
+    if collectDebug
+        info["Candidates"] := debugCandidates
+    return info
 }
 
 NormalizeHwnd(value, baseWin := 0) {
@@ -373,25 +595,25 @@ UIAHitTestElement(uia, elementPtr, x, y) {
 }
 
 UIACollectElementDetails(uia, elementPtr, x, y) {
-    info := Map("Auto", "", "Class", "")
-    if !elementPtr
+    info := UIAGetDirectElementInfo(elementPtr)
+    if !IsObject(info)
+        info := Map("Auto", "", "Class", "", "Source", "None")
+
+    if (info["Auto"] != "" && info["Class"] != "" && info["Class"] != "#32769")
         return info
 
-    auto := UIAGetProperty(elementPtr, 30011)
-    class := UIAGetProperty(elementPtr, 30012)
-    info["Auto"] := auto
-    info["Class"] := class
-
-    if (auto != "" && class != "")
-        return info
-
-    if auto = "" || class = "" || class = "#32769" {
-        deeper := UIAFindDescendantWithAutomation(uia, elementPtr, x, y)
-        if IsObject(deeper) {
-            if deeper.Has("Auto") && deeper["Auto"] != ""
-                info["Auto"] := deeper["Auto"]
-            if deeper.Has("Class") && deeper["Class"] != ""
-                info["Class"] := deeper["Class"]
+    deeper := UIAFindDescendantWithAutomation(uia, elementPtr, x, y)
+    if IsObject(deeper) {
+        for key, value in deeper {
+            if key = "Source"
+                info["Source"] := value
+            else if key = "Rect" {
+                if (!info.Has("Rect") || !IsObject(info["Rect"])) && IsObject(value)
+                    info["Rect"] := value
+            } else if value != "" {
+                if !info.Has(key) || info[key] = "" || info[key] = "#32769"
+                    info[key] := value
+            }
         }
     }
 
@@ -420,17 +642,20 @@ UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 128) {
         element := queue.RemoveAt(1)
         processed += 1
 
-        auto := UIAGetProperty(element, 30011)
-        class := UIAGetProperty(element, 30012)
-        rect := UIAGetBoundingRect(element)
-        matches := true
-        if rect
-            matches := UIAPointInRect(rect, x, y)
+        info := UIAGetDirectElementInfo(element)
+        if IsObject(info) {
+            rect := info.Has("Rect") ? info["Rect"] : ""
+            matches := true
+            if IsObject(rect)
+                matches := UIAPointInRect(rect, x, y)
 
-        if matches && (auto != "" || (class != "" && class != "#32769")) {
-            result := Map("Auto", auto, "Class", class)
-            UIARelease(element)
-            break
+            hasData := (info["Auto"] != "") || (info["Class"] != "" && info["Class"] != "#32769")
+            if matches && hasData {
+                info["Source"] := "Descendant"
+                result := info
+                UIARelease(element)
+                break
+            }
         }
 
         if processed < limit {
@@ -458,6 +683,93 @@ UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 128) {
     }
 
     return result
+}
+
+UIAGetDirectElementInfo(elementPtr) {
+    if !elementPtr
+        return 0
+
+    info := Map()
+    auto := UIAGetProperty(elementPtr, 30011)
+    class := UIAGetProperty(elementPtr, 30012)
+    name := UIAGetProperty(elementPtr, 30005)
+    controlTypeRaw := UIAGetProperty(elementPtr, 30003)
+    localizedType := UIAGetProperty(elementPtr, 30004)
+    frameworkId := UIAGetProperty(elementPtr, 30024)
+
+    controlTypeId := ""
+    if controlTypeRaw != "" && RegExMatch(controlTypeRaw, "^-?\d+$")
+        controlTypeId := controlTypeRaw + 0
+    else
+        controlTypeId := controlTypeRaw
+
+    info["Auto"] := auto
+    info["Class"] := class
+    info["Name"] := name
+    info["ControlTypeId"] := controlTypeId
+    info["ControlType"] := UIAControlTypeToName(controlTypeId)
+    info["LocalizedControlType"] := localizedType
+    info["FrameworkId"] := frameworkId
+    info["Rect"] := UIAGetBoundingRect(elementPtr)
+    info["Source"] := "Element"
+    return info
+}
+
+UIAControlTypeToName(id) {
+    static map := ""
+    if map = "" {
+        map := Map(
+            50000, "Button",
+            50001, "Calendar",
+            50002, "CheckBox",
+            50003, "ComboBox",
+            50004, "Edit",
+            50005, "Hyperlink",
+            50006, "Image",
+            50007, "ListItem",
+            50008, "List",
+            50009, "Menu",
+            50010, "MenuBar",
+            50011, "MenuItem",
+            50012, "ProgressBar",
+            50013, "RadioButton",
+            50014, "ScrollBar",
+            50015, "Slider",
+            50016, "Spinner",
+            50017, "StatusBar",
+            50018, "Tab",
+            50019, "TabItem",
+            50020, "Text",
+            50021, "ToolBar",
+            50022, "ToolTip",
+            50023, "Tree",
+            50024, "TreeItem",
+            50025, "Custom",
+            50026, "Group",
+            50027, "Thumb",
+            50028, "DataGrid",
+            50029, "DataItem",
+            50030, "Document",
+            50031, "SplitButton",
+            50032, "Window",
+            50033, "Pane",
+            50034, "Header",
+            50035, "HeaderItem",
+            50036, "Table",
+            50037, "TitleBar",
+            50038, "Separator",
+            50039, "SemanticZoom",
+            50040, "AppBar"
+        )
+    }
+
+    if id is Integer
+        return map.Has(id) ? map[id] : Format("ControlType({})", id)
+    if id != "" && RegExMatch(id, "^-?\d+$") {
+        num := id + 0
+        return map.Has(num) ? map[num] : Format("ControlType({})", num)
+    }
+    return id
 }
 
 UIAFindChildren(uia, elementPtr) {
@@ -653,6 +965,7 @@ JoinLines(arr) {
     return out
 }
 
+^!a::CaptureAutomationDebug()
 ^!d::CaptureUnderCursor()
 
 Main()
