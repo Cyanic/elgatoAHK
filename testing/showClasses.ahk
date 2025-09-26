@@ -309,8 +309,13 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
     selectedSource := ""
     selectedCandidate := ""
     chosenIndex := 0
+    bestDetails := 0
+    bestScore := -1
+    bestCandidateLabel := ""
 
     hitContext := Map("WinLeft", winLeft, "WinTop", winTop)
+
+    bestDebugIndex := 0
 
     for candidate in candidates {
         element := 0
@@ -357,15 +362,29 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
         }
 
         details := UIACollectElementDetails(uia, element, pointX, pointY, hitContext)
+        if !details.Has("Source")
+            details["Source"] := candidate.Has("Label") ? candidate["Label"] : candidate["Kind"]
         candAuto := details.Has("Auto") ? details["Auto"] : ""
         candClass := details.Has("Class") ? details["Class"] : ""
+        score := UIACandidateScore(details)
 
         if collectDebug {
             candDebug["Details"] := details
+            candDebug["Score"] := score
             debugCandidates.Push(candDebug)
         }
 
         UIARelease(element)
+
+        if score > bestScore {
+            bestScore := score
+            bestDetails := details
+            bestCandidateLabel := candidate.Has("Label") ? candidate["Label"] : candidate["Kind"]
+            selectedCandidate := bestCandidateLabel
+            selectedSource := details.Has("Source") ? details["Source"] : ""
+            if collectDebug
+                bestDebugIndex := debugCandidates.Length
+        }
 
         if candClass != "" {
             if candClass != winClass
@@ -383,44 +402,23 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
         }
 
         if candClass != "" && candClass != "#32769" && candClass != winClass {
-            if candAuto != "" {
-                automationId := candAuto
-                className := candClass
-                selectedDetails := details
-                selectedSource := details.Has("Source") ? details["Source"] : "Element"
-                selectedCandidate := candidate.Has("Label") ? candidate["Label"] : candidate["Kind"]
-                chosenIndex := collectDebug ? debugCandidates.Length : 0
-                break
-            }
             if preferredClass = "" {
                 preferredClass := candClass
                 preferredClassDetails := details
             }
         }
+    }
 
-        if automationId = "" && candAuto != "" {
-            automationId := candAuto
-            if !selectedDetails
-                selectedDetails := details
-            if selectedSource = ""
-                selectedSource := details.Has("Source") ? details["Source"] : "Element"
-            if selectedCandidate = ""
-                selectedCandidate := candidate.Has("Label") ? candidate["Label"] : candidate["Kind"]
-            if collectDebug
-                chosenIndex := debugCandidates.Length
-        }
-
-        if className = "" && candClass != "" {
-            className := candClass
-            if !selectedDetails
-                selectedDetails := details
-            if selectedSource = ""
-                selectedSource := details.Has("Source") ? details["Source"] : "Element"
-            if selectedCandidate = ""
-                selectedCandidate := candidate.Has("Label") ? candidate["Label"] : candidate["Kind"]
-            if collectDebug
-                chosenIndex := debugCandidates.Length
-        }
+    if IsObject(bestDetails) {
+        if bestDetails.Has("Auto") && bestDetails["Auto"] != ""
+            automationId := bestDetails["Auto"]
+        if bestDetails.Has("Class") && bestDetails["Class"] != ""
+            className := bestDetails["Class"]
+        selectedDetails := bestDetails
+        if selectedSource = ""
+            selectedSource := bestDetails.Has("Source") ? bestDetails["Source"] : ""
+        if bestCandidateLabel != ""
+            selectedCandidate := bestCandidateLabel
     }
 
     if className = "" && preferredClass != "" {
@@ -465,8 +463,9 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
     if className = ""
         className := "<none>"
 
-    if collectDebug && chosenIndex {
-        if chosenIndex <= debugCandidates.Length
+    if collectDebug {
+        chosenIndex := bestDebugIndex
+        if chosenIndex && chosenIndex <= debugCandidates.Length
             debugCandidates[chosenIndex]["Used"] := true
     }
 
