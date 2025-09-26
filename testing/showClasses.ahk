@@ -470,8 +470,26 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
             selectedCandidate := bestCandidateLabel
     }
 
-    if collectDebug && IsObject(bestCandidate) {
-        bestChildSnapshots := UIASnapshotDescendants(uia, bestCandidate, hitContext, 2)
+    if IsObject(bestCandidate) {
+        pointerX := bestCandidate.Has("PointX") ? bestCandidate["PointX"] : mx
+        pointerY := bestCandidate.Has("PointY") ? bestCandidate["PointY"] : my
+        descendants := UIASnapshotDescendants(uia, bestCandidate, hitContext, 2, pointerX, pointerY)
+        if collectDebug
+            bestChildSnapshots := descendants
+        if descendants.Length {
+            bestDescendant := UIASelectBestSnapshot(descendants, pointerX, pointerY, hitContext, bestScore)
+            if IsObject(bestDescendant) {
+                if bestDescendant.Has("Auto") && bestDescendant["Auto"] != ""
+                    automationId := bestDescendant["Auto"]
+                if bestDescendant.Has("Class") && bestDescendant["Class"] != ""
+                    className := bestDescendant["Class"]
+                selectedDetails := bestDescendant
+                if selectedSource = ""
+                    selectedSource := bestDescendant.Has("Source") ? bestDescendant["Source"] : "Descendant"
+                if bestCandidateLabel != ""
+                    selectedCandidate := bestCandidateLabel " -> descendant"
+            }
+        }
     }
 
     if className = "" && preferredClass != "" {
@@ -986,7 +1004,8 @@ UIAPointDistanceToRect(rect, x, y, ctx := 0) {
     if !IsObject(rect)
         return 100000
 
-    points := [[x, y]]
+    points := []
+    points.Push([x, y])
     if IsObject(ctx) {
         localX := x - (ctx.Has("WinLeft") ? ctx["WinLeft"] : 0)
         localY := y - (ctx.Has("WinTop") ? ctx["WinTop"] : 0)
@@ -1034,22 +1053,42 @@ UIANormalizeRect(rect, x, y, ctx := 0) {
         rawX := rect["x"]
         rawY := rect["y"]
 
-        isScreen := (rawX >= winLeft - tol && rawX <= winRight + tol && rawY >= winTop - tol && rawY <= winBottom + tol)
-        isLocal := (rawX >= -tol && rawX <= winWidth + tol && rawY >= -tol && rawY <= winHeight + tol)
+        screenRect := rect
+        localRect := Map("x", rect["x"] - winLeft, "y", rect["y"] - winTop, "w", rect["w"], "h", rect["h"])
+        adjustedRect := Map("x", rect["x"] + winLeft, "y", rect["y"] + winTop, "w", rect["w"], "h", rect["h"])
 
-        if isScreen && !isLocal {
+        pointLocalX := x - winLeft
+        pointLocalY := y - winTop
+
+        containsScreen := UIAPointInRect(rect, x, y)
+        containsLocal := UIAPointInRect(localRect, pointLocalX, pointLocalY)
+        containsAdjusted := UIAPointInRect(adjustedRect, x, y)
+
+        if containsScreen {
             result["Screen"] := rect
-            result["Local"] := Map("x", rect["x"] - winLeft, "y", rect["y"] - winTop, "w", rect["w"], "h", rect["h"])
+            result["Local"] := localRect
             result["RectSource"] := "Screen"
-        } else if isLocal && !isScreen {
-            screenRect := Map("x", rect["x"] + winLeft, "y", rect["y"] + winTop, "w", rect["w"], "h", rect["h"])
-            result["Screen"] := screenRect
-            result["Local"] := rect
+        } else if containsAdjusted {
+            result["Screen"] := adjustedRect
+            result["Local"] := Map("x", adjustedRect["x"] - winLeft, "y", adjustedRect["y"] - winTop, "w", adjustedRect["w"], "h", adjustedRect["h"])
+            result["RectSource"] := "Adjusted"
+        } else if containsLocal {
+            result["Screen"] := Map("x", localRect["x"] + winLeft, "y", localRect["y"] + winTop, "w", localRect["w"], "h", localRect["h"])
+            result["Local"] := localRect
             result["RectSource"] := "Local"
         } else {
-            result["Screen"] := rect
-            result["Local"] := Map("x", rect["x"] - winLeft, "y", rect["y"] - winTop, "w", rect["w"], "h", rect["h"])
-            result["RectSource"] := isScreen ? "Screen" : "Raw"
+            ; Choose whichever is closer to the pointer
+            distScreen := UIAPointDistanceToRect(rect, x, y)
+            distAdjusted := UIAPointDistanceToRect(adjustedRect, x, y)
+            if distAdjusted < distScreen {
+                result["Screen"] := adjustedRect
+                result["Local"] := Map("x", adjustedRect["x"] - winLeft, "y", adjustedRect["y"] - winTop, "w", adjustedRect["w"], "h", adjustedRect["h"])
+                result["RectSource"] := "Adjusted"
+            } else {
+                result["Screen"] := rect
+                result["Local"] := localRect
+                result["RectSource"] := "Screen"
+            }
         }
     } else {
         result["RectSource"] := "Raw"
@@ -1065,6 +1104,19 @@ UIACloneMap(source) {
     for key, value in source
         clone[key] := value
     return clone
+}
+
+UIASelectBestSnapshot(snapshots, x, y, ctx, baselineScore := -1) {
+    best := 0
+    bestScore := baselineScore
+    for snapshot in snapshots {
+        score := UIACandidateScore(snapshot, x, y, ctx)
+        if score > bestScore {
+            bestScore := score
+            best := snapshot
+        }
+    }
+    return best
 }
 
 UIAResolveCandidateElement(uia, candidate, ctx) {
@@ -1083,19 +1135,19 @@ UIAResolveCandidateElement(uia, candidate, ctx) {
     return 0
 }
 
-UIASnapshotDescendants(uia, candidate, ctx, depth := 2) {
+UIASnapshotDescendants(uia, candidate, ctx, depth := 2, pointerX := 0, pointerY := 0) {
     if depth <= 0
         return []
     element := UIAResolveCandidateElement(uia, candidate, ctx)
     if !element
         return []
     snapshots := []
-    UIAGatherDescendantInfo(uia, element, ctx, depth, 1, snapshots)
+    UIAGatherDescendantInfo(uia, element, ctx, depth, 1, snapshots, pointerX, pointerY)
     UIARelease(element)
     return snapshots
 }
 
-UIAGatherDescendantInfo(uia, elementPtr, ctx, remaining, level, outArr) {
+UIAGatherDescendantInfo(uia, elementPtr, ctx, remaining, level, outArr, pointerX, pointerY) {
     if remaining <= 0
         return
     children := UIAFindChildren(uia, elementPtr)
@@ -1109,7 +1161,7 @@ UIAGatherDescendantInfo(uia, elementPtr, ctx, remaining, level, outArr) {
         info := UIAGetDirectElementInfo(child)
         if IsObject(info) {
             if info.Has("Rect") && IsObject(info["Rect"]) {
-                normalized := UIANormalizeRect(info["Rect"], 0, 0, ctx)
+                normalized := UIANormalizeRect(info["Rect"], pointerX, pointerY, ctx)
                 if IsObject(normalized) {
                     if normalized.Has("Screen")
                         info["Rect"] := normalized["Screen"]
@@ -1120,10 +1172,11 @@ UIAGatherDescendantInfo(uia, elementPtr, ctx, remaining, level, outArr) {
                 }
             }
             info["Level"] := level
+            info["Source"] := "Descendant"
             outArr.Push(info)
         }
         if remaining > 1
-            UIAGatherDescendantInfo(uia, child, ctx, remaining - 1, level + 1, outArr)
+            UIAGatherDescendantInfo(uia, child, ctx, remaining - 1, level + 1, outArr, pointerX, pointerY)
         UIARelease(child)
     }
     UIARelease(children)
