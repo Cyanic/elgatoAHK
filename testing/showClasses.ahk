@@ -134,8 +134,9 @@ CaptureUnderCursor(*) {
     if IsObject(detail) && detail.Has("Rect") && IsObject(detail["Rect"]) {
         rect := detail["Rect"]
         rectText := Format("`tRect: ({},{},{},{})", rect["x"], rect["y"], rect["w"], rect["h"])
-        if detail.Has("RectSource")
-            rectSource := " (`" detail["RectSource"] " coords)"
+        if detail.Has("RectSource"){
+            rectSource := " (" detail["RectSource"] " coords)"
+        }
     }
 
     line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tWinHWND: {5}`tCtrlHWND: {6}`tPos: ({7}, {8}){9}{10}",
@@ -984,18 +985,8 @@ UIANormalizeRect(rect, x, y, ctx := 0) {
     if IsObject(ctx) {
         winLeft := ctx.Has("WinLeft") ? ctx["WinLeft"] : 0
         winTop := ctx.Has("WinTop") ? ctx["WinTop"] : 0
-        screenRect := rect
-
-        if !UIAPointInRect(rect, x, y) {
-            screenRect := Map("x", rect["x"] + winLeft, "y", rect["y"] + winTop, "w", rect["w"], "h", rect["h"])
-            result["RectSource"] := "Adjusted"
-        } else {
-            result["RectSource"] := "Screen"
-        }
-
-        localRect := Map("x", screenRect["x"] - winLeft, "y", screenRect["y"] - winTop, "w", screenRect["w"], "h", screenRect["h"])
-        result["Screen"] := screenRect
-        result["Local"] := localRect
+        result["RectSource"] := "Screen"
+        result["Local"] := Map("x", rect["x"] - winLeft, "y", rect["y"] - winTop, "w", rect["w"], "h", rect["h"])
     }
 
     return result
