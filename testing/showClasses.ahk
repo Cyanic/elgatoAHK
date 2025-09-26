@@ -244,6 +244,33 @@ CaptureAutomationDebug(*) {
         }
     }
 
+    if info.Has("ChildSnapshots") && IsObject(info["ChildSnapshots"]) && info["ChildSnapshots"].Length {
+        lines.Push("-- Descendants (up to 2 levels) --")
+        for child in info["ChildSnapshots"] {
+            level := child.Has("Level") ? child["Level"] : "?"
+            autoId := child.Has("Auto") ? child["Auto"] : ""
+            class := child.Has("Class") ? child["Class"] : ""
+            name := child.Has("Name") ? child["Name"] : ""
+            lines.Push(Format("  L{} AutoId='{}' Class='{}' Name='{}'"
+                , level
+                , autoId
+                , class
+                , name))
+
+            if child.Has("Rect") && IsObject(child["Rect"]) {
+                rect := child["Rect"]
+                rectSource := child.Has("RectSource") ? child["RectSource"] : ""
+                lines.Push(Format("    Rect=({}, {}, {}, {}){}"
+                    , rect["x"], rect["y"], rect["w"], rect["h"], rectSource ? " [" rectSource "]" : ""))
+            }
+            if child.Has("ControlType") || child.Has("LocalizedControlType") {
+                lines.Push(Format("    ControlType={} ({})"
+                    , child.Has("ControlTypeId") ? child["ControlTypeId"] : ""
+                    , child.Has("LocalizedControlType") ? child["LocalizedControlType"] : child.Has("ControlType") ? child["ControlType"] : ""))
+            }
+        }
+    }
+
     lines.Push("")
     FileAppend(JoinLines(lines) "`n", path, "UTF-8")
     MsgBox "UIA debug written to: " path
@@ -327,8 +354,10 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
     bestDetails := 0
     bestScore := -1
     bestCandidateLabel := ""
+    bestCandidate := 0
+    bestChildSnapshots := []
 
-    hitContext := Map("WinLeft", winLeft, "WinTop", winTop)
+    hitContext := Map("WinLeft", winLeft, "WinTop", winTop, "WinWidth", winWidth, "WinHeight", winHeight)
 
     bestDebugIndex := 0
 
@@ -397,6 +426,11 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
             bestCandidateLabel := candidate.Has("Label") ? candidate["Label"] : candidate["Kind"]
             selectedCandidate := bestCandidateLabel
             selectedSource := details.Has("Source") ? details["Source"] : ""
+            bestCandidate := UIACloneMap(candidate)
+            if IsObject(bestCandidate) {
+                bestCandidate["PointX"] := pointX
+                bestCandidate["PointY"] := pointY
+            }
             if collectDebug
                 bestDebugIndex := debugCandidates.Length
         }
@@ -434,6 +468,10 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
             selectedSource := bestDetails.Has("Source") ? bestDetails["Source"] : ""
         if bestCandidateLabel != ""
             selectedCandidate := bestCandidateLabel
+    }
+
+    if collectDebug && IsObject(bestCandidate) {
+        bestChildSnapshots := UIASnapshotDescendants(uia, bestCandidate, hitContext, 2)
     }
 
     if className = "" && preferredClass != "" {
@@ -508,6 +546,8 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
     info["SelectedCandidate"] := selectedCandidate
     info["Details"] := IsObject(selectedDetails) ? selectedDetails : 0
     info["Notes"] := notes
+    if collectDebug
+        info["ChildSnapshots"] := bestChildSnapshots
     if collectDebug
         info["Candidates"] := debugCandidates
     return info
@@ -980,16 +1020,113 @@ UIANormalizeRect(rect, x, y, ctx := 0) {
 
     result := Map()
     result["Screen"] := rect
-    result["RectSource"] := "Raw"
+    result["RectSource"] := "Unknown"
 
     if IsObject(ctx) {
         winLeft := ctx.Has("WinLeft") ? ctx["WinLeft"] : 0
         winTop := ctx.Has("WinTop") ? ctx["WinTop"] : 0
-        result["RectSource"] := "Screen"
-        result["Local"] := Map("x", rect["x"] - winLeft, "y", rect["y"] - winTop, "w", rect["w"], "h", rect["h"])
+        winWidth := ctx.Has("WinWidth") ? ctx["WinWidth"] : 0
+        winHeight := ctx.Has("WinHeight") ? ctx["WinHeight"] : 0
+        winRight := winLeft + winWidth
+        winBottom := winTop + winHeight
+        tol := 5
+
+        rawX := rect["x"]
+        rawY := rect["y"]
+
+        isScreen := (rawX >= winLeft - tol && rawX <= winRight + tol && rawY >= winTop - tol && rawY <= winBottom + tol)
+        isLocal := (rawX >= -tol && rawX <= winWidth + tol && rawY >= -tol && rawY <= winHeight + tol)
+
+        if isScreen && !isLocal {
+            result["Screen"] := rect
+            result["Local"] := Map("x", rect["x"] - winLeft, "y", rect["y"] - winTop, "w", rect["w"], "h", rect["h"])
+            result["RectSource"] := "Screen"
+        } else if isLocal && !isScreen {
+            screenRect := Map("x", rect["x"] + winLeft, "y", rect["y"] + winTop, "w", rect["w"], "h", rect["h"])
+            result["Screen"] := screenRect
+            result["Local"] := rect
+            result["RectSource"] := "Local"
+        } else {
+            result["Screen"] := rect
+            result["Local"] := Map("x", rect["x"] - winLeft, "y", rect["y"] - winTop, "w", rect["w"], "h", rect["h"])
+            result["RectSource"] := isScreen ? "Screen" : "Raw"
+        }
+    } else {
+        result["RectSource"] := "Raw"
     }
 
     return result
+}
+
+UIACloneMap(source) {
+    if !IsObject(source)
+        return source
+    clone := Map()
+    for key, value in source
+        clone[key] := value
+    return clone
+}
+
+UIAResolveCandidateElement(uia, candidate, ctx) {
+    if !uia || !IsObject(candidate)
+        return 0
+    kind := candidate.Has("Kind") ? candidate["Kind"] : ""
+    switch kind {
+        case "Handle":
+            value := candidate.Has("Value") ? candidate["Value"] : 0
+            return value ? UIAElementFromHandle(uia, value) : 0
+        case "Point":
+            x := candidate.Has("PointX") ? candidate["PointX"] : (candidate.Has("X") ? candidate["X"] : 0)
+            y := candidate.Has("PointY") ? candidate["PointY"] : (candidate.Has("Y") ? candidate["Y"] : 0)
+            return UIAElementFromPoint(uia, x, y)
+    }
+    return 0
+}
+
+UIASnapshotDescendants(uia, candidate, ctx, depth := 2) {
+    if depth <= 0
+        return []
+    element := UIAResolveCandidateElement(uia, candidate, ctx)
+    if !element
+        return []
+    snapshots := []
+    UIAGatherDescendantInfo(uia, element, ctx, depth, 1, snapshots)
+    UIARelease(element)
+    return snapshots
+}
+
+UIAGatherDescendantInfo(uia, elementPtr, ctx, remaining, level, outArr) {
+    if remaining <= 0
+        return
+    children := UIAFindChildren(uia, elementPtr)
+    if !children
+        return
+    count := UIAElementArrayLength(children)
+    Loop count {
+        child := UIAElementArrayGet(children, A_Index - 1)
+        if !child
+            continue
+        info := UIAGetDirectElementInfo(child)
+        if IsObject(info) {
+            if info.Has("Rect") && IsObject(info["Rect"]) {
+                normalized := UIANormalizeRect(info["Rect"], 0, 0, ctx)
+                if IsObject(normalized) {
+                    if normalized.Has("Screen")
+                        info["Rect"] := normalized["Screen"]
+                    if normalized.Has("Local")
+                        info["RectLocal"] := normalized["Local"]
+                    if normalized.Has("RectSource")
+                        info["RectSource"] := normalized["RectSource"]
+                }
+            }
+            info["Level"] := level
+            outArr.Push(info)
+        }
+        if remaining > 1
+            UIAGatherDescendantInfo(uia, child, ctx, remaining - 1, level + 1, outArr)
+        UIARelease(child)
+    }
+    UIARelease(children)
 }
 
 UIACandidateScore(info, x, y, ctx) {
