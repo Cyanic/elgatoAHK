@@ -155,6 +155,11 @@ CaptureAutomationDebug(*) {
     lines.Push("Timestamp: " timestamp)
     lines.Push(Format("LogicalPos: ({}, {})  PhysicalPos: ({}, {})", info["LogicalX"], info["LogicalY"], info["PhysicalX"], info["PhysicalY"]))
     lines.Push(Format("Window: hwnd={} class={} title={}", Format("0x{1:X}", info["WinHWND"]), info["WinClass"], info.Has("WinTitle") ? info["WinTitle"] : ""))
+    lines.Push(Format("WindowRect: left={} top={} width={} height={}"
+        , info.Has("WinLeft") ? info["WinLeft"] : "?"
+        , info.Has("WinTop") ? info["WinTop"] : "?"
+        , info.Has("WinWidth") ? info["WinWidth"] : "?"
+        , info.Has("WinHeight") ? info["WinHeight"] : "?"))
     lines.Push(Format("ControlHWND: {}", info["CtrlHWND"] ? Format("0x{1:X}", info["CtrlHWND"]) : "<none>"))
     lines.Push(Format("Resolved: AutoId='{}' Class='{}' Source={} Candidate={} UIAClass={} ",
         info["AutomationId"], info["ClassName"], info.Has("SelectedSource") ? info["SelectedSource"] : "",
@@ -277,6 +282,12 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
     try winClass := WinGetClass("ahk_id " winHwnd)
     try winTitle := WinGetTitle("ahk_id " winHwnd)
 
+    winLeft := 0
+    winTop := 0
+    winWidth := 0
+    winHeight := 0
+    try WinGetPos(&winLeft, &winTop, &winWidth, &winHeight, "ahk_id " winHwnd)
+
     candidates := []
     candidates.Push(Map("Kind", "Point", "X", logicalX, "Y", logicalY, "Label", "Logical point"))
     if hasPhysical && (physX != logicalX || physY != logicalY)
@@ -298,6 +309,8 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
     selectedSource := ""
     selectedCandidate := ""
     chosenIndex := 0
+
+    hitContext := Map("WinLeft", winLeft, "WinTop", winTop)
 
     for candidate in candidates {
         element := 0
@@ -333,7 +346,7 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
             continue
         }
 
-        refined := UIARefineElementAtPoint(uia, element, pointX, pointY)
+        refined := UIARefineElementAtPoint(uia, element, pointX, pointY, hitContext)
         if refined && refined != element {
             if collectDebug
                 candDebug["Refined"] := true
@@ -343,7 +356,7 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
             candDebug["Refined"] := false
         }
 
-        details := UIACollectElementDetails(uia, element, pointX, pointY)
+        details := UIACollectElementDetails(uia, element, pointX, pointY, hitContext)
         candAuto := details.Has("Auto") ? details["Auto"] : ""
         candClass := details.Has("Class") ? details["Class"] : ""
 
@@ -468,6 +481,10 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
     info["WinTitle"] := winTitle
     info["WinHWND"] := winHwnd
     info["CtrlHWND"] := ctrlHwnd
+    info["WinLeft"] := winLeft
+    info["WinTop"] := winTop
+    info["WinWidth"] := winWidth
+    info["WinHeight"] := winHeight
     info["LogicalX"] := logicalX
     info["LogicalY"] := logicalY
     info["PhysicalX"] := mx
@@ -553,48 +570,43 @@ UIAElementFromPoint(uia, x, y) {
     return 0
 }
 
-UIARefineElementAtPoint(uia, elementPtr, x, y) {
+UIARefineElementAtPoint(uia, elementPtr, x, y, ctx) {
     if !uia || !elementPtr
         return 0
 
-    refined := UIAHitTestElement(uia, elementPtr, x, y)
+    refined := UIAHitTestElement(uia, elementPtr, x, y, ctx)
     return refined ? refined : elementPtr
 }
 
-UIAHitTestElement(uia, elementPtr, x, y) {
+UIAHitTestElement(uia, elementPtr, x, y, ctx) {
     if !elementPtr
         return 0
 
     rect := UIAGetBoundingRect(elementPtr)
-    if rect && !UIAPointInRect(rect, x, y)
-        return 0
+    matches := !rect || UIAPointMatchesRect(rect, x, y, ctx)
 
     children := UIAFindChildren(uia, elementPtr)
-    if !children
-        return elementPtr
-
-    count := UIAElementArrayLength(children)
-    loop count {
-        child := UIAElementArrayGet(children, A_Index - 1)
-        if !child
-            continue
-        childRect := UIAGetBoundingRect(child)
-        if childRect && UIAPointInRect(childRect, x, y) {
-            deeper := UIAHitTestElement(uia, child, x, y)
+    if children {
+        count := UIAElementArrayLength(children)
+        loop count {
+            child := UIAElementArrayGet(children, A_Index - 1)
+            if !child
+                continue
+            deeper := UIAHitTestElement(uia, child, x, y, ctx)
             if deeper {
                 if deeper != child
                     UIARelease(child)
                 UIARelease(children)
                 return deeper
             }
+            UIARelease(child)
         }
-        UIARelease(child)
+        UIARelease(children)
     }
-    UIARelease(children)
-    return elementPtr
+    return matches ? elementPtr : 0
 }
 
-UIACollectElementDetails(uia, elementPtr, x, y) {
+UIACollectElementDetails(uia, elementPtr, x, y, ctx) {
     info := UIAGetDirectElementInfo(elementPtr)
     if !IsObject(info)
         info := Map("Auto", "", "Class", "", "Source", "None")
@@ -602,7 +614,7 @@ UIACollectElementDetails(uia, elementPtr, x, y) {
     if (info["Auto"] != "" && info["Class"] != "" && info["Class"] != "#32769")
         return info
 
-    deeper := UIAFindDescendantWithAutomation(uia, elementPtr, x, y)
+    deeper := UIAFindDescendantWithAutomation(uia, elementPtr, x, y, 128, ctx)
     if IsObject(deeper) {
         for key, value in deeper {
             if key = "Source"
@@ -620,7 +632,7 @@ UIACollectElementDetails(uia, elementPtr, x, y) {
     return info
 }
 
-UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 128) {
+UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 128, ctx := 0) {
     if !uia || !elementPtr
         return 0
 
@@ -647,7 +659,7 @@ UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 128) {
             rect := info.Has("Rect") ? info["Rect"] : ""
             matches := true
             if IsObject(rect)
-                matches := UIAPointInRect(rect, x, y)
+                matches := UIAPointMatchesRect(rect, x, y, ctx)
 
             hasData := (info["Auto"] != "") || (info["Class"] != "" && info["Class"] != "#32769")
             if matches && hasData {
@@ -871,6 +883,24 @@ UIAPointInRect(rect, x, y) {
     if x > rect["x"] + rect["w"] || y > rect["y"] + rect["h"]
         return false
     return true
+}
+
+UIAPointMatchesRect(rect, x, y, ctx := 0) {
+    if !IsObject(rect)
+        return false
+    if UIAPointInRect(rect, x, y)
+        return true
+    if IsObject(ctx) {
+        localX := x
+        localY := y
+        if ctx.Has("WinLeft")
+            localX := x - ctx["WinLeft"]
+        if ctx.Has("WinTop")
+            localY := y - ctx["WinTop"]
+        if UIAPointInRect(rect, localX, localY)
+            return true
+    }
+    return false
 }
 
 UIAGetProperty(elementPtr, propertyId) {
