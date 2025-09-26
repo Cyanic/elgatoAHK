@@ -473,9 +473,8 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
     if IsObject(bestCandidate) {
         pointerX := bestCandidate.Has("PointX") ? bestCandidate["PointX"] : mx
         pointerY := bestCandidate.Has("PointY") ? bestCandidate["PointY"] : my
-        descendants := UIASnapshotDescendants(uia, bestCandidate, hitContext, 5, pointerX, pointerY)
-        if collectDebug
-            bestChildSnapshots := descendants
+        descendants := UIASnapshotDescendants(uia, bestCandidate, hitContext, 3, pointerX, pointerY)
+        bestChildSnapshots := descendants
         if descendants.Length {
             bestDescendant := UIASelectBestSnapshot(descendants, pointerX, pointerY, hitContext, bestScore)
             if IsObject(bestDescendant) {
@@ -532,8 +531,29 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
         if selectedSource = ""
             selectedSource := "FallbackUIA"
     }
+    if (className = "" || className = "#32769" || className = "<none>") && IsObject(bestChildSnapshots) {
+        for child in bestChildSnapshots {
+            childClass := child.Has("Class") ? child["Class"] : ""
+            if childClass != "" && childClass != "#32769" {
+                className := childClass
+                if child.Has("Auto") && child["Auto"] != ""
+                    automationId := child["Auto"]
+                selectedDetails := child
+                if selectedSource = ""
+                    selectedSource := child.Has("Source") ? child["Source"] : "Descendant"
+                if bestCandidateLabel != ""
+                    selectedCandidate := bestCandidateLabel " -> descendant"
+                break
+            }
+        }
+    }
     if className = ""
         className := "<none>"
+    if className = "#32769"
+        className := "<fallback>"
+
+    if IsObject(selectedDetails)
+        selectedDetails["Class"] := className
 
     if collectDebug {
         chosenIndex := bestDebugIndex
@@ -1125,7 +1145,7 @@ UIAResolveCandidateElement(uia, candidate, ctx) {
     return 0
 }
 
-UIASnapshotDescendants(uia, candidate, ctx, depth := 2, pointerX := 0, pointerY := 0, limit := 256) {
+UIASnapshotDescendants(uia, candidate, ctx, depth := 2, pointerX := 0, pointerY := 0, limit := 128) {
     if depth <= 0 || limit <= 0
         return []
     element := UIAResolveCandidateElement(uia, candidate, ctx)
