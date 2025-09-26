@@ -65,3 +65,26 @@ Resolved: AutoId='<none>' Class='#32769' Source=Element Candidate= UIAClass=#327
     ControlType=50033 (Pane)
     Rect=(-867.0, -618.0, 1920.0, 1200.0) [Adjusted]
 
+=== UIA Debug Capture ===
+Timestamp: 2025-09-26 10:22:57
+LogicalPos: (-366, -312)  PhysicalPos: (-366, -312)
+Window: hwnd=0xC009C8 class=Qt673QWindowToolSaveBits title=Camera Hub
+WindowRect: left=-867 top=-618 width=1024 height=600
+ControlHWND: <none>
+Resolved: AutoId='<none>' Class='#32769' Source=Element Candidate= UIAClass=#32769 
+-- Resolved Element Details --
+  Name='Desktop 1' ControlType=50033 (Pane) Localized='pane' Framework='Win32'
+  Rect=(0.0, 0.0, 1920.0, 1200.0) [Raw]
+-- Notes --
+  Used native class fallback
+-- Candidates --
+  [1] Kind=Point Label=Logical point Element=No Refined=No Used=No
+    Point=(-366, -312)
+    Error=No element
+  [2] Kind=Handle Label=Window handle Element=Yes Refined=No Used=No
+    Handle=0xC009C8
+    AutoId='' Class='#32769' Source=Element
+    Name='Desktop 1' Localized='pane' Framework='Win32'
+    ControlType=50033 (Pane)
+    Rect=(0.0, 0.0, 1920.0, 1200.0) [Raw]
+

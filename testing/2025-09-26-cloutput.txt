@@ -15,3 +15,4 @@
 09:03:55	AutomationId: <none>	ClassName: QWidget	WinClass: Qt673QWindowToolSaveBits	WinHWND: 0xC009C8	CtrlHWND: <none>	Pos: (-356, -322)	Rect: (-867.0,-618.0,1024.0,600.0) (Screen coords)
 09:33:58	AutomationId: <none>	ClassName: #32769	WinClass: Qt673QWindowToolSaveBits	WinHWND: 0xC009C8	CtrlHWND: <none>	Pos: (-348, -311)	Rect: (-867.0,-618.0,1920.0,1200.0) (Local coords)
 09:46:51	AutomationId: <none>	ClassName: #32769	WinClass: Qt673QWindowToolSaveBits	WinHWND: 0xC009C8	CtrlHWND: <none>	Pos: (-349, -306)	Rect: (-867.0,-618.0,1920.0,1200.0) (Adjusted coords)
+10:22:55	AutomationId: <none>	ClassName: #32769	WinClass: Qt673QWindowToolSaveBits	WinHWND: 0xC009C8	CtrlHWND: <none>	Pos: (-366, -312)	Rect: (0.0,0.0,1920.0,1200.0) (Raw coords)
