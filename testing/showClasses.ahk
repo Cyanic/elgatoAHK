@@ -374,7 +374,7 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
             details["Source"] := candidate.Has("Label") ? candidate["Label"] : candidate["Kind"]
         candAuto := details.Has("Auto") ? details["Auto"] : ""
         candClass := details.Has("Class") ? details["Class"] : ""
-        score := UIACandidateScore(details)
+        score := UIACandidateScore(details, pointX, pointY, hitContext)
 
         if collectDebug {
             candDebug["Details"] := details
@@ -913,21 +913,67 @@ UIAPointMatchesRect(rect, x, y, ctx := 0) {
     return false
 }
 
-UIACandidateScore(info) {
-    score := 0
-    if info.Has("Auto") && info["Auto"] != ""
-        score += 100
+UIAPointDistanceToRect(rect, x, y, ctx := 0) {
+    if !IsObject(rect)
+        return 100000
+
+    points := [[x, y]]
+    if IsObject(ctx) {
+        localX := x - (ctx.Has("WinLeft") ? ctx["WinLeft"] : 0)
+        localY := y - (ctx.Has("WinTop") ? ctx["WinTop"] : 0)
+        points.Push([localX, localY])
+    }
+
+    best := 100000
+    for point in points {
+        px := point[1]
+        py := point[2]
+        dx := 0
+        dy := 0
+        if px < rect["x"]
+            dx := rect["x"] - px
+        else if px > rect["x"] + rect["w"]
+            dx := px - (rect["x"] + rect["w"])
+        if py < rect["y"]
+            dy := rect["y"] - py
+        else if py > rect["y"] + rect["h"]
+            dy := py - (rect["y"] + rect["h"])
+        dist := Sqrt(dx * dx + dy * dy)
+        if dist < best
+            best := dist
+    }
+    return best
+}
+
+UIACandidateScore(info, x, y, ctx) {
+    score := -100000
+    pointScore := 0
+    if info.Has("Rect") && IsObject(info["Rect"]) {
+        rect := info["Rect"]
+        if UIAPointMatchesRect(rect, x, y, ctx) {
+            pointScore := 4000
+        } else {
+            overlap := UIAPointDistanceToRect(rect, x, y, ctx)
+            pointScore := Max(-4000, 2000 - overlap)
+        }
+    }
+    score += pointScore
+
+    if info.Has("Auto") && info["Auto"] != "" 
+        score += 1000
     if info.Has("Class") && info["Class"] != "" && info["Class"] != "#32769"
-        score += 25
-    area := 0
+        score += 500
+    if info.Has("ControlType") && info["ControlType"] != ""
+        score += 100
+    if info.Has("LocalizedControlType") && info["LocalizedControlType"] != ""
+        score += 100
     if info.Has("Rect") && IsObject(info["Rect"]) {
         rect := info["Rect"]
         area := Abs(rect["w"]) * Abs(rect["h"])
-        ; Smaller areas get higher scores; avoid division by zero.
         if area > 0
-            score += Max(0, 1000 - Min(area, 1000))
+            score += Max(0, 2000 - Min(area, 2000))
         else
-            score += 1000
+            score += 2000
     }
     return score
 }
