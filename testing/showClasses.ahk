@@ -128,7 +128,14 @@ CaptureUnderCursor(*) {
     path := A_ScriptDir "\" dateStamp "-cloutput.txt"
     timestamp := FormatTime(, "HH:mm:ss")
 
-    line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tWinHWND: {5}`tCtrlHWND: {6}`tPos: ({7}, {8})",
+    rectText := ""
+    detail := info.Has("Details") ? info["Details"] : 0
+    if IsObject(detail) && detail.Has("Rect") && IsObject(detail["Rect"]) {
+        rect := detail["Rect"]
+        rectText := Format("`tRect: ({},{},{},{})", rect["x"], rect["y"], rect["w"], rect["h"])
+    }
+
+    line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tWinHWND: {5}`tCtrlHWND: {6}`tPos: ({7}, {8}){9}",
         timestamp,
         info["AutomationId"],
         info["ClassName"],
@@ -136,7 +143,8 @@ CaptureUnderCursor(*) {
         Format("0x{1:X}", info["WinHWND"]),
         info["CtrlHWND"] ? Format("0x{1:X}", info["CtrlHWND"]) : "<none>",
         info["PhysicalX"],
-        info["PhysicalY"])
+        info["PhysicalY"],
+        rectText)
     FileAppend(line "`n", path, "UTF-8")
     MsgBox "Captured AutomationId: " info["AutomationId"] "`nClassName: " info["ClassName"] "`nLogged to " path
 }
