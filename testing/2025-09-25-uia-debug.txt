@@ -26,3 +26,49 @@ Resolved: AutoId='<none>' Class='Microsoft.UI.Content.DesktopChildSiteBridge' So
     ControlType=50033 (Pane)
     Rect=(0.0, 0.0, 1920.0, 1200.0)
 
+=== UIA Debug Capture ===
+Timestamp: 2025-09-25 23:14:39
+LogicalPos: (591, 288)  PhysicalPos: (591, 288)
+Window: hwnd=0xD3073C class=Notepad title=*DdddDDDDDDDDDDDDDDDDDDD - Notepad
+ControlHWND: 0xA1636
+Resolved: AutoId='Edit' Class='Microsoft.UI.Xaml.Controls.MenuBarItem' Source=Element Candidate=Control handle UIAClass=Microsoft.UI.Xaml.Controls.MenuBarItem 
+-- Resolved Element Details --
+  Name='Edit' ControlType=50011 (MenuItem) Localized='menu item' Framework='XAML'
+  Rect=(570.0, 265.0, 44.0, 32.0)
+-- Candidates --
+  [1] Kind=Point Label=Logical point Element=No Refined=No Used=No
+    Point=(591, 288)
+    Error=No element
+  [2] Kind=Handle Label=Control handle Element=Yes Refined=Yes Used=Yes
+    Handle=0xA1636
+    AutoId='Edit' Class='Microsoft.UI.Xaml.Controls.MenuBarItem' Source=Element
+    Name='Edit' Localized='menu item' Framework='XAML'
+    ControlType=50011 (MenuItem)
+    Rect=(570.0, 265.0, 44.0, 32.0)
+
+=== UIA Debug Capture ===
+Timestamp: 2025-09-25 23:25:53
+LogicalPos: (2743, 344)  PhysicalPos: (2743, 344)
+Window: hwnd=0xD3073C class=Notepad title=*DdddDDDDDDDDDDDDDDDDDDD - Notepad
+ControlHWND: 0xA1636
+Resolved: AutoId='<none>' Class='Notepad++' Source=Descendant Candidate=Control handle UIAClass=Notepad++ 
+-- Resolved Element Details --
+  Name='Desktop 1' ControlType=50033 (Pane) Localized='pane' Framework='Win32'
+  Rect=(0.0, 0.0, 1920.0, 1200.0)
+-- Candidates --
+  [1] Kind=Point Label=Logical point Element=No Refined=No Used=No
+    Point=(2743, 344)
+    Error=No element
+  [2] Kind=Handle Label=Control handle Element=Yes Refined=No Used=Yes
+    Handle=0xA1636
+    AutoId='' Class='Notepad' Source=Descendant
+    Name='Desktop 1' Localized='pane' Framework='Win32'
+    ControlType=50033 (Pane)
+    Rect=(0.0, 0.0, 1920.0, 1200.0)
+  [3] Kind=Handle Label=Window handle Element=Yes Refined=No Used=No
+    Handle=0xD3073C
+    AutoId='' Class='Notepad++' Source=Descendant
+    Name='Desktop 1' Localized='pane' Framework='Win32'
+    ControlType=50033 (Pane)
+    Rect=(0.0, 0.0, 1920.0, 1200.0)
+
