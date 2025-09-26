@@ -129,13 +129,16 @@ CaptureUnderCursor(*) {
     timestamp := FormatTime(, "HH:mm:ss")
 
     rectText := ""
+    rectSource := ""
     detail := info.Has("Details") ? info["Details"] : 0
     if IsObject(detail) && detail.Has("Rect") && IsObject(detail["Rect"]) {
         rect := detail["Rect"]
         rectText := Format("`tRect: ({},{},{},{})", rect["x"], rect["y"], rect["w"], rect["h"])
+        if detail.Has("RectSource")
+            rectSource := " (`" detail["RectSource"] " coords)"
     }
 
-    line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tWinHWND: {5}`tCtrlHWND: {6}`tPos: ({7}, {8}){9}",
+    line := Format("{1}`tAutomationId: {2}`tClassName: {3}`tWinClass: {4}`tWinHWND: {5}`tCtrlHWND: {6}`tPos: ({7}, {8}){9}{10}",
         timestamp,
         info["AutomationId"],
         info["ClassName"],
@@ -144,7 +147,8 @@ CaptureUnderCursor(*) {
         info["CtrlHWND"] ? Format("0x{1:X}", info["CtrlHWND"]) : "<none>",
         info["PhysicalX"],
         info["PhysicalY"],
-        rectText)
+        rectText,
+        rectSource)
     FileAppend(line "`n", path, "UTF-8")
     MsgBox "Captured AutomationId: " info["AutomationId"] "`nClassName: " info["ClassName"] "`nLogged to " path
 }
@@ -185,7 +189,8 @@ CaptureAutomationDebug(*) {
             , detail.Has("FrameworkId") ? detail["FrameworkId"] : ""))
         if detail.Has("Rect") && IsObject(detail["Rect"]) {
             rect := detail["Rect"]
-            lines.Push(Format("  Rect=({}, {}, {}, {})", rect["x"], rect["y"], rect["w"], rect["h"]))
+            rectSource := detail.Has("RectSource") ? detail["RectSource"] : ""
+            lines.Push(Format("  Rect=({}, {}, {}, {}){}", rect["x"], rect["y"], rect["w"], rect["h"], rectSource ? " [" rectSource "]" : ""))
         }
     }
 
@@ -229,7 +234,8 @@ CaptureAutomationDebug(*) {
                         , det["ControlType"]))
                 if det.Has("Rect") && IsObject(det["Rect"]) {
                     rect := det["Rect"]
-                    lines.Push(Format("    Rect=({}, {}, {}, {})", rect["x"], rect["y"], rect["w"], rect["h"]))
+                    rectSource := det.Has("RectSource") ? det["RectSource"] : ""
+                    lines.Push(Format("    Rect=({}, {}, {}, {}){}", rect["x"], rect["y"], rect["w"], rect["h"], rectSource ? " [" rectSource "]" : ""))
                 }
             }
             if cand.Has("Error")
@@ -618,6 +624,17 @@ UIACollectElementDetails(uia, elementPtr, x, y, ctx) {
     if !IsObject(info)
         info := Map("Auto", "", "Class", "", "Source", "None")
 
+    if info.Has("Rect") && IsObject(info["Rect"])
+        normalized := UIANormalizeRect(info["Rect"], x, y, ctx)
+        if IsObject(normalized) {
+            if normalized.Has("Screen")
+                info["Rect"] := normalized["Screen"]
+            if normalized.Has("Local")
+                info["RectLocal"] := normalized["Local"]
+            if normalized.Has("RectSource")
+                info["RectSource"] := normalized["RectSource"]
+        }
+
     if (info["Auto"] != "" && info["Class"] != "" && info["Class"] != "#32769")
         return info
 
@@ -664,6 +681,17 @@ UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 256, ctx := 0) {
 
         info := UIAGetDirectElementInfo(element)
         if IsObject(info) {
+            if info.Has("Rect") && IsObject(info["Rect"]) {
+                normalized := UIANormalizeRect(info["Rect"], x, y, ctx)
+                if IsObject(normalized) {
+                    if normalized.Has("Screen")
+                        info["Rect"] := normalized["Screen"]
+                    if normalized.Has("Local")
+                        info["RectLocal"] := normalized["Local"]
+                    if normalized.Has("RectSource")
+                        info["RectSource"] := normalized["RectSource"]
+                }
+            }
             rect := info.Has("Rect") ? info["Rect"] : ""
             matches := true
             if IsObject(rect)
@@ -672,7 +700,7 @@ UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 256, ctx := 0) {
             hasData := (info["Auto"] != "") || (info["Class"] != "" && info["Class"] != "#32769")
             if matches && hasData {
                 info["Source"] := "Descendant"
-                score := UIACandidateScore(info)
+                score := UIACandidateScore(info, x, y, ctx)
                 if score > bestScore {
                     best := info
                     bestScore := score
@@ -943,6 +971,34 @@ UIAPointDistanceToRect(rect, x, y, ctx := 0) {
             best := dist
     }
     return best
+}
+
+UIANormalizeRect(rect, x, y, ctx := 0) {
+    if !IsObject(rect)
+        return 0
+
+    result := Map()
+    result["Screen"] := rect
+    result["RectSource"] := "Raw"
+
+    if IsObject(ctx) {
+        winLeft := ctx.Has("WinLeft") ? ctx["WinLeft"] : 0
+        winTop := ctx.Has("WinTop") ? ctx["WinTop"] : 0
+        screenRect := rect
+
+        if !UIAPointInRect(rect, x, y) {
+            screenRect := Map("x", rect["x"] + winLeft, "y", rect["y"] + winTop, "w", rect["w"], "h", rect["h"])
+            result["RectSource"] := "Adjusted"
+        } else {
+            result["RectSource"] := "Screen"
+        }
+
+        localRect := Map("x", screenRect["x"] - winLeft, "y", screenRect["y"] - winTop, "w", screenRect["w"], "h", screenRect["h"])
+        result["Screen"] := screenRect
+        result["Local"] := localRect
+    }
+
+    return result
 }
 
 UIACandidateScore(info, x, y, ctx) {
