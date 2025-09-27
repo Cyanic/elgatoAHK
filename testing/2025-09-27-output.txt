@@ -113,3 +113,22 @@ Control Class Scan - 2025-09-27 01:31:15 | Filter: EVHSpinBox
 Class: <none>	UIAClass: <none>	Type: tree item	AutomationId: list_id_5_12	Name: Output EVHSpinBox fail, dkondor	HWND: 
 Class: <none>	UIAClass: <none>	Type: text	AutomationId: <none>	Name: Output EVHSpinBox fail	HWND: 
 
+Control Class Scan - 2025-09-27 01:42:02 | Filter: QWidget
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget	Name: <none>	HWND: 
+Class: Qt683QWindowIcon	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.centralwidget	Name: <none>	HWND: 0x11907F6
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.scenesDock.dockWidgetContents_2	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.sourcesDock.dockWidgetContents_6	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.mixerDock.dockWidgetContents_7	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.transitionsDock.dockWidgetContents_5	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.topBar	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.left	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.mid	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.right	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.mixerDock.dockWidgetContents_7.mixerFrame.stackedMixerArea.hMixerScrollArea.qt_scrollarea_viewport	Name: <none>	HWND: 
+
+Control Class Scan - 2025-09-27 01:43:52 | Filter: EVHSpinBox
+No matches found.
+
