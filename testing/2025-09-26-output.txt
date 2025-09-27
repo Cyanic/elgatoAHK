@@ -1,8 +1,8 @@
-﻿Control Class Scan - 2025-09-26 19:29:30
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	HWND: 0xB1660	Title: 
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	HWND: 0x3B0F56	Title: 
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	HWND: 0x670C44	Title: 
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	HWND: 0xA1636	Title: 
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	HWND: 0x80874	Title: 
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	HWND: 0x35025C	Title: 
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	HWND: 0x4A13F0	Title: 
+﻿Control Class Scan - 2025-09-26 19:39:29
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0xB1660
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0x3B0F56
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0x670C44
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0xA1636
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0x80874
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0x35025C
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0x4A13F0
