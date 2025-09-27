@@ -147,19 +147,22 @@ Win32TraverseMatches(hwnd, filter) {
     if !hwnd
         return results
 
-    lowered := filter
+    context := Map("Results", results, "Filter", filter)
 
-    callback := CallbackCreate(Win32EnumProc, "Fast", results, lowered)
+    callback := CallbackCreate(Func("Win32EnumProc").Bind(context), "Fast")
     try {
         DllCall("EnumChildWindows", "ptr", hwnd, "ptr", callback, "ptr", 0)
     } finally {
         CallbackFree(callback)
     }
 
-    return results
+    return context["Results"]
 }
 
-Win32EnumProc(childHwnd, lParam, results, filter) {
+Win32EnumProc(context, childHwnd, lParam) {
+    results := context["Results"]
+    filter := context["Filter"]
+
     class := GetWindowClassName(childHwnd)
     classLower := StrLower(class)
     title := ""
