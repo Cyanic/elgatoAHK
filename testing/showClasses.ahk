@@ -104,6 +104,7 @@ EnumChildProc(childHwnd, lParam) {
     typeName := ""
     autoId := ""
     ctrlName := ""
+    uiaClass := ""
     uia := gEnumUIA
     if IsObject(uia) {
         element := UIAElementFromHandle(uia, childHwnd)
@@ -118,15 +119,22 @@ EnumChildProc(childHwnd, lParam) {
                     autoId := details["Auto"]
                 if details.Has("Name")
                     ctrlName := details["Name"]
+                if details.Has("Class")
+                    uiaClass := details["Class"]
             }
             UIARelease(element)
         }
     }
 
-    if gEnumFilter = "" || InStr(StrLower(class), gEnumFilter)
+    matchClass := class
+    if matchClass = "" && uiaClass != ""
+        matchClass := uiaClass
+
+    if gEnumFilter = "" || InStr(StrLower(matchClass), gEnumFilter)
         gEnumMatches.Push(Map(
             "HWND", Format("0x{1:X}", childHwnd),
             "Class", class,
+            "UIAClass", uiaClass,
             "Type", typeName,
             "AutomationId", autoId,
             "Name", ctrlName
@@ -151,10 +159,11 @@ WriteResults(path, results) {
     lines.Push(header)
     for item in results {
         class := item.Has("Class") && item["Class"] != "" ? item["Class"] : "<none>"
+        uiaClass := item.Has("UIAClass") && item["UIAClass"] != "" ? item["UIAClass"] : "<none>"
         typeName := item.Has("Type") && item["Type"] != "" ? item["Type"] : "<none>"
         autoId := item.Has("AutomationId") && item["AutomationId"] != "" ? item["AutomationId"] : "<none>"
         ctrlName := item.Has("Name") && item["Name"] != "" ? item["Name"] : "<none>"
-        line := Format("Class: {1}`tType: {2}`tAutomationId: {3}`tName: {4}`tHWND: {5}", class, typeName, autoId, ctrlName, item["HWND"])
+        line := Format("Class: {1}`tUIAClass: {2}`tType: {3}`tAutomationId: {4}`tName: {5}`tHWND: {6}", class, uiaClass, typeName, autoId, ctrlName, item["HWND"])
         lines.Push(line)
     }
     if FileExist(path) {
