@@ -202,52 +202,65 @@ UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
     if filterExact = ""
         return matches
 
-    walkerObj := ""
+    propCond := ""
     try {
-        walkerObj := uia.RawViewWalker
+        propCond := uia.CreatePropertyCondition(30012, filterExact)
     } catch {
-        walkerObj := ""
+        propCond := ""
     }
-    if !IsObject(walkerObj)
+    if !IsObject(propCond)
         return matches
 
-    walker := walkerObj
-    element := rootElement
-    stack := []
+    rawCond := ""
+    try {
+        rawCond := uia.RawViewCondition
+    } catch {
+        rawCond := ""
+    }
+    if !IsObject(rawCond)
+        return matches
 
-    path := Map()
-    path["Element"] := element
-    path["Depth"] := 0
-    stack.Push(path)
+    combined := ""
+    try {
+        combined := uia.CreateAndCondition(propCond, rawCond)
+    } catch {
+        combined := ""
+    }
+    if !IsObject(combined)
+        return matches
 
-    visited := Map()
-    while stack.Length {
-        current := stack.Pop()
-        elem := current["Element"]
-        depth := current["Depth"]
+    condPtr := ComObjValue(combined)
+    if !condPtr
+        return matches
 
-        id := elem
-        if visited.Has(id)
+    elements := 0
+    static TREE_SCOPE_DESCENDANTS := 4
+    hr := 1
+    try {
+        hr := ComCall(8, rootElement, "int", TREE_SCOPE_DESCENDANTS, "ptr", condPtr, "ptr*", &elements)
+    } catch {
+        hr := 1
+    }
+    if hr != 0 || !elements
+        return matches
+
+    count := UIAElementArrayLength(elements)
+    loop count {
+        elem := UIAElementArrayGet(elements, A_Index - 1)
+        if !elem
             continue
-        visited[id] := true
-
         details := UIAGetDirectElementInfo(elem)
         if IsObject(details) {
-            record := UIABuildMatchRecord(details, depth)
+            record := UIABuildMatchRecord(details, 0)
             classField := record.Has("UIAClass") ? record["UIAClass"] : ""
             if classField = ""
                 classField := record.Has("Class") ? record["Class"] : ""
             if StrLower(classField) = filterLower
                 matches.Push(record)
         }
-
-        nextElem := walker.GetFirstChildElement(elem)
-        while nextElem {
-            stack.Push(Map("Element", nextElem, "Depth", depth + 1))
-            nextElem := walker.GetNextSiblingElement(nextElem)
-        }
+        UIARelease(elem)
     }
-
+    UIARelease(elements)
     return matches
 }
 
