@@ -149,7 +149,7 @@ Win32TraverseMatches(hwnd, filter) {
 
     context := Map("Results", results, "Filter", filter)
 
-    callback := CallbackCreate(Func("Win32EnumProc").Bind(context), "Fast")
+    callback := CallbackCreate(Win32EnumProc, "Fast", context)
     try {
         DllCall("EnumChildWindows", "ptr", hwnd, "ptr", callback, "ptr", 0)
     } finally {
@@ -159,7 +159,7 @@ Win32TraverseMatches(hwnd, filter) {
     return context["Results"]
 }
 
-Win32EnumProc(context, childHwnd, lParam) {
+Win32EnumProc(childHwnd, lParam, context) {
     results := context["Results"]
     filter := context["Filter"]
 
