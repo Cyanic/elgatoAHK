@@ -286,7 +286,7 @@ UIAMatchFilter(record, filter) {
     if filter = ""
         return true
 
-    fields := ["Class", "UIAClass", "Type", "AutomationId", "Name"]
+    fields := ["Class", "UIAClass"]
     for field in fields {
         value := record.Has(field) ? record[field] : ""
         if value != "" {
