@@ -110,7 +110,11 @@ EnumChildProc(childHwnd, lParam) {
 WriteResults(path, results) {
     header := "Control Class Scan - " FormatTime(, "yyyy-MM-dd HH:mm:ss")
     if results.Length = 0 {
-        FileDelete(path)
+        if FileExist(path) {
+            try FileDelete(path)
+            catch {
+            }
+        }
         FileAppend(header "`nNo matches found.`n", path, "UTF-8")
         return
     }
@@ -120,7 +124,11 @@ WriteResults(path, results) {
         line := Format("Class: {1}`tHWND: {2}`tTitle: {3}", item["Class"], item["HWND"], item["Title"])
         lines.Push(line)
     }
-    FileDelete(path)
+    if FileExist(path) {
+        try FileDelete(path)
+        catch {
+        }
+    }
     FileAppend(JoinLines(lines) "`n", path, "UTF-8")
 }
 
