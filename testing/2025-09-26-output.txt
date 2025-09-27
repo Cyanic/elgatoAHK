@@ -1,8 +1,4 @@
-﻿Control Class Scan - 2025-09-26 19:39:29
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0xB1660
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0x3B0F56
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0x670C44
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0xA1636
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0x80874
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0x35025C
-Class: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: Desktop 1	HWND: 0x4A13F0
+﻿Control Class Scan - 2025-09-26 23:50:51
+Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: File	Name: File	HWND: 
+Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: Edit	Name: Edit	HWND: 
+Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: View	Name: View	HWND: 
