@@ -202,65 +202,70 @@ UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
     if filterExact = ""
         return matches
 
-    propCond := ""
+    walker := ""
+    try walker := uia.CreateTreeWalker(uia.RawViewCondition)
+    catch walker := ""
+    if !IsObject(walker)
+        return matches
+
+    start := rootElement
     try {
-        propCond := uia.CreatePropertyCondition(30012, filterExact)
+        normalized := walker.NormalizeElement(rootElement)
+        if normalized
+            start := normalized
     } catch {
-        propCond := ""
     }
-    if !IsObject(propCond)
-        return matches
 
-    rawCond := ""
-    try {
-        rawCond := uia.RawViewCondition
-    } catch {
-        rawCond := ""
-    }
-    if !IsObject(rawCond)
-        return matches
+    stack := []
+    stack.Push(Map("Element", start, "Depth", 0, "Release", false))
+    visited := Map()
 
-    combined := ""
-    try {
-        combined := uia.CreateAndCondition(propCond, rawCond)
-    } catch {
-        combined := ""
-    }
-    if !IsObject(combined)
-        return matches
+    maxNodes := 20000
+    processed := 0
 
-    condPtr := ComObjValue(combined)
-    if !condPtr
-        return matches
-
-    elements := 0
-    static TREE_SCOPE_DESCENDANTS := 4
-    hr := 1
-    try {
-        hr := ComCall(8, rootElement, "int", TREE_SCOPE_DESCENDANTS, "ptr", condPtr, "ptr*", &elements)
-    } catch {
-        hr := 1
-    }
-    if hr != 0 || !elements
-        return matches
-
-    count := UIAElementArrayLength(elements)
-    loop count {
-        elem := UIAElementArrayGet(elements, A_Index - 1)
+    while stack.Length {
+        current := stack.Pop()
+        elem := current["Element"]
+        depth := current["Depth"]
+        releaseElem := current.Has("Release") ? current["Release"] : true
         if !elem
             continue
+
+        key := elem
+        if visited.Has(key) {
+            if releaseElem
+                UIARelease(elem)
+            continue
+        }
+        visited[key] := true
+
+        processed += 1
         details := UIAGetDirectElementInfo(elem)
         if IsObject(details) {
-            record := UIABuildMatchRecord(details, 0)
+            record := UIABuildMatchRecord(details, depth)
             classField := record.Has("UIAClass") ? record["UIAClass"] : ""
             if classField = ""
                 classField := record.Has("Class") ? record["Class"] : ""
             if StrLower(classField) = filterLower
                 matches.Push(record)
         }
-        UIARelease(elem)
+
+        if processed > maxNodes {
+            if releaseElem
+                UIARelease(elem)
+            break
+        }
+
+        child := walker.GetFirstChildElement(elem)
+        while child {
+            stack.Push(Map("Element", child, "Depth", depth + 1, "Release", true))
+            child := walker.GetNextSiblingElement(child)
+        }
+
+        if releaseElem
+            UIARelease(elem)
     }
-    UIARelease(elements)
+
     return matches
 }
 
