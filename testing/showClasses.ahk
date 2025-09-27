@@ -21,11 +21,12 @@ Main() {
         return
     }
 
-    matches := FindChildWindows(targetHwnd, classPrompt.Value)
+    filterText := Trim(classPrompt.Value)
+    matches := FindChildWindows(targetHwnd, filterText)
 
     dateStamp := FormatTime(, "yyyy-MM-dd")
     outPath := A_ScriptDir "\" dateStamp "-output.txt"
-    WriteResults(outPath, matches)
+    WriteResults(outPath, matches, filterText)
     MsgBox Format("Found {1} matching controls. Details written to:`n{2}", matches.Length, outPath)
 
     MsgBox "Hover any control and press Ctrl+Alt+D to log its AutomationId and ClassName." "`nOutput file: " dateStamp "-cloutput.txt"
@@ -74,8 +75,10 @@ FindChildWindows(hwnd, filterClass) {
         return matches
 
     root := UIAElementFromHandle(uia, hwnd)
-    if !root
+    if !root {
+        MsgBox "UI Automation could not bind to the target window."
         return matches
+    }
 
     return UIATraverseMatches(uia, root, filter)
 }
@@ -184,34 +187,26 @@ UIAMatchFilter(record, filter) {
     return false
 }
 
-WriteResults(path, results) {
-    header := "Control Class Scan - " FormatTime(, "yyyy-MM-dd HH:mm:ss")
-    if results.Length = 0 {
-        if FileExist(path) {
-            try FileDelete(path)
-            catch {
-            }
-        }
-        FileAppend(header "`nNo matches found.`n", path, "UTF-8")
-        return
-    }
+WriteResults(path, results, searchTerm := "") {
+    timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
+    filterLabel := searchTerm != "" ? searchTerm : "<none>"
+    header := Format("Control Class Scan - {1} | Filter: {2}", timestamp, filterLabel)
     lines := []
     lines.Push(header)
-    for item in results {
-        class := item.Has("Class") && item["Class"] != "" ? item["Class"] : "<none>"
-        uiaClass := item.Has("UIAClass") && item["UIAClass"] != "" ? item["UIAClass"] : "<none>"
-        typeName := item.Has("Type") && item["Type"] != "" ? item["Type"] : "<none>"
-        autoId := item.Has("AutomationId") && item["AutomationId"] != "" ? item["AutomationId"] : "<none>"
-        ctrlName := item.Has("Name") && item["Name"] != "" ? item["Name"] : "<none>"
-        line := Format("Class: {1}`tUIAClass: {2}`tType: {3}`tAutomationId: {4}`tName: {5}`tHWND: {6}", class, uiaClass, typeName, autoId, ctrlName, item["HWND"])
-        lines.Push(line)
-    }
-    if FileExist(path) {
-        try FileDelete(path)
-        catch {
+    if results.Length = 0 {
+        lines.Push("No matches found.")
+    } else {
+        for item in results {
+            class := item.Has("Class") && item["Class"] != "" ? item["Class"] : "<none>"
+            uiaClass := item.Has("UIAClass") && item["UIAClass"] != "" ? item["UIAClass"] : "<none>"
+            typeName := item.Has("Type") && item["Type"] != "" ? item["Type"] : "<none>"
+            autoId := item.Has("AutomationId") && item["AutomationId"] != "" ? item["AutomationId"] : "<none>"
+            ctrlName := item.Has("Name") && item["Name"] != "" ? item["Name"] : "<none>"
+            line := Format("Class: {1}`tUIAClass: {2}`tType: {3}`tAutomationId: {4}`tName: {5}`tHWND: {6}", class, uiaClass, typeName, autoId, ctrlName, item["HWND"])
+            lines.Push(line)
         }
     }
-    FileAppend(JoinLines(lines) "`n", path, "UTF-8")
+    FileAppend(JoinLines(lines) "`n`n", path, "UTF-8")
 }
 
 CaptureUnderCursor(*) {
