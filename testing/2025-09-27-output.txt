@@ -1,0 +1,6 @@
+﻿Control Class Scan - 2025-09-27 00:07:07 | Filter: Microsoft.UI.Content.DesktopChildSiteBridge
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	UIAClass: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: <none>	HWND: 0x670C44
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	UIAClass: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: <none>	HWND: 0xA1636
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	UIAClass: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: <none>	HWND: 0x80874
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	UIAClass: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: <none>	HWND: 0x390ACA
+
