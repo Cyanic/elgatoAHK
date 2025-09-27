@@ -87,6 +87,8 @@ FindChildWindows(hwnd, filterClass) {
     if filterOriginal != ""
         uiaMatches := UIAFindClassMatches(uia, root, filter, filterOriginal)
     if !uiaMatches.Length
+        uiaMatches := UIARawClassMatches(uia, root, filter, filterOriginal)
+    if !uiaMatches.Length
         uiaMatches := UIATraverseMatches(uia, root, filter)
     nativeMatches := Win32TraverseMatches(hwnd, filter)
     return UIAMergeMatches(uiaMatches, nativeMatches)
@@ -192,6 +194,60 @@ UIAFindClassMatches(uia, rootElement, filterLower, filterExact) {
         UIARelease(elem)
     }
     UIARelease(elements)
+    return matches
+}
+
+UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
+    matches := []
+    if filterExact = ""
+        return matches
+
+    walkerObj := ""
+    try {
+        walkerObj := uia.RawViewWalker
+    } catch {
+        walkerObj := ""
+    }
+    if !IsObject(walkerObj)
+        return matches
+
+    walker := walkerObj
+    element := rootElement
+    stack := []
+
+    path := Map()
+    path["Element"] := element
+    path["Depth"] := 0
+    stack.Push(path)
+
+    visited := Map()
+    while stack.Length {
+        current := stack.Pop()
+        elem := current["Element"]
+        depth := current["Depth"]
+
+        id := elem
+        if visited.Has(id)
+            continue
+        visited[id] := true
+
+        details := UIAGetDirectElementInfo(elem)
+        if IsObject(details) {
+            record := UIABuildMatchRecord(details, depth)
+            classField := record.Has("UIAClass") ? record["UIAClass"] : ""
+            if classField = ""
+                classField := record.Has("Class") ? record["Class"] : ""
+            if StrLower(classField) = filterLower
+                matches.Push(record)
+        }
+
+        nextElem := walker.GetFirstChildElement(elem)
+        while nextElem {
+            stack.Push(Map("Element", nextElem, "Depth", depth + 1))
+            nextElem := walker.GetNextSiblingElement(nextElem)
+        }
+    }
+
     return matches
 }
 
