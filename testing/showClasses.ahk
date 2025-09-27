@@ -69,7 +69,8 @@ GetTargetWindow(config) {
 }
 
 FindChildWindows(hwnd, filterClass) {
-    filter := StrLower(Trim(filterClass))
+    filterOriginal := Trim(filterClass)
+    filter := StrLower(filterOriginal)
     matches := []
 
     uia := GetUIAutomation()
@@ -82,7 +83,11 @@ FindChildWindows(hwnd, filterClass) {
         return matches
     }
 
-    uiaMatches := UIATraverseMatches(uia, root, filter)
+    uiaMatches := []
+    if filterOriginal != ""
+        uiaMatches := UIAFindClassMatches(uia, root, filter, filterOriginal)
+    if !uiaMatches.Length
+        uiaMatches := UIATraverseMatches(uia, root, filter)
     nativeMatches := Win32TraverseMatches(hwnd, filter)
     return UIAMergeMatches(uiaMatches, nativeMatches)
 }
@@ -141,6 +146,46 @@ UIATraverseMatches(uia, rootElement, filter) {
         }
     }
 
+    return matches
+}
+
+UIAFindClassMatches(uia, rootElement, filterLower, filterExact) {
+    matches := []
+    if filterExact = ""
+        return matches
+
+    condObj := ""
+    try condObj := uia.CreatePropertyCondition(30012, filterExact)
+    catch condObj := ""
+    if !IsObject(condObj)
+        return matches
+
+    condPtr := ComObjValue(condObj)
+    if !condPtr
+        return matches
+
+    elements := 0
+    static TREE_SCOPE_DESCENDANTS := 4
+    hr := 1
+    try hr := ComCall(8, rootElement, "int", TREE_SCOPE_DESCENDANTS, "ptr", condPtr, "ptr*", &elements)
+    catch hr := 1
+    if hr != 0 || !elements
+        return matches
+
+    count := UIAElementArrayLength(elements)
+    loop count {
+        elem := UIAElementArrayGet(elements, A_Index - 1)
+        if !elem
+            continue
+        details := UIAGetDirectElementInfo(elem)
+        if IsObject(details) {
+            record := UIABuildMatchRecord(details, 0)
+            if filterLower = "" || UIAMatchFilter(record, filterLower)
+                matches.Push(record)
+        }
+        UIARelease(elem)
+    }
+    UIARelease(elements)
     return matches
 }
 
