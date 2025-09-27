@@ -203,8 +203,11 @@ UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
         return matches
 
     walker := ""
-    try walker := uia.CreateTreeWalker(uia.RawViewCondition)
-    catch walker := ""
+    try {
+        walker := uia.CreateTreeWalker(uia.RawViewCondition)
+    } catch {
+        walker := ""
+    }
     if !IsObject(walker)
         return matches
 
