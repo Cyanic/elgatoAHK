@@ -72,12 +72,17 @@ GetTargetWindow(config) {
 
 FindChildWindows(hwnd, filterClass) {
     global gEnumFilter, gEnumMatches, gEnumCallback
-    gEnumFilter := StrLower(filterClass)
+    gEnumFilter := StrLower(Trim(filterClass))
     gEnumMatches := []
-    gEnumCallback := CallbackCreate("EnumChildProc", "Fast")
-    EnumChildrenRecursive(hwnd)
-    CallbackFree(gEnumCallback)
-    gEnumCallback := 0
+    gEnumCallback := CallbackCreate(Func("EnumChildProc"), "Fast")
+    try {
+        EnumChildrenRecursive(hwnd)
+    } finally {
+        if gEnumCallback {
+            CallbackFree(gEnumCallback)
+            gEnumCallback := 0
+        }
+    }
     return gEnumMatches
 }
 
