@@ -1,4 +1,8 @@
-﻿Control Class Scan - 2025-09-26 23:50:51
-Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: File	Name: File	HWND: 
-Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: Edit	Name: Edit	HWND: 
-Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: View	Name: View	HWND: 
+﻿Control Class Scan - 2025-09-26 23:59:09
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: StartButton	Name: Start	HWND: 
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: TaskViewButton	Name: Task View	HWND: 
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Bold (Ctrl+B)	HWND: 
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Italic (Ctrl+I)	HWND: 
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Link (Ctrl+K)	HWND: 
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Clear formatting (Ctrl+Space)	HWND: 
+Class: <none>	UIAClass: AppBarButton	Type: app bar button	AutomationId: PreviewPaneToggleButton	Name: Preview	HWND: 
