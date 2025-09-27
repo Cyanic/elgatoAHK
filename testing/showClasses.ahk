@@ -152,8 +152,9 @@ Win32TraverseMatches(hwnd, filter) {
 
     callback := CallbackCreate(Win32EnumProc, "Fast")
     try {
-        basePtr := ObjPtr(context)
-        DllCall("EnumChildWindows", "ptr", hwnd, "ptr", callback, "ptr", basePtr)
+        ptr := ObjPtrAddRef(context)
+        try DllCall("EnumChildWindows", "ptr", hwnd, "ptr", callback, "ptr", ptr)
+        finally ObjRelease(ptr)
     } finally {
         CallbackFree(callback)
     }
@@ -162,9 +163,11 @@ Win32TraverseMatches(hwnd, filter) {
 }
 
 Win32EnumProc(childHwnd, lParam) {
-    context := ObjFromPtr(lParam)
-    if !IsObject(context)
+    context := ObjFromPtrAddRef(lParam)
+    if !IsObject(context) {
+        ObjRelease(lParam)
         return true
+    }
     try {
         results := context["Items"]
         filter := context["Filter"]
@@ -192,6 +195,9 @@ Win32EnumProc(childHwnd, lParam) {
                 results.Push(record)
         }
         return true
+    }
+    finally {
+        ObjRelease(lParam)
     }
 }
 
