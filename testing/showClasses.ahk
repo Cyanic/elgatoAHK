@@ -5,6 +5,7 @@
 global gEnumFilter := ""
 global gEnumMatches := []
 global gEnumCallback := 0
+global gEnumUIA := ""
 
 Main() {
     iniPath := EnsureConfig()
@@ -71,9 +72,10 @@ GetTargetWindow(config) {
 }
 
 FindChildWindows(hwnd, filterClass) {
-    global gEnumFilter, gEnumMatches, gEnumCallback
+    global gEnumFilter, gEnumMatches, gEnumCallback, gEnumUIA
     gEnumFilter := StrLower(Trim(filterClass))
     gEnumMatches := []
+    gEnumUIA := GetUIAutomation()
     gEnumCallback := CallbackCreate(EnumChildProc, "Fast")
     try {
         EnumChildrenRecursive(hwnd)
@@ -82,6 +84,7 @@ FindChildWindows(hwnd, filterClass) {
             CallbackFree(gEnumCallback)
             gEnumCallback := 0
         }
+        gEnumUIA := ""
     }
     return gEnumMatches
 }
@@ -94,14 +97,40 @@ EnumChildrenRecursive(hwnd) {
 }
 
 EnumChildProc(childHwnd, lParam) {
-    global gEnumFilter, gEnumMatches
+    global gEnumFilter, gEnumMatches, gEnumUIA
     class := ""
-    title := ""
     try class := WinGetClass("ahk_id " childHwnd)
-    try title := WinGetTitle("ahk_id " childHwnd)
+
+    typeName := ""
+    autoId := ""
+    ctrlName := ""
+    uia := gEnumUIA
+    if IsObject(uia) {
+        element := UIAElementFromHandle(uia, childHwnd)
+        if element {
+            details := UIAGetDirectElementInfo(element)
+            if IsObject(details) {
+                if details.Has("LocalizedControlType") && details["LocalizedControlType"] != ""
+                    typeName := details["LocalizedControlType"]
+                else if details.Has("ControlType")
+                    typeName := details["ControlType"]
+                if details.Has("Auto")
+                    autoId := details["Auto"]
+                if details.Has("Name")
+                    ctrlName := details["Name"]
+            }
+            UIARelease(element)
+        }
+    }
 
     if gEnumFilter = "" || InStr(StrLower(class), gEnumFilter)
-        gEnumMatches.Push(Map("HWND", Format("0x{1:X}", childHwnd), "Class", class, "Title", title))
+        gEnumMatches.Push(Map(
+            "HWND", Format("0x{1:X}", childHwnd),
+            "Class", class,
+            "Type", typeName,
+            "AutomationId", autoId,
+            "Name", ctrlName
+        ))
 
     EnumChildrenRecursive(childHwnd)
     return true
@@ -121,7 +150,11 @@ WriteResults(path, results) {
     lines := []
     lines.Push(header)
     for item in results {
-        line := Format("Class: {1}`tHWND: {2}`tTitle: {3}", item["Class"], item["HWND"], item["Title"])
+        class := item.Has("Class") && item["Class"] != "" ? item["Class"] : "<none>"
+        typeName := item.Has("Type") && item["Type"] != "" ? item["Type"] : "<none>"
+        autoId := item.Has("AutomationId") && item["AutomationId"] != "" ? item["AutomationId"] : "<none>"
+        ctrlName := item.Has("Name") && item["Name"] != "" ? item["Name"] : "<none>"
+        line := Format("Class: {1}`tType: {2}`tAutomationId: {3}`tName: {4}`tHWND: {5}", class, typeName, autoId, ctrlName, item["HWND"])
         lines.Push(line)
     }
     if FileExist(path) {
