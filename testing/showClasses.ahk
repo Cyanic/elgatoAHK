@@ -1,12 +1,6 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
-; Global state for recursive child enumeration
-global gEnumFilter := ""
-global gEnumMatches := []
-global gEnumCallback := 0
-global gEnumUIA := ""
-
 Main() {
     iniPath := EnsureConfig()
     config := LoadConfig(iniPath)
@@ -72,76 +66,122 @@ GetTargetWindow(config) {
 }
 
 FindChildWindows(hwnd, filterClass) {
-    global gEnumFilter, gEnumMatches, gEnumCallback, gEnumUIA
-    gEnumFilter := StrLower(Trim(filterClass))
-    gEnumMatches := []
-    gEnumUIA := GetUIAutomation()
-    gEnumCallback := CallbackCreate(EnumChildProc, "Fast")
+    filter := StrLower(Trim(filterClass))
+    matches := []
+
+    uia := GetUIAutomation()
+    if !IsObject(uia)
+        return matches
+
+    root := UIAElementFromHandle(uia, hwnd)
+    if !root
+        return matches
+
+    return UIATraverseMatches(uia, root, filter)
+}
+
+UIATraverseMatches(uia, rootElement, filter) {
+    matches := []
+    queue := []
+    queue.Push(Map("Element", rootElement, "Depth", 0))
+
+    processed := 0
+    maxNodes := 5000
+
     try {
-        EnumChildrenRecursive(hwnd)
-    } finally {
-        if gEnumCallback {
-            CallbackFree(gEnumCallback)
-            gEnumCallback := 0
-        }
-        gEnumUIA := ""
-    }
-    return gEnumMatches
-}
+        while queue.Length {
+            current := queue.RemoveAt(1)
+            element := current["Element"]
+            depth := current["Depth"]
 
-EnumChildrenRecursive(hwnd) {
-    global gEnumCallback
-    if !gEnumCallback
-        return
-    DllCall("EnumChildWindows", "ptr", hwnd, "ptr", gEnumCallback, "ptr", 0)
-}
+            processed += 1
 
-EnumChildProc(childHwnd, lParam) {
-    global gEnumFilter, gEnumMatches, gEnumUIA
-    class := ""
-    try class := WinGetClass("ahk_id " childHwnd)
-
-    typeName := ""
-    autoId := ""
-    ctrlName := ""
-    uiaClass := ""
-    uia := gEnumUIA
-    if IsObject(uia) {
-        element := UIAElementFromHandle(uia, childHwnd)
-        if element {
             details := UIAGetDirectElementInfo(element)
             if IsObject(details) {
-                if details.Has("LocalizedControlType") && details["LocalizedControlType"] != ""
-                    typeName := details["LocalizedControlType"]
-                else if details.Has("ControlType")
-                    typeName := details["ControlType"]
-                if details.Has("Auto")
-                    autoId := details["Auto"]
-                if details.Has("Name")
-                    ctrlName := details["Name"]
-                if details.Has("Class")
-                    uiaClass := details["Class"]
+                record := UIABuildMatchRecord(details, depth)
+                if UIAMatchFilter(record, filter)
+                    matches.Push(record)
             }
+
+            if processed < maxNodes {
+                children := UIAFindChildren(uia, element)
+                if children {
+                    count := UIAElementArrayLength(children)
+                    Loop count {
+                        child := UIAElementArrayGet(children, A_Index - 1)
+                        if child
+                            queue.Push(Map("Element", child, "Depth", depth + 1))
+                    }
+                    UIARelease(children)
+                }
+            }
+
             UIARelease(element)
+
+            if processed >= maxNodes
+                break
+        }
+    } finally {
+        while queue.Length {
+            leftover := queue.Pop()
+            if IsObject(leftover) {
+                element := leftover.Has("Element") ? leftover["Element"] : 0
+                if element
+                    UIARelease(element)
+            } else if leftover {
+                UIARelease(leftover)
+            }
         }
     }
 
-    matchClass := class
-    if matchClass = "" && uiaClass != ""
-        matchClass := uiaClass
+    return matches
+}
 
-    if gEnumFilter = "" || InStr(StrLower(matchClass), gEnumFilter)
-        gEnumMatches.Push(Map(
-            "HWND", Format("0x{1:X}", childHwnd),
-            "Class", class,
-            "UIAClass", uiaClass,
-            "Type", typeName,
-            "AutomationId", autoId,
-            "Name", ctrlName
-        ))
+UIABuildMatchRecord(details, depth) {
+    record := Map()
 
-    EnumChildrenRecursive(childHwnd)
-    return true
+    uiaClass := details.Has("Class") ? Trim(details["Class"]) : ""
+    name := details.Has("Name") ? Trim(details["Name"]) : ""
+    autoId := details.Has("Auto") ? Trim(details["Auto"]) : ""
+
+    localizedType := details.Has("LocalizedControlType") ? Trim(details["LocalizedControlType"]) : ""
+    controlType := details.Has("ControlType") ? Trim(details["ControlType"]) : ""
+    typeName := localizedType != "" ? localizedType : controlType
+
+    hwnd := 0
+    if details.Has("HWND")
+        hwnd := details["HWND"]
+    nativeClass := ""
+    if hwnd
+        nativeClass := Trim(GetWindowClassName(hwnd))
+
+    hwndText := hwnd ? Format("0x{1:X}", hwnd) : ""
+
+    record["HWND"] := hwndText
+    record["HWNDRaw"] := hwnd
+    record["Class"] := nativeClass
+    record["UIAClass"] := uiaClass
+    record["Type"] := typeName
+    record["AutomationId"] := autoId
+    record["Name"] := name
+    record["Depth"] := depth
+
+    return record
+}
+
+UIAMatchFilter(record, filter) {
+    if filter = ""
+        return true
+
+    fields := ["Class", "UIAClass", "Type", "AutomationId", "Name"]
+    for field in fields {
+        value := record.Has(field) ? record[field] : ""
+        if value != "" {
+            if InStr(StrLower(value), filter)
+                return true
+        }
+    }
+    return false
 }
 
 WriteResults(path, results) {
@@ -881,6 +921,7 @@ UIAGetDirectElementInfo(elementPtr) {
     controlTypeRaw := UIAGetProperty(elementPtr, 30003)
     localizedType := UIAGetProperty(elementPtr, 30004)
     frameworkId := UIAGetProperty(elementPtr, 30024)
+    nativeHandle := UIAGetProperty(elementPtr, 30020)
 
     controlTypeId := ""
     if controlTypeRaw != "" && RegExMatch(controlTypeRaw, "^-?\d+$")
@@ -897,6 +938,10 @@ UIAGetDirectElementInfo(elementPtr) {
     info["FrameworkId"] := frameworkId
     info["Rect"] := UIAGetBoundingRect(elementPtr)
     info["Source"] := "Element"
+    if nativeHandle != ""
+        info["HWND"] := nativeHandle + 0
+    else
+        info["HWND"] := 0
     return info
 }
 
