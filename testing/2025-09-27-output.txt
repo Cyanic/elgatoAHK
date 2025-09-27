@@ -29,3 +29,55 @@ Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.mixerD
 Control Class Scan - 2025-09-27 00:21:26 | Filter: EVHSpinBox
 No matches found.
 
+Control Class Scan - 2025-09-27 01:06:17 | Filter: QWidget
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget	Name: <none>	HWND: 
+Class: Qt683QWindowIcon	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.centralwidget	Name: <none>	HWND: 0x11907F6
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.scenesDock.dockWidgetContents_2	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.sourcesDock.dockWidgetContents_6	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.mixerDock.dockWidgetContents_7	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.transitionsDock.dockWidgetContents_5	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.topBar	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.left	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.mid	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.right	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.mixerDock.dockWidgetContents_7.mixerFrame.stackedMixerArea.hMixerScrollArea.qt_scrollarea_viewport	Name: <none>	HWND: 
+
+Control Class Scan - 2025-09-27 01:08:39 | Filter: EVHSpinBox
+Class: Scintilla	UIAClass: Scintilla	Type: pane	AutomationId: <none>	Name: Control Class Scan - 2025-09-27 00:07:07 | Filter: Microsoft.UI.Content.DesktopChildSiteBridge
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	UIAClass: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: <none>	HWND: 0x670C44
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	UIAClass: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: <none>	HWND: 0xA1636
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	UIAClass: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: <none>	HWND: 0x80874
+Class: Microsoft.UI.Content.DesktopChildSiteBridge	UIAClass: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: <none>	HWND: 0x390ACA
+
+Control Class Scan - 2025-09-27 00:11:16 | Filter: Microsoft.UI.Xaml.Controls.MenuBarItem
+Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: File	Name: File	HWND: 
+Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: Edit	Name: Edit	HWND: 
+Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: View	Name: View	HWND: 
+
+Control Class Scan - 2025-09-27 00:17:30 | Filter: QWidget
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget	Name: <none>	HWND: 
+Class: Qt683QWindowIcon	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.centralwidget	Name: <none>	HWND: 0x11907F6
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.scenesDock.dockWidgetContents_2	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.sourcesDock.dockWidgetContents_6	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.mixerDock.dockWidgetContents_7	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.transitionsDock.dockWidgetContents_5	Name: <none>	HWND: 
+Class: <none>	UIAClass: <none>	Type: text	AutomationId: <none>	Name: QWidget	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.topBar	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.left	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.mid	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.right	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.mixerDock.dockWidgetContents_7.mixerFrame.stackedMixerArea.hMixerScrollArea.qt_scrollarea_viewport	Name: <none>	HWND: 
+
+Control Class Scan - 2025-09-27 00:21:26 | Filter: EVHSpinBox
+No matches found.
+
+	HWND: 0x1010620
+Class: <none>	UIAClass: <none>	Type: tree item	AutomationId: list_id_5_9	Name: Output EVHSpinBox fail, dkondor	HWND: 
+Class: <none>	UIAClass: <none>	Type: text	AutomationId: <none>	Name: Output EVHSpinBox fail	HWND: 
+
