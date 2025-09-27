@@ -74,7 +74,7 @@ FindChildWindows(hwnd, filterClass) {
     global gEnumFilter, gEnumMatches, gEnumCallback
     gEnumFilter := StrLower(Trim(filterClass))
     gEnumMatches := []
-    gEnumCallback := CallbackCreate(Func("EnumChildProc"), "Fast")
+    gEnumCallback := CallbackCreate(EnumChildProc, "Fast")
     try {
         EnumChildrenRecursive(hwnd)
     } finally {
