@@ -80,7 +80,9 @@ FindChildWindows(hwnd, filterClass) {
         return matches
     }
 
-    return UIATraverseMatches(uia, root, filter)
+    uiaMatches := UIATraverseMatches(uia, root, filter)
+    nativeMatches := Win32TraverseMatches(hwnd, filter)
+    return UIAMergeMatches(uiaMatches, nativeMatches)
 }
 
 UIATraverseMatches(uia, rootElement, filter) {
@@ -140,6 +142,49 @@ UIATraverseMatches(uia, rootElement, filter) {
     return matches
 }
 
+Win32TraverseMatches(hwnd, filter) {
+    results := []
+    if !hwnd
+        return results
+
+    lowered := filter
+
+    callback := CallbackCreate(Win32EnumProc, "Fast", results, lowered)
+    try {
+        DllCall("EnumChildWindows", "ptr", hwnd, "ptr", callback, "ptr", 0)
+    } finally {
+        CallbackFree(callback)
+    }
+
+    return results
+}
+
+Win32EnumProc(childHwnd, lParam, results, filter) {
+    class := GetWindowClassName(childHwnd)
+    classLower := StrLower(class)
+    title := ""
+    try title := WinGetTitle("ahk_id " childHwnd)
+
+    record := Map()
+    record["HWNDRaw"] := childHwnd
+    record["HWND"] := Format("0x{1:X}", childHwnd)
+    record["Class"] := class
+    record["UIAClass"] := ""
+    record["Type"] := ""
+    record["AutomationId"] := ""
+    record["Name"] := title
+    record["Depth"] := -1
+
+    if filter = ""
+        results.Push(record)
+    else {
+        titleLower := StrLower(title)
+        if InStr(classLower, filter) || (titleLower != "" && InStr(titleLower, filter))
+            results.Push(record)
+    }
+    return true
+}
+
 UIABuildMatchRecord(details, depth) {
     record := Map()
 
@@ -185,6 +230,33 @@ UIAMatchFilter(record, filter) {
         }
     }
     return false
+}
+
+UIAMergeMatches(uiaMatches, nativeMatches) {
+    merged := []
+    seen := Map()
+
+    if IsObject(uiaMatches) {
+        for entry in uiaMatches {
+            merged.Push(entry)
+            if entry.Has("HWNDRaw") {
+                hwnd := entry["HWNDRaw"]
+                if hwnd
+                    seen[hwnd] := true
+            }
+        }
+    }
+
+    if IsObject(nativeMatches) {
+        for entry in nativeMatches {
+            hwnd := entry.Has("HWNDRaw") ? entry["HWNDRaw"] : 0
+            if hwnd && seen.Has(hwnd)
+                continue
+            merged.Push(entry)
+        }
+    }
+
+    return merged
 }
 
 WriteResults(path, results, searchTerm := "") {
