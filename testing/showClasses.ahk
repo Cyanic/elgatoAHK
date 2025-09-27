@@ -153,8 +153,11 @@ Win32TraverseMatches(hwnd, filter) {
     callback := CallbackCreate(Win32EnumProc, "Fast")
     try {
         ptr := ObjPtrAddRef(context)
-        try DllCall("EnumChildWindows", "ptr", hwnd, "ptr", callback, "ptr", ptr)
-        finally ObjRelease(ptr)
+        try {
+            DllCall("EnumChildWindows", "ptr", hwnd, "ptr", callback, "ptr", ptr)
+        } finally {
+            ObjRelease(ptr)
+        }
     } finally {
         CallbackFree(callback)
     }
