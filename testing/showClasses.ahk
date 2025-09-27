@@ -171,34 +171,32 @@ Win32EnumProc(childHwnd, lParam) {
     context := gWin32EnumContext
     if !IsObject(context)
         return true
-    try {
-        results := context["Items"]
-        filter := context["Filter"]
+    results := context["Items"]
+    filter := context["Filter"]
 
-        class := GetWindowClassName(childHwnd)
-        classLower := StrLower(class)
-        title := ""
-        try title := WinGetTitle("ahk_id " childHwnd)
+    class := GetWindowClassName(childHwnd)
+    classLower := StrLower(class)
+    title := ""
+    try title := WinGetTitle("ahk_id " childHwnd)
 
-        record := Map()
-        record["HWNDRaw"] := childHwnd
-        record["HWND"] := Format("0x{1:X}", childHwnd)
-        record["Class"] := class
-        record["UIAClass"] := ""
-        record["Type"] := ""
-        record["AutomationId"] := ""
-        record["Name"] := title
-        record["Depth"] := -1
+    record := Map()
+    record["HWNDRaw"] := childHwnd
+    record["HWND"] := Format("0x{1:X}", childHwnd)
+    record["Class"] := class
+    record["UIAClass"] := ""
+    record["Type"] := ""
+    record["AutomationId"] := ""
+    record["Name"] := title
+    record["Depth"] := -1
 
-        if filter = "" {
+    if filter = "" {
+        results.Push(record)
+    } else {
+        titleLower := StrLower(title)
+        if InStr(classLower, filter) || (titleLower != "" && InStr(titleLower, filter))
             results.Push(record)
-        } else {
-            titleLower := StrLower(title)
-            if InStr(classLower, filter) || (titleLower != "" && InStr(titleLower, filter))
-                results.Push(record)
-        }
-        return true
     }
+    return true
 }
 
 UIABuildMatchRecord(details, depth) {
