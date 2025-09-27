@@ -155,8 +155,11 @@ UIAFindClassMatches(uia, rootElement, filterLower, filterExact) {
         return matches
 
     condObj := ""
-    try condObj := uia.CreatePropertyCondition(30012, filterExact)
-    catch condObj := ""
+    try {
+        condObj := uia.CreatePropertyCondition(30012, filterExact)
+    } catch {
+        condObj := ""
+    }
     if !IsObject(condObj)
         return matches
 
@@ -167,8 +170,11 @@ UIAFindClassMatches(uia, rootElement, filterLower, filterExact) {
     elements := 0
     static TREE_SCOPE_DESCENDANTS := 4
     hr := 1
-    try hr := ComCall(8, rootElement, "int", TREE_SCOPE_DESCENDANTS, "ptr", condPtr, "ptr*", &elements)
-    catch hr := 1
+    try {
+        hr := ComCall(8, rootElement, "int", TREE_SCOPE_DESCENDANTS, "ptr", condPtr, "ptr*", &elements)
+    } catch {
+        hr := 1
+    }
     if hr != 0 || !elements
         return matches
 
