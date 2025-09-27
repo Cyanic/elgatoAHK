@@ -4,3 +4,8 @@ Class: Microsoft.UI.Content.DesktopChildSiteBridge	UIAClass: Microsoft.UI.Conten
 Class: Microsoft.UI.Content.DesktopChildSiteBridge	UIAClass: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: <none>	HWND: 0x80874
 Class: Microsoft.UI.Content.DesktopChildSiteBridge	UIAClass: Microsoft.UI.Content.DesktopChildSiteBridge	Type: pane	AutomationId: <none>	Name: <none>	HWND: 0x390ACA
 
+Control Class Scan - 2025-09-27 00:11:16 | Filter: Microsoft.UI.Xaml.Controls.MenuBarItem
+Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: File	Name: File	HWND: 
+Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: Edit	Name: Edit	HWND: 
+Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: View	Name: View	HWND: 
+
