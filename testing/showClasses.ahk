@@ -1,6 +1,8 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
+global gWin32EnumContext := 0
+
 Main() {
     iniPath := EnsureConfig()
     config := LoadConfig(iniPath)
@@ -146,31 +148,29 @@ Win32TraverseMatches(hwnd, filter) {
     if !hwnd
         return []
 
+    global gWin32EnumContext
     context := Map()
     context["Items"] := []
     context["Filter"] := StrLower(filter)
+    gWin32EnumContext := context
 
     callback := CallbackCreate(Win32EnumProc, "Fast")
     try {
-        ptr := ObjPtrAddRef(context)
-        try {
-            DllCall("EnumChildWindows", "ptr", hwnd, "ptr", callback, "ptr", ptr)
-        } finally {
-            ObjRelease(ptr)
-        }
+        DllCall("EnumChildWindows", "ptr", hwnd, "ptr", callback, "ptr", 0)
     } finally {
         CallbackFree(callback)
     }
 
-    return context.Has("Items") ? context["Items"] : []
+    results := context.Has("Items") ? context["Items"] : []
+    gWin32EnumContext := 0
+    return results
 }
 
 Win32EnumProc(childHwnd, lParam) {
-    context := ObjFromPtrAddRef(lParam)
-    if !IsObject(context) {
-        ObjRelease(lParam)
+    global gWin32EnumContext
+    context := gWin32EnumContext
+    if !IsObject(context)
         return true
-    }
     try {
         results := context["Items"]
         filter := context["Filter"]
@@ -198,9 +198,6 @@ Win32EnumProc(childHwnd, lParam) {
                 results.Push(record)
         }
         return true
-    }
-    finally {
-        ObjRelease(lParam)
     }
 }
 
