@@ -81,3 +81,35 @@ No matches found.
 Class: <none>	UIAClass: <none>	Type: tree item	AutomationId: list_id_5_9	Name: Output EVHSpinBox fail, dkondor	HWND: 
 Class: <none>	UIAClass: <none>	Type: text	AutomationId: <none>	Name: Output EVHSpinBox fail	HWND: 
 
+Control Class Scan - 2025-09-27 01:24:18 | Filter: QWidget
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget	Name: <none>	HWND: 
+Class: Qt683QWindowIcon	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.centralwidget	Name: <none>	HWND: 0x11907F6
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.scenesDock.dockWidgetContents_2	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.sourcesDock.dockWidgetContents_6	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.mixerDock.dockWidgetContents_7	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.transitionsDock.dockWidgetContents_5	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage	Name: <none>	HWND: 
+Class: <none>	UIAClass: <none>	Type: tree item	AutomationId: list_id_5_3	Name: QWidget fail6, dkondor	HWND: 
+Class: <none>	UIAClass: <none>	Type: tree item	AutomationId: list_id_5_4	Name: QWidget fail5, dkondor	HWND: 
+Class: <none>	UIAClass: <none>	Type: tree item	AutomationId: list_id_5_5	Name: QWidget fail4, dkondor	HWND: 
+Class: <none>	UIAClass: <none>	Type: tree item	AutomationId: list_id_5_6	Name: QWidget fail3, dkondor	HWND: 
+Class: <none>	UIAClass: <none>	Type: tree item	AutomationId: list_id_5_7	Name: QWidget fail2, dkondor	HWND: 
+Class: <none>	UIAClass: <none>	Type: tree item	AutomationId: list_id_5_8	Name: QWidget fail, dkondor	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer	Name: <none>	HWND: 
+Class: <none>	UIAClass: <none>	Type: text	AutomationId: <none>	Name: QWidget fail6	HWND: 
+Class: <none>	UIAClass: <none>	Type: text	AutomationId: <none>	Name: QWidget fail5	HWND: 
+Class: <none>	UIAClass: <none>	Type: text	AutomationId: <none>	Name: QWidget fail4	HWND: 
+Class: <none>	UIAClass: <none>	Type: text	AutomationId: <none>	Name: QWidget fail3	HWND: 
+Class: <none>	UIAClass: <none>	Type: text	AutomationId: <none>	Name: QWidget fail2	HWND: 
+Class: <none>	UIAClass: <none>	Type: text	AutomationId: <none>	Name: QWidget fail	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.topBar	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.left	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.mid	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer.previewToolbar.right	Name: <none>	HWND: 
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.mixerDock.dockWidgetContents_7.mixerFrame.stackedMixerArea.hMixerScrollArea.qt_scrollarea_viewport	Name: <none>	HWND: 
+
+Control Class Scan - 2025-09-27 01:31:15 | Filter: EVHSpinBox
+Class: <none>	UIAClass: <none>	Type: tree item	AutomationId: list_id_5_12	Name: Output EVHSpinBox fail, dkondor	HWND: 
+Class: <none>	UIAClass: <none>	Type: text	AutomationId: <none>	Name: Output EVHSpinBox fail	HWND: 
+
