@@ -164,7 +164,9 @@ UIAPointerKey(ptr) {
         return 0
     key := 0
     try key := ComObjValue(ptr)
-    catch key := ptr
+    catch {
+        key := ptr
+    }
     return key
 }
 
@@ -344,7 +346,9 @@ UIAGetProperty(elementPtr, propertyId) {
         params.Push(variant.Ptr)
 
         try hr := ComCall(params*)
-        catch hr := -1
+        catch {
+            hr := -1
+        }
         if hr = 0 {
             value := UIAVariantToText(variant)
             UIATryVariantClear(variant)
