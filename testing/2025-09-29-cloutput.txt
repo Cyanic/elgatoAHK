@@ -1,0 +1,1 @@
+﻿09:04:50	AutomationId: <none>	ClassName: QWidget	WinClass: Qt673QWindowToolSaveBits	WinHWND: 0x470C02	CtrlHWND: <none>	Pos: (-367, -321)	Rect: (-867.0,-618.0,1024.0,600.0) (Screen coords)
