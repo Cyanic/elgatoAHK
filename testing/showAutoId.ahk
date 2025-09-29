@@ -87,6 +87,7 @@ FindAutomationMatches(hwnd, filterText) {
     return matches
 }
 
+
 UIABreadthFirstSearch(uia, rootElement, filterLower) {
     maxNodes := gAutoIdMaxNodes
     queue := []
@@ -94,6 +95,10 @@ UIABreadthFirstSearch(uia, rootElement, filterLower) {
     matches := []
     index := 1
     processed := 0
+    visited := Map()
+    rootKey := UIAPointerKey(rootElement)
+    if rootKey
+        visited[rootKey] := true
 
     while index <= queue.Length {
         current := queue[index]
@@ -117,8 +122,16 @@ UIABreadthFirstSearch(uia, rootElement, filterLower) {
                 count := UIAElementArrayLength(children)
                 Loop count {
                     child := UIAElementArrayGet(children, A_Index - 1)
-                    if child
-                        queue.Push(Map("Element", child, "Depth", depth + 1, "Release", true))
+                    if !child
+                        continue
+                    key := UIAPointerKey(child)
+                    if key && visited.Has(key) {
+                        UIARelease(child)
+                        continue
+                    }
+                    if key
+                        visited[key] := true
+                    queue.Push(Map("Element", child, "Depth", depth + 1, "Release", true))
                 }
                 UIARelease(children)
             }
@@ -144,6 +157,15 @@ UIABreadthFirstSearch(uia, rootElement, filterLower) {
     }
 
     return matches
+}
+
+UIAPointerKey(ptr) {
+    if !ptr
+        return 0
+    key := 0
+    try key := ComObjValue(ptr)
+    catch key := ptr
+    return key
 }
 
 UIABuildMatchRecord(details, depth) {
@@ -321,7 +343,8 @@ UIAGetProperty(elementPtr, propertyId) {
         params.Push("ptr")
         params.Push(variant.Ptr)
 
-        hr := ComCall(params*)
+        try hr := ComCall(params*)
+        catch hr := -1
         if hr = 0 {
             value := UIAVariantToText(variant)
             UIATryVariantClear(variant)
