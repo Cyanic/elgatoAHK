@@ -212,18 +212,25 @@ UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
         return matches
 
     start := rootElement
+    releaseStart := false
     try {
         normalized := walker.NormalizeElement(rootElement)
-        if normalized
+        if normalized {
             start := normalized
+            if start != rootElement
+                releaseStart := true
+        }
     } catch {
     }
 
+    if !start
+        return matches
+
     stack := []
-    stack.Push(Map("Element", start, "Depth", 0, "Release", false))
+    stack.Push(Map("Element", start, "Depth", 0, "Release", releaseStart))
     visited := Map()
 
-    maxNodes := 20000
+    maxNodes := 1000000
     processed := 0
 
     while stack.Length {
@@ -234,13 +241,16 @@ UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
         if !elem
             continue
 
-        key := elem
-        if visited.Has(key) {
+        key := 0
+        try key := ComObjValue(elem)
+        catch key := elem
+        if key && visited.Has(key) {
             if releaseElem
                 UIARelease(elem)
             continue
         }
-        visited[key] := true
+        if key
+            visited[key] := true
 
         processed += 1
         details := UIAGetDirectElementInfo(elem)
@@ -249,7 +259,7 @@ UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
             classField := record.Has("UIAClass") ? record["UIAClass"] : ""
             if classField = ""
                 classField := record.Has("Class") ? record["Class"] : ""
-            if StrLower(classField) = filterLower
+            if classField != "" && InStr(StrLower(classField), filterLower)
                 matches.Push(record)
         }
 
@@ -262,7 +272,8 @@ UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
         child := walker.GetFirstChildElement(elem)
         while child {
             stack.Push(Map("Element", child, "Depth", depth + 1, "Release", true))
-            child := walker.GetNextSiblingElement(child)
+            sibling := walker.GetNextSiblingElement(child)
+            child := sibling
         }
 
         if releaseElem
