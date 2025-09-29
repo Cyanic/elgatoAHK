@@ -242,8 +242,12 @@ UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
             continue
 
         key := 0
-        try key := ComObjValue(elem)
-        catch key := elem
+        try {
+            key := ComObjValue(elem)
+        }
+        catch {
+            key := elem
+        }
         if key && visited.Has(key) {
             if releaseElem
                 UIARelease(elem)
