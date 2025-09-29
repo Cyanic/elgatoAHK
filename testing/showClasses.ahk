@@ -28,7 +28,7 @@ Main() {
 
     dateStamp := FormatTime(, "yyyy-MM-dd")
     outPath := A_ScriptDir "\" dateStamp "-output.txt"
-    WriteResults(outPath, matches, filterText)
+    WriteResults(outPath, matches, filterText, config)
     MsgBox Format("Found {1} matching controls. Details written to:`n{2}", matches.Length, outPath)
 
     MsgBox "Hover any control and press Ctrl+Alt+D to log its AutomationId and ClassName." "`nOutput file: " dateStamp "-cloutput.txt"
@@ -327,6 +327,9 @@ Win32EnumProc(childHwnd, lParam) {
     record["AutomationId"] := ""
     record["Name"] := title
     record["Depth"] := -1
+    rectInfo := GetWindowRectInfo(childHwnd)
+    if IsObject(rectInfo)
+        record["Rect"] := rectInfo
 
     if filter = "" {
         results.Push(record)
@@ -366,6 +369,8 @@ UIABuildMatchRecord(details, depth) {
     record["AutomationId"] := autoId
     record["Name"] := name
     record["Depth"] := depth
+    if details.Has("Rect") && IsObject(details["Rect"])
+        record["Rect"] := details["Rect"]
 
     return record
 }
@@ -412,10 +417,12 @@ UIAMergeMatches(uiaMatches, nativeMatches) {
     return merged
 }
 
-WriteResults(path, results, searchTerm := "") {
+WriteResults(path, results, searchTerm := "", config := 0) {
     timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
     filterLabel := searchTerm != "" ? searchTerm : "<none>"
-    header := Format("Control Class Scan - {1} | Filter: {2}", timestamp, filterLabel)
+    classLabel := ConfigValueOrDefault(config, "ClassNN")
+    processLabel := ConfigValueOrDefault(config, "Process")
+    header := Format("Control Class Scan - {1} | Filter: {2} | ClassNN: {3} | Process: {4}", timestamp, filterLabel, classLabel, processLabel)
     lines := []
     lines.Push(header)
     if results.Length = 0 {
@@ -427,12 +434,36 @@ WriteResults(path, results, searchTerm := "") {
             typeName := item.Has("Type") && item["Type"] != "" ? item["Type"] : "<none>"
             autoId := item.Has("AutomationId") && item["AutomationId"] != "" ? item["AutomationId"] : "<none>"
             ctrlName := item.Has("Name") && item["Name"] != "" ? item["Name"] : "<none>"
-            line := Format("Class: {1}`tUIAClass: {2}`tType: {3}`tAutomationId: {4}`tName: {5}`tHWND: {6}", class, uiaClass, typeName, autoId, ctrlName, item["HWND"])
+            hwnd := item.Has("HWND") && item["HWND"] != "" ? item["HWND"] : "<none>"
+            location := FormatLocation(item)
+            line := Format("Class: {1}`tUIAClass: {2}`tType: {3}`tAutomationId: {4}`tName: {5}`tHWND: {6}`t{7}", class, uiaClass, typeName, autoId, ctrlName, hwnd, location)
             lines.Push(line)
         }
     }
     FileAppend(JoinLines(lines) "`n`n", path, "UTF-8")
 }
+
+ConfigValueOrDefault(config, key) {
+    if !IsObject(config)
+        return "<none>"
+    if !config.Has(key)
+        return "<none>"
+    value := Trim(config[key])
+    return value != "" ? value : "<none>"
+}
+
+FormatLocation(item) {
+    if IsObject(item) && item.Has("Rect") && IsObject(item["Rect"]) {
+        rect := item["Rect"]
+        x := rect.Has("x") ? Round(rect["x"]) : 0
+        y := rect.Has("y") ? Round(rect["y"]) : 0
+        w := rect.Has("w") ? Round(rect["w"]) : 0
+        h := rect.Has("h") ? Round(rect["h"]) : 0
+        return Format("Location:{x: {1} y: {2} w:{3}, h: {4}}", x, y, w, h)
+    }
+    return "Location:{x: <none> y: <none> w:<none>, h: <none>}"
+}
+
 
 CaptureUnderCursor(*) {
     info := GatherCursorUIAInfo(true, false)
@@ -947,6 +978,21 @@ GetWindowClassName(hwnd) {
     buf := Buffer(512 * 2, 0)
     len := DllCall("GetClassNameW", "ptr", hwnd, "ptr", buf, "int", 512)
     return len ? StrGet(buf, "UTF-16") : ""
+}
+
+GetWindowRectInfo(hwnd) {
+    if !hwnd
+        return 0
+    rectBuf := Buffer(16, 0)
+    if !DllCall("GetWindowRect", "ptr", hwnd, "ptr", rectBuf.Ptr)
+        return 0
+    left := NumGet(rectBuf, 0, "int")
+    top := NumGet(rectBuf, 4, "int")
+    right := NumGet(rectBuf, 8, "int")
+    bottom := NumGet(rectBuf, 12, "int")
+    width := right - left
+    height := bottom - top
+    return Map("x", left, "y", top, "w", width, "h", height)
 }
 
 UIAElementFromHandle(uia, hwnd) {
