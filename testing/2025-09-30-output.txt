@@ -6,3 +6,11 @@ Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Ita
 Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Link (Ctrl+K)	HWND: <none>	Location:{x: -31377 y: -31958 w:32, h: 32}
 Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Clear formatting (Ctrl+Space)	HWND: <none>	Location:{x: -31345 y: -31958 w:32, h: 32}
 
+Scan - 2025-09-30 00:45:21 | Filter: ToggleButton | ClassNN: <none> | Process: <none>
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: StartButton	Name: Start	HWND: <none>Rect: (0.0,1152.0,55.0,48.0)	Depth: 4	LocationLocation:{x: 0 y: 1152 w:55, h: 48}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: TaskViewButton	Name: Task View	HWND: <none>Rect: (55.0,1152.0,44.0,48.0)	Depth: 4	LocationLocation:{x: 55 y: 1152 w:44, h: 48}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Bold (Ctrl+B)	HWND: <none>Rect: (-31441.0,-31958.0,32.0,32.0)	Depth: 4	LocationLocation:{x: -31441 y: -31958 w:32, h: 32}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Italic (Ctrl+I)	HWND: <none>Rect: (-31409.0,-31958.0,32.0,32.0)	Depth: 4	LocationLocation:{x: -31409 y: -31958 w:32, h: 32}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Link (Ctrl+K)	HWND: <none>Rect: (-31377.0,-31958.0,32.0,32.0)	Depth: 4	LocationLocation:{x: -31377 y: -31958 w:32, h: 32}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Clear formatting (Ctrl+Space)	HWND: <none>Rect: (-31345.0,-31958.0,32.0,32.0)	Depth: 4	LocationLocation:{x: -31345 y: -31958 w:32, h: 32}
+

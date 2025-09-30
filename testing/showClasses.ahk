@@ -389,8 +389,6 @@ UIAMergeMatches(uiaMatches, nativeMatches) {
 }
 
 
-
-
 GetWindowClassName(hwnd) {
     if !hwnd
         return ""
