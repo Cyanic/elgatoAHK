@@ -1,474 +1,5 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
-
-global gWin32EnumContext := 0
-
-Main() {
-    iniPath := EnsureConfig()
-    config := LoadConfig(iniPath)
-    if !config.Has("ClassNN") && !config.Has("Process") {
-        MsgBox "No window configuration found in " iniPath
-        return
-    }
-
-    classPrompt := InputBox("Enter (part of) the class name to search for:", "Class Lookup")
-    if classPrompt.Result != "OK" || classPrompt.Value = "" {
-        MsgBox "No class provided. Exiting."
-        return
-    }
-
-    targetHwnd := GetTargetWindow(config)
-    if !targetHwnd {
-        MsgBox "Target window not found. Check showClasses.ini"
-        return
-    }
-
-    filterText := Trim(classPrompt.Value)
-    matches := FindChildWindows(targetHwnd, filterText)
-
-    dateStamp := FormatTime(, "yyyy-MM-dd")
-    outPath := A_ScriptDir "\" dateStamp "-output.txt"
-    WriteResults(outPath, matches, filterText, config)
-    MsgBox Format("Found {1} matching controls. Details written to:`n{2}", matches.Length, outPath)
-
-    MsgBox "Hover any control and press Ctrl+Alt+D to log its AutomationId and ClassName." "`nOutput file: " dateStamp "-cloutput.txt"
-}
-
-EnsureConfig() {
-    iniPath := A_ScriptDir "\showClasses.ini"
-    if !FileExist(iniPath) {
-        IniWrite("Qt673QWindowToolSaveBits", iniPath, "Window", "ClassNN")
-        IniWrite("Camera Hub.exe", iniPath, "Window", "Process")
-    }
-    return iniPath
-}
-
-LoadConfig(iniPath) {
-    config := Map()
-    classNN := IniRead(iniPath, "Window", "ClassNN", "")
-    process := IniRead(iniPath, "Window", "Process", "")
-    if classNN != ""
-        config["ClassNN"] := classNN
-    if process != ""
-        config["Process"] := process
-    return config
-}
-
-GetTargetWindow(config) {
-    search := ""
-    if config.Has("ClassNN")
-        search .= "ahk_class " config["ClassNN"]
-    if config.Has("Process") {
-        if search != ""
-            search .= " "
-        search .= "ahk_exe " config["Process"]
-    }
-    if search = ""
-        return 0
-    return WinExist(search)
-}
-
-FindChildWindows(hwnd, filterClass) {
-    filterOriginal := Trim(filterClass)
-    filter := StrLower(filterOriginal)
-    matches := []
-
-    uia := GetUIAutomation()
-    if !IsObject(uia)
-        return matches
-
-    root := UIAElementFromHandle(uia, hwnd)
-    if !root {
-        MsgBox "UI Automation could not bind to the target window."
-        return matches
-    }
-
-    uiaMatches := []
-    if filterOriginal != ""
-        uiaMatches := UIAFindClassMatches(uia, root, filter, filterOriginal)
-    if !uiaMatches.Length
-        uiaMatches := UIARawClassMatches(uia, root, filter, filterOriginal)
-    if !uiaMatches.Length
-        uiaMatches := UIATraverseMatches(uia, root, filter)
-    nativeMatches := Win32TraverseMatches(hwnd, filter)
-    return UIAMergeMatches(uiaMatches, nativeMatches)
-}
-
-UIATraverseMatches(uia, rootElement, filter) {
-    matches := []
-    queue := []
-    queue.Push(Map("Element", rootElement, "Depth", 0))
-
-    processed := 0
-    maxNodes := 5000
-
-    try {
-        while queue.Length {
-            current := queue.RemoveAt(1)
-            element := current["Element"]
-            depth := current["Depth"]
-
-            processed += 1
-
-            details := UIAGetDirectElementInfo(element)
-            if IsObject(details) {
-                record := UIABuildMatchRecord(details, depth)
-                if UIAMatchFilter(record, filter)
-                    matches.Push(record)
-            }
-
-            if processed < maxNodes {
-                children := UIAFindChildren(uia, element)
-                if children {
-                    count := UIAElementArrayLength(children)
-                    Loop count {
-                        child := UIAElementArrayGet(children, A_Index - 1)
-                        if child
-                            queue.Push(Map("Element", child, "Depth", depth + 1))
-                    }
-                    UIARelease(children)
-                }
-            }
-
-            UIARelease(element)
-
-            if processed >= maxNodes
-                break
-        }
-    } finally {
-        while queue.Length {
-            leftover := queue.Pop()
-            if IsObject(leftover) {
-                element := leftover.Has("Element") ? leftover["Element"] : 0
-                if element
-                    UIARelease(element)
-            } else if leftover {
-                UIARelease(leftover)
-            }
-        }
-    }
-
-    return matches
-}
-
-UIAFindClassMatches(uia, rootElement, filterLower, filterExact) {
-    matches := []
-    if filterExact = ""
-        return matches
-
-    condObj := ""
-    try {
-        condObj := uia.CreatePropertyCondition(30012, filterExact)
-    } catch {
-        condObj := ""
-    }
-    if !IsObject(condObj)
-        return matches
-
-    condPtr := ComObjValue(condObj)
-    if !condPtr
-        return matches
-
-    elements := 0
-    static TREE_SCOPE_DESCENDANTS := 4
-    hr := 1
-    try {
-        hr := ComCall(8, rootElement, "int", TREE_SCOPE_DESCENDANTS, "ptr", condPtr, "ptr*", &elements)
-    } catch {
-        hr := 1
-    }
-    if hr != 0 || !elements
-        return matches
-
-    count := UIAElementArrayLength(elements)
-    loop count {
-        elem := UIAElementArrayGet(elements, A_Index - 1)
-        if !elem
-            continue
-        details := UIAGetDirectElementInfo(elem)
-        if IsObject(details) {
-            record := UIABuildMatchRecord(details, 0)
-            if filterLower = "" || UIAMatchFilter(record, filterLower)
-                matches.Push(record)
-        }
-        UIARelease(elem)
-    }
-    UIARelease(elements)
-    return matches
-}
-
-UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
-    matches := []
-    if filterExact = ""
-        return matches
-
-    walker := ""
-    try {
-        walker := uia.CreateTreeWalker(uia.RawViewCondition)
-    } catch {
-        walker := ""
-    }
-    if !IsObject(walker)
-        return matches
-
-    start := rootElement
-    releaseStart := false
-    try {
-        normalized := walker.NormalizeElement(rootElement)
-        if normalized {
-            start := normalized
-            if start != rootElement
-                releaseStart := true
-        }
-    } catch {
-    }
-
-    if !start
-        return matches
-
-    stack := []
-    stack.Push(Map("Element", start, "Depth", 0, "Release", releaseStart))
-    visited := Map()
-
-    maxNodes := 1000000
-    processed := 0
-
-    while stack.Length {
-        current := stack.Pop()
-        elem := current["Element"]
-        depth := current["Depth"]
-        releaseElem := current.Has("Release") ? current["Release"] : true
-        if !elem
-            continue
-
-        key := 0
-        try {
-            key := ComObjValue(elem)
-        }
-        catch {
-            key := elem
-        }
-        if key && visited.Has(key) {
-            if releaseElem
-                UIARelease(elem)
-            continue
-        }
-        if key
-            visited[key] := true
-
-        processed += 1
-        details := UIAGetDirectElementInfo(elem)
-        if IsObject(details) {
-            record := UIABuildMatchRecord(details, depth)
-            classField := record.Has("UIAClass") ? record["UIAClass"] : ""
-            if classField = ""
-                classField := record.Has("Class") ? record["Class"] : ""
-            if classField != "" && InStr(StrLower(classField), filterLower)
-                matches.Push(record)
-        }
-
-        if processed > maxNodes {
-            if releaseElem
-                UIARelease(elem)
-            break
-        }
-
-        child := walker.GetFirstChildElement(elem)
-        while child {
-            stack.Push(Map("Element", child, "Depth", depth + 1, "Release", true))
-            sibling := walker.GetNextSiblingElement(child)
-            child := sibling
-        }
-
-        if releaseElem
-            UIARelease(elem)
-    }
-
-    return matches
-}
-
-Win32TraverseMatches(hwnd, filter) {
-    if !hwnd
-        return []
-
-    global gWin32EnumContext
-    context := Map()
-    context["Items"] := []
-    context["Filter"] := StrLower(filter)
-    gWin32EnumContext := context
-
-    callback := CallbackCreate(Win32EnumProc, "Fast")
-    try {
-        DllCall("EnumChildWindows", "ptr", hwnd, "ptr", callback, "ptr", 0)
-    } finally {
-        CallbackFree(callback)
-    }
-
-    results := context.Has("Items") ? context["Items"] : []
-    gWin32EnumContext := 0
-    return results
-}
-
-Win32EnumProc(childHwnd, lParam) {
-    global gWin32EnumContext
-    context := gWin32EnumContext
-    if !IsObject(context)
-        return true
-    results := context["Items"]
-    filter := context["Filter"]
-
-    class := GetWindowClassName(childHwnd)
-    classLower := StrLower(class)
-    title := ""
-    try title := WinGetTitle("ahk_id " childHwnd)
-
-    record := Map()
-    record["HWNDRaw"] := childHwnd
-    record["HWND"] := Format("0x{1:X}", childHwnd)
-    record["Class"] := class
-    record["UIAClass"] := ""
-    record["Type"] := ""
-    record["AutomationId"] := ""
-    record["Name"] := title
-    record["Depth"] := -1
-    rectInfo := GetWindowRectInfo(childHwnd)
-    if IsObject(rectInfo)
-        record["Rect"] := rectInfo
-
-    if filter = "" {
-        results.Push(record)
-    } else {
-        titleLower := StrLower(title)
-        if InStr(classLower, filter) || (titleLower != "" && InStr(titleLower, filter))
-            results.Push(record)
-    }
-    return true
-}
-
-UIABuildMatchRecord(details, depth) {
-    record := Map()
-
-    uiaClass := details.Has("Class") ? Trim(details["Class"]) : ""
-    name := details.Has("Name") ? Trim(details["Name"]) : ""
-    autoId := details.Has("Auto") ? Trim(details["Auto"]) : ""
-
-    localizedType := details.Has("LocalizedControlType") ? Trim(details["LocalizedControlType"]) : ""
-    controlType := details.Has("ControlType") ? Trim(details["ControlType"]) : ""
-    typeName := localizedType != "" ? localizedType : controlType
-
-    hwnd := 0
-    if details.Has("HWND")
-        hwnd := details["HWND"]
-    nativeClass := ""
-    if hwnd
-        nativeClass := Trim(GetWindowClassName(hwnd))
-
-    hwndText := hwnd ? Format("0x{1:X}", hwnd) : ""
-
-    record["HWND"] := hwndText
-    record["HWNDRaw"] := hwnd
-    record["Class"] := nativeClass
-    record["UIAClass"] := uiaClass
-    record["Type"] := typeName
-    record["AutomationId"] := autoId
-    record["Name"] := name
-    record["Depth"] := depth
-    if details.Has("Rect") && IsObject(details["Rect"])
-        record["Rect"] := details["Rect"]
-
-    return record
-}
-
-UIAMatchFilter(record, filter) {
-    if filter = ""
-        return true
-
-    fields := ["Class", "UIAClass"]
-    for field in fields {
-        value := record.Has(field) ? record[field] : ""
-        if value != "" {
-            if InStr(StrLower(value), filter)
-                return true
-        }
-    }
-    return false
-}
-
-UIAMergeMatches(uiaMatches, nativeMatches) {
-    merged := []
-    seen := Map()
-
-    if IsObject(uiaMatches) {
-        for entry in uiaMatches {
-            merged.Push(entry)
-            if entry.Has("HWNDRaw") {
-                hwnd := entry["HWNDRaw"]
-                if hwnd
-                    seen[hwnd] := true
-            }
-        }
-    }
-
-    if IsObject(nativeMatches) {
-        for entry in nativeMatches {
-            hwnd := entry.Has("HWNDRaw") ? entry["HWNDRaw"] : 0
-            if hwnd && seen.Has(hwnd)
-                continue
-            merged.Push(entry)
-        }
-    }
-
-    return merged
-}
-
-WriteResults(path, results, searchTerm := "", config := 0) {
-    timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
-    filterLabel := searchTerm != "" ? searchTerm : "<none>"
-    classLabel := ConfigValueOrDefault(config, "ClassNN")
-    processLabel := ConfigValueOrDefault(config, "Process")
-    header := Format("Control Class Scan - {1} | Filter: {2} | ClassNN: {3} | Process: {4}", timestamp, filterLabel, classLabel, processLabel)
-    lines := []
-    lines.Push(header)
-    if results.Length = 0 {
-        lines.Push("No matches found.")
-    } else {
-        for item in results {
-            class := item.Has("Class") && item["Class"] != "" ? item["Class"] : "<none>"
-            uiaClass := item.Has("UIAClass") && item["UIAClass"] != "" ? item["UIAClass"] : "<none>"
-            typeName := item.Has("Type") && item["Type"] != "" ? item["Type"] : "<none>"
-            autoId := item.Has("AutomationId") && item["AutomationId"] != "" ? item["AutomationId"] : "<none>"
-            ctrlName := item.Has("Name") && item["Name"] != "" ? item["Name"] : "<none>"
-            hwnd := item.Has("HWND") && item["HWND"] != "" ? item["HWND"] : "<none>"
-            location := FormatLocation(item)
-            line := Format("Class: {1}`tUIAClass: {2}`tType: {3}`tAutomationId: {4}`tName: {5}`tHWND: {6}`t{7}", class, uiaClass, typeName, autoId, ctrlName, hwnd, location)
-            lines.Push(line)
-        }
-    }
-    FileAppend(JoinLines(lines) "`n`n", path, "UTF-8")
-}
-
-ConfigValueOrDefault(config, key) {
-    if !IsObject(config)
-        return "<none>"
-    if !config.Has(key)
-        return "<none>"
-    value := Trim(config[key])
-    return value != "" ? value : "<none>"
-}
-
-FormatLocation(item) {
-    if IsObject(item) && item.Has("Rect") && IsObject(item["Rect"]) {
-        rect := item["Rect"]
-        x := rect.Has("x") ? Round(rect["x"]) : 0
-        y := rect.Has("y") ? Round(rect["y"]) : 0
-        w := rect.Has("w") ? Round(rect["w"]) : 0
-        h := rect.Has("h") ? Round(rect["h"]) : 0
-        return Format("Location:{x: {1} y: {2} w:{3}, h: {4}}", x, y, w, h)
-    }
-    return "Location:{x: <none> y: <none> w:<none>, h: <none>}"
-}
-
-
 CaptureUnderCursor(*) {
     info := GatherCursorUIAInfo(true, false)
     if !IsObject(info)
@@ -503,7 +34,6 @@ CaptureUnderCursor(*) {
     FileAppend(line "`n", path, "UTF-8")
     MsgBox "Captured AutomationId: " info["AutomationId"] "`nClassName: " info["ClassName"] "`nLogged to " path
 }
-
 CaptureAutomationDebug(*) {
     info := GatherCursorUIAInfo(true, true)
     if !IsObject(info)
@@ -625,7 +155,6 @@ CaptureAutomationDebug(*) {
     FileAppend(JoinLines(lines) "`n", path, "UTF-8")
     MsgBox "UIA debug written to: " path
 }
-
 GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
     info := Map()
     notes := []
@@ -941,7 +470,6 @@ GatherCursorUIAInfo(showMessages := true, collectDebug := false) {
         info["Candidates"] := debugCandidates
     return info
 }
-
 NormalizeHwnd(value, baseWin := 0) {
     if value is Integer
         return value
@@ -959,14 +487,12 @@ NormalizeHwnd(value, baseWin := 0) {
     }
     return 0
 }
-
 WindowFromPoint(x, y) {
     point := Buffer(8, 0)
     NumPut("int", x, point, 0)
     NumPut("int", y, point, 4)
     return DllCall("WindowFromPoint", "int64", NumGet(point, 0, "int64"), "ptr")
 }
-
 GetPhysicalCursorPos(&x, &y) {
     point := Buffer(8, 0)
     if !DllCall("GetCursorPos", "ptr", point.Ptr)
@@ -975,7 +501,6 @@ GetPhysicalCursorPos(&x, &y) {
     y := NumGet(point, 4, "int")
     return true
 }
-
 GetWindowClassName(hwnd) {
     if !hwnd
         return ""
@@ -983,28 +508,11 @@ GetWindowClassName(hwnd) {
     len := DllCall("GetClassNameW", "ptr", hwnd, "ptr", buf, "int", 512)
     return len ? StrGet(buf, "UTF-16") : ""
 }
-
-GetWindowRectInfo(hwnd) {
-    if !hwnd
-        return 0
-    rectBuf := Buffer(16, 0)
-    if !DllCall("GetWindowRect", "ptr", hwnd, "ptr", rectBuf.Ptr)
-        return 0
-    left := NumGet(rectBuf, 0, "int")
-    top := NumGet(rectBuf, 4, "int")
-    right := NumGet(rectBuf, 8, "int")
-    bottom := NumGet(rectBuf, 12, "int")
-    width := right - left
-    height := bottom - top
-    return Map("x", left, "y", top, "w", width, "h", height)
-}
-
 UIAElementFromHandle(uia, hwnd) {
     elementPtr := 0
     hr := ComCall(7, uia, "ptr", hwnd, "ptr*", &elementPtr)
     return hr = 0 ? elementPtr : 0
 }
-
 UIAElementFromPoint(uia, x, y) {
     elementPtr := 0
     point := Buffer(8, 0)
@@ -1027,7 +535,6 @@ UIAElementFromPoint(uia, x, y) {
     }
     return 0
 }
-
 UIARefineElementAtPoint(uia, elementPtr, x, y, ctx) {
     if !uia || !elementPtr
         return 0
@@ -1035,7 +542,6 @@ UIARefineElementAtPoint(uia, elementPtr, x, y, ctx) {
     refined := UIAHitTestElement(uia, elementPtr, x, y, ctx)
     return refined ? refined : elementPtr
 }
-
 UIAHitTestElement(uia, elementPtr, x, y, ctx) {
     if !elementPtr
         return 0
@@ -1063,7 +569,6 @@ UIAHitTestElement(uia, elementPtr, x, y, ctx) {
     }
     return matches ? elementPtr : 0
 }
-
 UIACollectElementDetails(uia, elementPtr, x, y, ctx) {
     info := UIAGetDirectElementInfo(elementPtr)
     if !IsObject(info)
@@ -1100,7 +605,6 @@ UIACollectElementDetails(uia, elementPtr, x, y, ctx) {
 
     return info
 }
-
 UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 256, ctx := 0) {
     if !uia || !elementPtr
         return 0
@@ -1179,7 +683,6 @@ UIAFindDescendantWithAutomation(uia, elementPtr, x, y, limit := 256, ctx := 0) {
 
     return best
 }
-
 UIAGetDirectElementInfo(elementPtr) {
     if !elementPtr
         return 0
@@ -1214,7 +717,6 @@ UIAGetDirectElementInfo(elementPtr) {
         info["HWND"] := 0
     return info
 }
-
 UIAControlTypeToName(id) {
     static typeMap := ""
     if typeMap = "" {
@@ -1271,7 +773,6 @@ UIAControlTypeToName(id) {
     }
     return id
 }
-
 UIAFindChildren(uia, elementPtr) {
     if !uia || !elementPtr
         return 0
@@ -1288,7 +789,6 @@ UIAFindChildren(uia, elementPtr) {
         UIARelease(children)
     return 0
 }
-
 UIAElementArrayLength(arrayPtr) {
     if !arrayPtr
         return 0
@@ -1296,7 +796,6 @@ UIAElementArrayLength(arrayPtr) {
     try ComCall(3, arrayPtr, "int*", &length)
     return length
 }
-
 UIAElementArrayGet(arrayPtr, index) {
     if !arrayPtr
         return 0
@@ -1304,7 +803,6 @@ UIAElementArrayGet(arrayPtr, index) {
     try ComCall(4, arrayPtr, "int", index, "ptr*", &element)
     return element
 }
-
 UIAGetTrueCondition(uia) {
     static cond := 0
     if cond
@@ -1317,7 +815,6 @@ UIAGetTrueCondition(uia) {
     cond := 0
     return 0
 }
-
 UIAGetBoundingRect(elementPtr) {
     if !elementPtr
         return 0
@@ -1362,7 +859,6 @@ UIAGetBoundingRect(elementPtr) {
 
     return Map("x", left, "y", top, "w", width, "h", height)
 }
-
 UIAPointInRect(rect, x, y) {
     if !IsObject(rect)
         return false
@@ -1372,7 +868,6 @@ UIAPointInRect(rect, x, y) {
         return false
     return true
 }
-
 UIAPointMatchesRect(rect, x, y, ctx := 0) {
     if !IsObject(rect)
         return false
@@ -1390,7 +885,6 @@ UIAPointMatchesRect(rect, x, y, ctx := 0) {
     }
     return false
 }
-
 UIAPointDistanceToRect(rect, x, y, ctx := 0) {
     if !IsObject(rect)
         return 100000
@@ -1423,7 +917,6 @@ UIAPointDistanceToRect(rect, x, y, ctx := 0) {
     }
     return best
 }
-
 UIANormalizeRect(rect, x, y, ctx := 0) {
     if !IsObject(rect)
         return 0
@@ -1476,7 +969,6 @@ UIANormalizeRect(rect, x, y, ctx := 0) {
 
     return result
 }
-
 UIACloneMap(source) {
     if !IsObject(source)
         return source
@@ -1485,7 +977,6 @@ UIACloneMap(source) {
         clone[key] := value
     return clone
 }
-
 UIASelectBestSnapshot(snapshots, x, y, ctx, baselineScore := -1, baselineDetails := 0) {
     best := 0
     bestScore := baselineScore
@@ -1515,7 +1006,6 @@ UIASelectBestSnapshot(snapshots, x, y, ctx, baselineScore := -1, baselineDetails
     }
     return best
 }
-
 UIAResolveCandidateElement(uia, candidate, ctx) {
     if !uia || !IsObject(candidate)
         return 0
@@ -1531,7 +1021,6 @@ UIAResolveCandidateElement(uia, candidate, ctx) {
     }
     return 0
 }
-
 UIASnapshotDescendants(uia, candidate, ctx, depth := 2, pointerX := 0, pointerY := 0, limit := 128) {
     if depth <= 0 || limit <= 0
         return []
@@ -1543,7 +1032,6 @@ UIASnapshotDescendants(uia, candidate, ctx, depth := 2, pointerX := 0, pointerY 
     UIARelease(element)
     return snapshots
 }
-
 UIAGatherDescendantInfo(uia, elementPtr, ctx, remaining, level, outArr, pointerX, pointerY, &limit) {
     if remaining <= 0 || limit <= 0
         return
@@ -1581,7 +1069,6 @@ UIAGatherDescendantInfo(uia, elementPtr, ctx, remaining, level, outArr, pointerX
     }
     UIARelease(children)
 }
-
 UIACandidateScore(info, x, y, ctx) {
     score := -100000
     pointScore := 0
@@ -1614,7 +1101,6 @@ UIACandidateScore(info, x, y, ctx) {
     }
     return score
 }
-
 UIAGetProperty(elementPtr, propertyId) {
     if !elementPtr
         return ""
@@ -1646,7 +1132,6 @@ UIAGetProperty(elementPtr, propertyId) {
 
     return ""
 }
-
 UIARelease(elementPtr) {
     if !elementPtr
         return
@@ -1654,7 +1139,6 @@ UIARelease(elementPtr) {
     fn := NumGet(vtable, 2 * A_PtrSize, "ptr")
     DllCall(fn, "ptr", elementPtr, "uint")
 }
-
 UIAVariantToText(varBuf) {
     vt := NumGet(varBuf, 0, "ushort")
     switch vt {
@@ -1671,7 +1155,6 @@ UIAVariantToText(varBuf) {
             return ""
     }
 }
-
 UIATryVariantClear(varBuf) {
     if !IsObject(varBuf)
         ptr := varBuf
@@ -1679,7 +1162,6 @@ UIATryVariantClear(varBuf) {
         ptr := varBuf.Ptr
     try DllCall("OleAut32\\VariantClear", "ptr", ptr)
 }
-
 GetUIAutomation() {
     static uia := ""
     if IsObject(uia)
@@ -1694,7 +1176,6 @@ GetUIAutomation() {
     }
     return uia
 }
-
 JoinLines(arr) {
     out := ""
     for index, value in arr {
@@ -1704,8 +1185,5 @@ JoinLines(arr) {
     }
     return out
 }
-
 ^!a:: CaptureAutomationDebug()
 ^!d:: CaptureUnderCursor()
-
-Main()

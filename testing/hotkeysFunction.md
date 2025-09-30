@@ -1,0 +1,76 @@
+# Hotkey Function Map
+
+## Ctrl+Alt+D → `CaptureUnderCursor`
+Functions involved (directly or indirectly):
+- CaptureUnderCursor
+- GatherCursorUIAInfo
+- GetUIAutomation
+- GetPhysicalCursorPos
+- NormalizeHwnd
+- WindowFromPoint
+- UIAElementFromHandle
+- UIAElementFromPoint
+- UIARefineElementAtPoint
+- UIAHitTestElement
+- UIAFindChildren
+- UIAElementArrayLength
+- UIAElementArrayGet
+- UIAGetTrueCondition
+- UIARelease
+- UIACollectElementDetails
+- UIANormalizeRect
+- UIAPointInRect
+- UIAPointDistanceToRect
+- UIAPointMatchesRect
+- UIAFindDescendantWithAutomation
+- UIACandidateScore
+- UIAGetDirectElementInfo
+- UIAGetProperty
+- UIAGetBoundingRect
+- UIAControlTypeToName
+- UIAVariantToText
+- UIATryVariantClear
+- UIACloneMap
+- UIASnapshotDescendants
+- UIAResolveCandidateElement
+- UIAGatherDescendantInfo
+- UIASelectBestSnapshot
+- GetWindowClassName
+
+## Ctrl+Alt+A → `CaptureAutomationDebug`
+Functions involved (directly or indirectly):
+- CaptureAutomationDebug
+- GatherCursorUIAInfo
+- JoinLines
+- GetUIAutomation
+- GetPhysicalCursorPos
+- NormalizeHwnd
+- WindowFromPoint
+- UIAElementFromHandle
+- UIAElementFromPoint
+- UIARefineElementAtPoint
+- UIAHitTestElement
+- UIAFindChildren
+- UIAElementArrayLength
+- UIAElementArrayGet
+- UIAGetTrueCondition
+- UIARelease
+- UIACollectElementDetails
+- UIANormalizeRect
+- UIAPointInRect
+- UIAPointDistanceToRect
+- UIAPointMatchesRect
+- UIAFindDescendantWithAutomation
+- UIACandidateScore
+- UIAGetDirectElementInfo
+- UIAGetProperty
+- UIAGetBoundingRect
+- UIAControlTypeToName
+- UIAVariantToText
+- UIATryVariantClear
+- UIACloneMap
+- UIASnapshotDescendants
+- UIAResolveCandidateElement
+- UIAGatherDescendantInfo
+- UIASelectBestSnapshot
+- GetWindowClassName
