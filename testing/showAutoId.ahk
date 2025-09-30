@@ -34,8 +34,6 @@ Main() {
 }
 
 
-
-
 FindAutomationMatches(hwnd, filterText) {
     matches := []
     uia := GetUIAutomation()
@@ -193,19 +191,6 @@ WriteResults(path, results, searchTerm := "") {
     }
     FileAppend(JoinLines(lines) "`n`n", path, "UTF-8")
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 Main()

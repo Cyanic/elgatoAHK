@@ -1,0 +1,22 @@
+﻿AutomationId Scan - 2025-09-30 00:09:26 | Filter: Tabs
+AutomationId: sidebar-synced-tabs-context-menu	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: SyncedTabsSidebarContext	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: SyncedTabsSidebarTabsFilterContext	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: TabsToolbar	Class: <none>	Type: tool bar	Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: sidebar-synced-tabs-context-menu	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: SyncedTabsSidebarContext	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: SyncedTabsSidebarTabsFilterContext	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: sidebar-synced-tabs-context-menu	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: SyncedTabsSidebarContext	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: SyncedTabsSidebarTabsFilterContext	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: TabsToolbar	Class: <none>	Type: tool bar	Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: sidebar-synced-tabs-context-menu	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: SyncedTabsSidebarContext	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: SyncedTabsSidebarTabsFilterContext	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: TabsToolbar	Class: <none>	Type: tool bar	Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: sidebar-synced-tabs-context-menu	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: SyncedTabsSidebarContext	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: SyncedTabsSidebarTabsFilterContext	Class: <none>	Type: menu	Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: TabsToolbar	Class: <none>	Type: tool bar	Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2
+AutomationId: alltabs-button	Class: <none>	Type: button	Name: List all tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 3
+

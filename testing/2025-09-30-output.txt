@@ -1,0 +1,8 @@
+﻿Control Class Scan - 2025-09-30 00:06:23 | Filter: ToggleButton | ClassNN: Notepad | Process: Notepad.exe
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: StartButton	Name: Start	HWND: <none>	Location:{x: 0 y: 1152 w:55, h: 48}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: TaskViewButton	Name: Task View	HWND: <none>	Location:{x: 55 y: 1152 w:44, h: 48}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Bold (Ctrl+B)	HWND: <none>	Location:{x: -31441 y: -31958 w:32, h: 32}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Italic (Ctrl+I)	HWND: <none>	Location:{x: -31409 y: -31958 w:32, h: 32}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Link (Ctrl+K)	HWND: <none>	Location:{x: -31377 y: -31958 w:32, h: 32}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Clear formatting (Ctrl+Space)	HWND: <none>	Location:{x: -31345 y: -31958 w:32, h: 32}
+
