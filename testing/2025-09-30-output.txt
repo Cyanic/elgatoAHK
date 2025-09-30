@@ -14,3 +14,21 @@ Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Ita
 Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Link (Ctrl+K)	HWND: <none>Rect: (-31377.0,-31958.0,32.0,32.0)	Depth: 4	LocationLocation:{x: -31377 y: -31958 w:32, h: 32}
 Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Clear formatting (Ctrl+Space)	HWND: <none>Rect: (-31345.0,-31958.0,32.0,32.0)	Depth: 4	LocationLocation:{x: -31345 y: -31958 w:32, h: 32}
 
+Scan - 2025-09-30 10:23:53 | Filter: QScrollArea | ClassNN: <none> | Process: <none>
+Class: <none>	UIAClass: QScrollArea	Type: group	AutomationId: <none>	Name: <none>	HWND: <none>Rect: (-459.0,-402.0,208.0,168.0)	Depth: 4	LocationLocation:{x: -459 y: -402 w:208, h: 168}
+Class: <none>	UIAClass: QScrollArea	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea	Name: <none>	HWND: <none>Rect: (268.0,-1071.0,374.0,745.0)	Depth: 6	LocationLocation:{x: 268 y: -1071 w:374, h: 745}
+
+Scan - 2025-09-30 10:24:50 | Filter: QWidget | ClassNN: <none> | Process: <none>
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: <none>	Name: <none>	HWND: <none>Rect: (-867.0,-618.0,1024.0,600.0)	Depth: 2	LocationLocation:{x: -867 y: -618 w:1024, h: 600}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget	Name: <none>	HWND: <none>Rect: (259.0,-1117.0,1422.0,800.0)	Depth: 2	LocationLocation:{x: 259 y: -1117 w:1422, h: 800}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: <none>	Name: <none>	HWND: <none>Rect: (-867.0,-618.0,1024.0,600.0)	Depth: 3	LocationLocation:{x: -867 y: -618 w:1024, h: 600}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage	Name: <none>	HWND: <none>Rect: (259.0,-1117.0,1422.0,800.0)	Depth: 4	LocationLocation:{x: 259 y: -1117 w:1422, h: 800}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: qt_scrollarea_viewport	Name: <none>	HWND: <none>Rect: (-459.0,-402.0,208.0,168.0)	Depth: 5	LocationLocation:{x: -459 y: -402 w:208, h: 168}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer	Name: <none>	HWND: <none>Rect: (648.0,-1117.0,1024.0,791.0)	Depth: 5	LocationLocation:{x: 648 y: -1117 w:1024, h: 791}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: <none>	Name: <none>	HWND: <none>Rect: (-459.0,-1344.0,208.0,5665.0)	Depth: 6	LocationLocation:{x: -459 y: -1344 w:208, h: 5665}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.topBar	Name: <none>	HWND: <none>Rect: (268.0,-1117.0,374.0,46.0)	Depth: 6	LocationLocation:{x: 268 y: -1117 w:374, h: 46}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_viewport	Name: <none>	HWND: <none>Rect: (268.0,-1071.0,367.0,745.0)	Depth: 7	LocationLocation:{x: 268 y: -1071 w:367, h: 745}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea.qt_scrollarea_vcontainer	Name: <none>	HWND: <none>Rect: (635.0,-1071.0,7.0,745.0)	Depth: 7	LocationLocation:{x: 635 y: -1071 w:7, h: 745}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: <none>	Name: <none>	HWND: <none>Rect: (657.0,-363.0,114.0,28.0)	Depth: 7	LocationLocation:{x: 657 y: -363 w:114, h: 28}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: <none>	Name: <none>	HWND: <none>Rect: (1086.0,-363.0,84.0,28.0)	Depth: 7	LocationLocation:{x: 1086 y: -363 w:84, h: 28}
+

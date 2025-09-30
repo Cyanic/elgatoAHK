@@ -47,3 +47,6 @@ Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarTabsFil
 Class: <none>	UIAClass: <none>	Type: tool bar	AutomationId: TabsToolbar	Name: Browser tabs	HWND: <none>Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
 Class: <none>	UIAClass: <none>	Type: button	AutomationId: taskbar-tabs-button	Name: Add tab to taskbar	HWND: <none>Rect: (0.0,0.0,0.0,0.0)	Depth: 3	LocationLocation:{x: 0 y: 0 w:0, h: 0}
 
+Scan - 2025-09-30 10:26:23 | Filter: qt_scrollarea_viewport | ClassNN: <none> | Process: <none>
+No matches found.
+
