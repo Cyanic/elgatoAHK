@@ -21,3 +21,14 @@ Class: <none>	UIAClass: QWidget	Type: group	AutomationId: <none>	Name: <none>	HW
 Class: <none>	UIAClass: QWidget	Type: group	AutomationId: <none>	Name: <none>	HWND: 
 Class: <none>	UIAClass: QWidget	Type: group	AutomationId: OBSApp.OBSBasic.mixerDock.dockWidgetContents_7.mixerFrame.stackedMixerArea.hMixerScrollArea.qt_scrollarea_viewport	Name: <none>	HWND: 
 
+Control Class Scan - 2025-09-29 23:50:00 | Filter: MenuFlyoutItem | ClassNN: Notepad | Process: Notepad.exe
+No matches found.
+
+Control Class Scan - 2025-09-29 23:52:51 | Filter: ToggleButton | ClassNN: Notepad | Process: Notepad.exe
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: StartButton	Name: Start	HWND: <none>	Location:{x: 0 y: 1152 w:55, h: 48}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: TaskViewButton	Name: Task View	HWND: <none>	Location:{x: 55 y: 1152 w:44, h: 48}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Bold (Ctrl+B)	HWND: <none>	Location:{x: 579 y: 77 w:32, h: 32}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Italic (Ctrl+I)	HWND: <none>	Location:{x: 611 y: 77 w:32, h: 32}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Link (Ctrl+K)	HWND: <none>	Location:{x: 643 y: 77 w:32, h: 32}
+Class: <none>	UIAClass: ToggleButton	Type: button	AutomationId: <none>	Name: Clear formatting (Ctrl+Space)	HWND: <none>	Location:{x: 675 y: 77 w:32, h: 32}
+

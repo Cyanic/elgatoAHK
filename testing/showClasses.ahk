@@ -35,8 +35,6 @@ Main() {
 }
 
 
-
-
 FindChildWindows(hwnd, filterClass) {
     filterOriginal := Trim(filterClass)
     filter := StrLower(filterOriginal)
@@ -461,18 +459,4 @@ GetWindowRectInfo(hwnd) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 Main()
-
