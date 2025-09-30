@@ -29,7 +29,7 @@ Main() {
 
     dateStamp := FormatTime(, "yyyy-MM-dd")
     outPath := A_ScriptDir "\" dateStamp "-autoid-output.txt"
-    WriteResults(outPath, matches, filter)
+    WriteResults(outPath, matches, filter, Map("Mode", "Automation"))
     MsgBox Format("Found {1} matching controls. Details written to:`n{2}", matches.Length, outPath)
 }
 
@@ -164,33 +164,6 @@ UIABuildMatchRecord(details, depth) {
     return record
 }
 
-WriteResults(path, results, searchTerm := "") {
-    timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
-    filterLabel := searchTerm != "" ? searchTerm : "<none>"
-    header := Format("AutomationId Scan - {1} | Filter: {2}", timestamp, filterLabel)
-    lines := []
-    lines.Push(header)
-    if results.Length = 0 {
-        lines.Push("No matches found.")
-    } else {
-        for item in results {
-            autoId := item.Has("AutomationId") && item["AutomationId"] != "" ? item["AutomationId"] : "<none>"
-            className := item.Has("Class") && item["Class"] != "" ? item["Class"] : "<none>"
-            typeName := item.Has("Type") && item["Type"] != "" ? item["Type"] : "<none>"
-            ctrlName := item.Has("Name") && item["Name"] != "" ? item["Name"] : "<none>"
-            hwnd := item.Has("HWND") && item["HWND"] != "" ? item["HWND"] : "<none>"
-            rectText := "<none>"
-            if item.Has("Rect") && IsObject(item["Rect"]) {
-                rect := item["Rect"]
-                rectText := Format("({},{},{},{})", rect["x"], rect["y"], rect["w"], rect["h"])
-            }
-            line := Format("AutomationId: {1}`tClass: {2}`tType: {3}`tName: {4}`tHWND: {5}`tRect: {6}`tDepth: {7}",
-                autoId, className, typeName, ctrlName, hwnd, rectText, item.Has("Depth") ? item["Depth"] : "?")
-            lines.Push(line)
-        }
-    }
-    FileAppend(JoinLines(lines) "`n`n", path, "UTF-8")
-}
 
 
 Main()

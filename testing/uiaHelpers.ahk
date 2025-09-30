@@ -312,3 +312,55 @@ JoinLines(arr) {
     }
     return out
 }
+
+WriteResults(path, results, searchTerm := "", config := 0) {
+    timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
+    filterLabel := searchTerm != "" ? searchTerm : "<none>"
+    classLabel := ConfigValueOrDefault(config, "ClassNN")
+    processLabel := ConfigValueOrDefault(config, "Process")
+    header := Format("Scan - {1} | Filter: {2} | ClassNN: {3} | Process: {4}", timestamp, filterLabel, classLabel, processLabel)
+    lines := []
+    lines.Push(header)
+    if results.Length = 0 {
+        lines.Push("No matches found.")
+    } else {
+        for item in results {
+            class := item.Has("Class") && item["Class"] != "" ? item["Class"] : "<none>"
+            uiaClass := item.Has("UIAClass") && item["UIAClass"] != "" ? item["UIAClass"] : "<none>"
+            typeName := item.Has("Type") && item["Type"] != "" ? item["Type"] : "<none>"
+            autoId := item.Has("AutomationId") && item["AutomationId"] != "" ? item["AutomationId"] : "<none>"
+            ctrlName := item.Has("Name") && item["Name"] != "" ? item["Name"] : "<none>"
+            hwnd := item.Has("HWND") && item["HWND"] != "" ? item["HWND"] : "<none>"
+            rectText := "<none>"
+            if item.Has("Rect") && IsObject(item["Rect"]) {
+                rect := item["Rect"]
+                rectText := Format("({},{},{},{})", rect["x"], rect["y"], rect["w"], rect["h"])
+            }
+            location := FormatLocation(item)
+            line := Format("Class: {1}`tUIAClass: {2}`tType: {3}`tAutomationId: {4}`tName: {5}`tHWND: {6}`Rect: {7}`tDepth: {8}`tLocation{9}", class, uiaClass, typeName, autoId, ctrlName, hwnd, rectText, item.Has("Depth") ? item["Depth"] : "?", location)
+            lines.Push(line)
+        }
+    }
+    FileAppend(JoinLines(lines) "`n`n", path, "UTF-8")
+}
+
+ConfigValueOrDefault(config, key) {
+    if !IsObject(config)
+        return "<none>"
+    if !config.Has(key)
+        return "<none>"
+    value := Trim(config[key])
+    return value != "" ? value : "<none>"
+}
+
+FormatLocation(item) {
+    if IsObject(item) && item.Has("Rect") && IsObject(item["Rect"]) {
+        rect := item["Rect"]
+        x := rect.Has("x") ? Round(rect["x"]) : 0
+        y := rect.Has("y") ? Round(rect["y"]) : 0
+        w := rect.Has("w") ? Round(rect["w"]) : 0
+        h := rect.Has("h") ? Round(rect["h"]) : 0
+        return Format("Location:{x: {1} y: {2} w:{3}, h: {4}}", x, y, w, h)
+    }
+    return "Location:{x: <none> y: <none> w:<none>, h: <none>}"
+}
