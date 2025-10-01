@@ -6,6 +6,7 @@
 global gViewportAutomationId := "qt_scrollarea_viewport"
 global gScrollContainerClass := "QScrollArea"
 global gDebugEnabled := true
+global gAutomationSearchLimit := 150000
 
 DebugLog(message, details := "") {
     if !gDebugEnabled
@@ -228,7 +229,11 @@ FindElementByAutomationId(uia, root, automationId) {
     result := (hr = 0 && element) ? element : 0
 
     try ObjRelease(cond)
-    return result
+    if result
+        return result
+
+    DebugLog("FindElementByAutomationId fallback", Format("automationId={1}", automationId))
+    return FindElementByAutomationIdFallback(uia, root, automationId)
 }
 
 FindElementByClassName(uia, root, className) {
@@ -268,6 +273,30 @@ FindElementByClassName(uia, root, className) {
 
     try ObjRelease(cond)
     return result
+}
+
+FindElementByAutomationIdFallback(uia, root, automationId) {
+    if automationId = ""
+        return 0
+
+    needle := StrLower(automationId)
+    found := 0
+
+    Callback(elem, details, depth) {
+        autoId := details.Has("Auto") ? Trim(details["Auto"]) : ""
+        if autoId != "" && InStr(StrLower(autoId), needle) {
+            UIAAddRef(elem)
+            found := elem
+            DebugLog("FindElementByAutomationId fallback match", DebugDescribeElement(elem))
+            return 0
+        }
+        return true
+    }
+
+    processed := UIAForEachRaw(uia, root, Callback, gAutomationSearchLimit)
+    if !found
+        DebugLog("FindElementByAutomationId fallback exhausted", Format("automationId={1} | processed={2}", automationId, processed))
+    return found
 }
 
 FindElementByClassWithSize(uia, root, className, width, height) {

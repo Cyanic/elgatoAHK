@@ -63,6 +63,14 @@ UIARelease(elementPtr) {
     DllCall(fn, "ptr", elementPtr, "uint")
 }
 
+UIAAddRef(elementPtr) {
+    if !elementPtr
+        return
+    vtable := NumGet(elementPtr, 0, "ptr")
+    fn := NumGet(vtable, 1 * A_PtrSize, "ptr")
+    DllCall(fn, "ptr", elementPtr, "uint")
+}
+
 UIAFindChildren(uia, elementPtr) {
     if !uia || !elementPtr
         return 0
