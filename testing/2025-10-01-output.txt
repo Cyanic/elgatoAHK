@@ -1,5 +1,0 @@
-﻿Scan - 2025-10-01 01:03:55 | Filter: Microsoft.UI.Xaml.Controls.MenuBarItem | ClassNN: Notepad | Process: Notepad.exe
-Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: File			Name: File	HWND: <none>	Rect: (80.0,195.0,41.0,32.0)	Depth: 5	LocationLocation:{x: 80 y: 195 w:41, h: 32}
-Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: Edit			Name: Edit	HWND: <none>	Rect: (129.0,195.0,44.0,32.0)	Depth: 5	LocationLocation:{x: 129 y: 195 w:44, h: 32}
-Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: View			Name: View	HWND: <none>	Rect: (181.0,195.0,50.0,32.0)	Depth: 5	LocationLocation:{x: 181 y: 195 w:50, h: 32}
-
