@@ -207,9 +207,17 @@ UIAGetBoundingRect(elementPtr) {
     static GET_CURRENT_PROPERTY_VALUE_EX := 11
     rectVariant := Buffer(variantSize, 0)
 
-    attempt := ComCall(GET_CURRENT_PROPERTY_VALUE, elementPtr, "int", 30001, "ptr", rectVariant.Ptr)
-    if attempt != 0
-        attempt := ComCall(GET_CURRENT_PROPERTY_VALUE_EX, elementPtr, "int", 30001, "int", true, "ptr", rectVariant.Ptr)
+    attempt := -1
+    try attempt := ComCall(GET_CURRENT_PROPERTY_VALUE, elementPtr, "int", 30001, "ptr", rectVariant.Ptr)
+    catch {
+        attempt := -1
+    }
+    if attempt != 0 {
+        try attempt := ComCall(GET_CURRENT_PROPERTY_VALUE_EX, elementPtr, "int", 30001, "int", true, "ptr", rectVariant.Ptr)
+        catch {
+            attempt := -1
+        }
+    }
     if attempt != 0 {
         UIATryVariantClear(rectVariant)
         return 0
