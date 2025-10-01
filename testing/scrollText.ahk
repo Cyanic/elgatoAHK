@@ -201,12 +201,15 @@ FindElementByAutomationId(uia, root, automationId) {
     catch {
         cond := 0
     }
-    if !IsObject(cond)
+    if !IsObject(cond) {
+        DebugLog("FindElementByAutomationId condition missing", Format("automationId={1}", automationId))
         return 0
+    }
 
     condPtr := ComObjValue(cond)
     if !condPtr {
-        ObjRelease(cond)
+        DebugLog("FindElementByAutomationId condPtr null", Format("automationId={1}", automationId))
+        try ObjRelease(cond)
         return 0
     }
 
@@ -224,7 +227,7 @@ FindElementByAutomationId(uia, root, automationId) {
 
     result := (hr = 0 && element) ? element : 0
 
-    ObjRelease(cond)
+    try ObjRelease(cond)
     return result
 }
 
@@ -237,12 +240,15 @@ FindElementByClassName(uia, root, className) {
     catch {
         cond := 0
     }
-    if !IsObject(cond)
+    if !IsObject(cond) {
+        DebugLog("FindElementByClassName condition missing", Format("className={1}", className))
         return 0
+    }
 
     condPtr := ComObjValue(cond)
     if !condPtr {
-        ObjRelease(cond)
+        DebugLog("FindElementByClassName condPtr null", Format("className={1}", className))
+        try ObjRelease(cond)
         return 0
     }
 
@@ -260,7 +266,7 @@ FindElementByClassName(uia, root, className) {
 
     result := (hr = 0 && element) ? element : 0
 
-    ObjRelease(cond)
+    try ObjRelease(cond)
     return result
 }
 
@@ -273,12 +279,15 @@ FindElementByClassWithSize(uia, root, className, width, height) {
     catch {
         cond := 0
     }
-    if !IsObject(cond)
+    if !IsObject(cond) {
+        DebugLog("FindElementByClassWithSize condition missing", Format("className={1}", className))
         return 0
+    }
 
     condPtr := ComObjValue(cond)
     if !condPtr {
-        ObjRelease(cond)
+        DebugLog("FindElementByClassWithSize condPtr null", Format("className={1}", className))
+        try ObjRelease(cond)
         return 0
     }
 
@@ -290,7 +299,7 @@ FindElementByClassWithSize(uia, root, className, width, height) {
     }
     if hr != 0 || !elements {
         DebugLog("FindElementByClassWithSize query failed", Format("className={1} | hr={2}", className, hr))
-        ObjRelease(cond)
+        try ObjRelease(cond)
         if elements
             UIARelease(elements)
         return 0
@@ -319,7 +328,7 @@ FindElementByClassWithSize(uia, root, className, width, height) {
         UIARelease(elements)
     }
 
-    ObjRelease(cond)
+    try ObjRelease(cond)
     return found
 }
 
@@ -357,6 +366,7 @@ FindAncestorByClass(uia, element, className, maxLevels := 10) {
             if StrLower(parentClass) = classLower {
                 if current != element
                     UIARelease(current)
+                current := element
                 result := parent
                 DebugLog("FindAncestorByClass matched", DebugDescribeElement(result))
                 break
@@ -392,26 +402,32 @@ ScrollElement(element, direction, steps) {
     catch {
         hr := -1
     }
-    if hr != 0 || !pattern
+    if hr != 0 || !pattern {
+        DebugLog("ScrollElement missing scroll pattern", Format("element={1} | hr={2}", DebugDescribeElement(element), hr))
         return false
+    }
 
     success := true
     try {
         vertAmount := (direction = "up") ? SCROLL_SMALL_DECREMENT : SCROLL_SMALL_INCREMENT
+        DebugLog("ScrollElement begin", Format("element={1} | direction={2} | steps={3} | vertAmount={4}", DebugDescribeElement(element), direction, steps, vertAmount))
         Loop steps {
             try callHr := ComCall(9, pattern, "int", SCROLL_NO_AMOUNT, "int", vertAmount)
             catch {
                 callHr := -1
             }
             if callHr != 0 {
+                DebugLog("ScrollElement step failed", Format("step={1} | hr={2}", A_Index, callHr))
                 success := false
                 break
             }
+            DebugLog("ScrollElement step succeeded", Format("step={1}", A_Index))
             Sleep 60
         }
     } finally {
         UIARelease(pattern)
     }
+    DebugLog("ScrollElement completed", Format("element={1} | success={2}", DebugDescribeElement(element), success))
     return success
 }
 
