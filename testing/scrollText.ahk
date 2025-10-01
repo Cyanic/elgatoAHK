@@ -5,6 +5,74 @@
 ; Automation identifiers for the viewport target and its scroll container.
 global gViewportAutomationId := "qt_scrollarea_viewport"
 global gScrollContainerClass := "QScrollArea"
+global gDebugEnabled := true
+
+DebugLog(message, details := "") {
+    if !gDebugEnabled
+        return
+
+    try {
+        timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
+        text := details != "" ? Format("[{1}] {2} | {3}", timestamp, message, details) : Format("[{1}] {2}", timestamp, message)
+        FileAppend(text "`n", GetDebugLogPath(), "UTF-8")
+    } catch {
+        ; Swallow logging errors to keep scroll hotkeys functional.
+    }
+}
+
+GetDebugLogPath() {
+    dateStamp := FormatTime(, "yyyy-MM-dd")
+    return A_ScriptDir "\" dateStamp "-scroll-debug.txt"
+}
+
+FormatPtr(value) {
+    return value ? Format("0x{:X}", value) : "0x0"
+}
+
+DebugDescribeConfig(config) {
+    if !IsObject(config)
+        return "<none>"
+
+    items := []
+    for key, val in config {
+        items.Push(Format("{1}={2}", key, val))
+    }
+    return items.Length ? JoinWithComma(items) : "<empty>"
+}
+
+DebugDescribeElement(element) {
+    if !element
+        return "<null>"
+
+    auto := UIAGetProperty(element, 30011)
+    name := UIAGetProperty(element, 30005)
+    class := UIAGetProperty(element, 30012)
+    rect := UIAGetBoundingRect(element)
+    rectText := DebugDescribeRect(rect)
+    return Format("ptr={1} | AutomationId={2} | Name={3} | Class={4} | Rect={5}", FormatPtr(element), auto != "" ? auto : "<none>", name != "" ? name : "<none>", class != "" ? class : "<none>", rectText)
+}
+
+DebugDescribeRect(rect) {
+    if !IsObject(rect)
+        return "<none>"
+    x := rect.Has("x") ? Round(rect["x"]) : "?"
+    y := rect.Has("y") ? Round(rect["y"]) : "?"
+    w := rect.Has("w") ? Round(rect["w"]) : "?"
+    h := rect.Has("h") ? Round(rect["h"]) : "?"
+    return Format("x={1}, y={2}, w={3}, h={4}", x, y, w, h)
+}
+
+JoinWithComma(items) {
+    if !IsObject(items)
+        return ""
+    output := ""
+    for item in items {
+        if output != ""
+            output .= ", "
+        output .= item
+    }
+    return output
+}
 
 ScrollViewport(direction := "down", steps := 1) {
     return ScrollResolved(direction, steps, "viewport")
@@ -21,8 +89,11 @@ ScrollResolved(direction, steps, targetMode) {
 
     steps := Max(1, Round(Abs(steps)))
 
+    DebugLog("ScrollResolved invoked", Format("direction={1} | steps={2} | targetMode={3}", direction, steps, targetMode))
+
     uia := GetUIAutomation()
     if !IsObject(uia) {
+        DebugLog("UI Automation unavailable")
         MsgBox "UI Automation is not available on this system."
         return false
     }
@@ -30,14 +101,17 @@ ScrollResolved(direction, steps, targetMode) {
     iniPath := EnsureConfig()
     config := LoadConfig(iniPath)
     targetDesc := BuildWindowSearchLabel(config)
+    DebugLog("Loaded configuration", Format("path={1} | config={2}", iniPath, DebugDescribeConfig(config)))
     hwnd := GetTargetWindow(config)
     if !hwnd {
+        DebugLog("Target window not found", Format("expected={1}", targetDesc))
         MsgBox Format("Target window not found. Expected match for:`n{1}`nUpdate showClasses.ini and try again.", targetDesc)
         return false
     }
 
     root := UIAElementFromHandle(uia, hwnd)
     if !root {
+        DebugLog("UIAElementFromHandle failed", Format("hwnd={1}", FormatPtr(hwnd)))
         MsgBox "Failed to bind UI Automation to the target window."
         return false
     }
@@ -47,9 +121,11 @@ ScrollResolved(direction, steps, targetMode) {
     try {
         element := ResolveTargetElement(uia, root, targetMode)
         if !element {
+            DebugLog("ResolveTargetElement returned null", Format("targetMode={1}", targetMode))
             MsgBox Format("Unable to locate the {1} element.", targetMode)
             return false
         }
+        DebugLog("Resolved element", Format("targetMode={1} | element={2}", targetMode, DebugDescribeElement(element)))
         success := ScrollElement(element, direction, steps)
     } finally {
         if element
@@ -58,13 +134,16 @@ ScrollResolved(direction, steps, targetMode) {
     }
 
     if !success {
+        DebugLog("ScrollElement failed", Format("targetMode={1} | direction={2} | steps={3}", targetMode, direction, steps))
         MsgBox Format("The {1} element does not support UI Automation scrolling.", targetMode)
         return false
     }
+    DebugLog("ScrollResolved completed", Format("targetMode={1} | direction={2} | steps={3}", targetMode, direction, steps))
     return true
 }
 
 ResolveTargetElement(uia, root, mode) {
+    DebugLog("ResolveTargetElement", Format("mode={1}", mode))
     switch mode {
         case "viewport":
             return ResolveViewportElement(uia, root)
@@ -76,7 +155,13 @@ ResolveTargetElement(uia, root, mode) {
 }
 
 ResolveViewportElement(uia, root) {
-    return FindElementByAutomationId(uia, root, gViewportAutomationId)
+    DebugLog("ResolveViewportElement", Format("automationId={1}", gViewportAutomationId))
+    element := FindElementByAutomationId(uia, root, gViewportAutomationId)
+    if element
+        DebugLog("Viewport element located", DebugDescribeElement(element))
+    else
+        DebugLog("Viewport element missing", Format("automationId={1}", gViewportAutomationId))
+    return element
 }
 
 ResolveScrollAreaElement(uia, root) {
@@ -85,6 +170,7 @@ ResolveScrollAreaElement(uia, root) {
         return FindScrollAreaFallback(uia, root)
 
     scrollArea := FindAncestorByClass(uia, viewport, gScrollContainerClass)
+    DebugLog("ResolveScrollAreaElement", Format("viewport={1} | ancestorResult={2}", DebugDescribeElement(viewport), scrollArea ? DebugDescribeElement(scrollArea) : "<null>"))
     UIARelease(viewport)
     if scrollArea
         return scrollArea
@@ -92,10 +178,18 @@ ResolveScrollAreaElement(uia, root) {
 }
 
 FindScrollAreaFallback(uia, root) {
+    DebugLog("FindScrollAreaFallback", Format("class={1}", gScrollContainerClass))
     target := FindElementByClassWithSize(uia, root, gScrollContainerClass, 208, 168)
-    if target
+    if target {
+        DebugLog("Fallback located size-matched scroll area", DebugDescribeElement(target))
         return target
-    return FindElementByClassName(uia, root, gScrollContainerClass)
+    }
+    alt := FindElementByClassName(uia, root, gScrollContainerClass)
+    if alt
+        DebugLog("Fallback located class match", DebugDescribeElement(alt))
+    else
+        DebugLog("Fallback failed to locate QScrollArea instance")
+    return alt
 }
 
 FindElementByAutomationId(uia, root, automationId) {
@@ -111,8 +205,10 @@ FindElementByAutomationId(uia, root, automationId) {
         return 0
 
     condPtr := ComObjValue(cond)
-    if !condPtr
+    if !condPtr {
+        ObjRelease(cond)
         return 0
+    }
 
     element := 0
     static TREE_SCOPE_DESCENDANTS := 4
@@ -120,7 +216,16 @@ FindElementByAutomationId(uia, root, automationId) {
     catch {
         hr := -1
     }
-    return (hr = 0 && element) ? element : 0
+
+    if hr != 0
+        DebugLog("FindElementByAutomationId failure", Format("automationId={1} | hr={2}", automationId, hr))
+    else
+        DebugLog("FindElementByAutomationId success", Format("automationId={1} | element={2}", automationId, element ? DebugDescribeElement(element) : "<null>"))
+
+    result := (hr = 0 && element) ? element : 0
+
+    ObjRelease(cond)
+    return result
 }
 
 FindElementByClassName(uia, root, className) {
@@ -136,8 +241,10 @@ FindElementByClassName(uia, root, className) {
         return 0
 
     condPtr := ComObjValue(cond)
-    if !condPtr
+    if !condPtr {
+        ObjRelease(cond)
         return 0
+    }
 
     element := 0
     static TREE_SCOPE_DESCENDANTS := 4
@@ -145,7 +252,16 @@ FindElementByClassName(uia, root, className) {
     catch {
         hr := -1
     }
-    return (hr = 0 && element) ? element : 0
+
+    if hr != 0
+        DebugLog("FindElementByClassName failure", Format("className={1} | hr={2}", className, hr))
+    else
+        DebugLog("FindElementByClassName success", Format("className={1} | element={2}", className, element ? DebugDescribeElement(element) : "<null>"))
+
+    result := (hr = 0 && element) ? element : 0
+
+    ObjRelease(cond)
+    return result
 }
 
 FindElementByClassWithSize(uia, root, className, width, height) {
@@ -161,8 +277,10 @@ FindElementByClassWithSize(uia, root, className, width, height) {
         return 0
 
     condPtr := ComObjValue(cond)
-    if !condPtr
+    if !condPtr {
+        ObjRelease(cond)
         return 0
+    }
 
     elements := 0
     static TREE_SCOPE_DESCENDANTS := 4
@@ -170,20 +288,28 @@ FindElementByClassWithSize(uia, root, className, width, height) {
     catch {
         hr := -1
     }
-    if hr != 0 || !elements
+    if hr != 0 || !elements {
+        DebugLog("FindElementByClassWithSize query failed", Format("className={1} | hr={2}", className, hr))
+        ObjRelease(cond)
+        if elements
+            UIARelease(elements)
         return 0
+    }
 
     found := 0
     try {
         count := UIAElementArrayLength(elements)
+        DebugLog("FindElementByClassWithSize candidates", Format("className={1} | expectedSize={2}x{3} | count={4}", className, width, height, count))
         Loop count {
             elem := UIAElementArrayGet(elements, A_Index - 1)
             if !elem
                 continue
             rect := UIAGetBoundingRect(elem)
+            DebugLog("ClassWithSize candidate", Format("index={1} | element={2}", A_Index - 1, DebugDescribeElement(elem)))
             if IsObject(rect) {
                 if Abs(rect["w"] - width) <= 1 && Abs(rect["h"] - height) <= 1 {
                     found := elem
+                    DebugLog("ClassWithSize match", Format("index={1} | element={2}", A_Index - 1, DebugDescribeElement(elem)))
                     break
                 }
             }
@@ -192,6 +318,8 @@ FindElementByClassWithSize(uia, root, className, width, height) {
     } finally {
         UIARelease(elements)
     }
+
+    ObjRelease(cond)
     return found
 }
 
@@ -209,31 +337,45 @@ FindAncestorByClass(uia, element, className, maxLevels := 10) {
 
     current := element
     classLower := StrLower(className)
+    DebugLog("FindAncestorByClass", Format("start={1} | className={2} | maxLevels={3}", DebugDescribeElement(current), className, maxLevels))
 
-    Loop maxLevels {
-        parent := 0
-        try parent := walker.GetParentElement(current)
-        catch {
+    result := 0
+    try {
+        Loop maxLevels {
             parent := 0
-        }
-        if !parent
-            break
+            try parent := walker.GetParentElement(current)
+            catch {
+                parent := 0
+            }
+            if !parent {
+                DebugLog("FindAncestorByClass parent lookup ended", Format("reason=no-parent | current={1}", DebugDescribeElement(current)))
+                break
+            }
 
-        parentClass := UIAGetProperty(parent, 30012)
-        if StrLower(parentClass) = classLower {
+            parentClass := UIAGetProperty(parent, 30012)
+            DebugLog("FindAncestorByClass candidate", Format("parent={1} | parentClass={2}", DebugDescribeElement(parent), parentClass))
+            if StrLower(parentClass) = classLower {
+                if current != element
+                    UIARelease(current)
+                result := parent
+                DebugLog("FindAncestorByClass matched", DebugDescribeElement(result))
+                break
+            }
+
             if current != element
                 UIARelease(current)
-            return parent
+            current := parent
         }
-
+    } finally {
         if current != element
             UIARelease(current)
-        current := parent
+        try {
+            if IsObject(walker)
+                ObjRelease(walker)
+        }
     }
 
-    if current != element
-        UIARelease(current)
-    return 0
+    return result
 }
 
 ScrollElement(element, direction, steps) {
