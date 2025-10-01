@@ -29,9 +29,10 @@ ScrollResolved(direction, steps, targetMode) {
 
     iniPath := EnsureConfig()
     config := LoadConfig(iniPath)
+    targetDesc := BuildWindowSearchLabel(config)
     hwnd := GetTargetWindow(config)
     if !hwnd {
-        MsgBox "Target window not found. Update showClasses.ini and try again."
+        MsgBox Format("Target window not found. Expected match for:`n{1}`nUpdate showClasses.ini and try again.", targetDesc)
         return false
     }
 
@@ -270,6 +271,38 @@ ScrollElement(element, direction, steps) {
         UIARelease(pattern)
     }
     return success
+}
+
+BuildWindowSearchLabel(config) {
+    if !IsObject(config)
+        return "<none>"
+
+    parts := []
+    if config.Has("ClassNN") {
+        classToken := "ahk_class " config["ClassNN"]
+        parts.Push(classToken)
+    }
+    if config.Has("Process") {
+        processToken := "ahk_exe " config["Process"]
+        parts.Push(processToken)
+    }
+
+    if parts.Length = 0
+        return "<none>"
+
+    return JoinWithSpace(parts)
+}
+
+JoinWithSpace(items) {
+    if !IsObject(items)
+        return ""
+    text := ""
+    for item in items {
+        if text != ""
+            text .= " "
+        text .= item
+    }
+    return text
 }
 
 ; Hotkeys for scrolling the viewport element.
