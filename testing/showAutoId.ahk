@@ -2,7 +2,7 @@
 #SingleInstance Force
 #Include "%A_ScriptDir%\uiaHelpers.ahk"
 
-global gAutoIdMaxNodes := 75000
+global gAutoIdMaxNodes := 300000
 
 Main() {
     iniPath := EnsureConfig()
@@ -50,13 +50,74 @@ FindAutomationMatches(hwnd, filterText) {
     }
 
     try {
-        needle := StrLower(Trim(filterText))
-        matches := UIABreadthFirstSearch(uia, root, needle)
+        filterTrim := Trim(filterText)
+        filterLower := StrLower(filterTrim)
+
+        if filterTrim != ""
+            matches := UIAExactAutomationMatches(uia, root, filterTrim)
+
         if matches.Length = 0
-            matches := UIARawAutomationMatches(uia, root, needle)
+            matches := UIABreadthFirstSearch(uia, root, filterLower)
+
+        if matches.Length = 0
+            matches := UIARawAutomationMatches(uia, root, filterLower)
     } finally {
         UIARelease(root)
     }
+    return matches
+}
+
+UIAExactAutomationMatches(uia, rootElement, filterExact) {
+    matches := []
+    if filterExact = ""
+        return matches
+
+    cond := ""
+    try cond := uia.CreatePropertyCondition(30011, filterExact)
+    catch {
+        cond := ""
+    }
+    if !IsObject(cond)
+        return matches
+
+    condPtr := ComObjValue(cond)
+    if !condPtr {
+        try ObjRelease(cond)
+        return matches
+    }
+
+    elements := 0
+    static TREE_SCOPE_DESCENDANTS := 4
+    hr := 1
+    try hr := ComCall(8, rootElement, "int", TREE_SCOPE_DESCENDANTS, "ptr", condPtr, "ptr*", &elements)
+    catch {
+        hr := 1
+    }
+    if hr != 0 || !elements {
+        try ObjRelease(cond)
+        if elements
+            UIARelease(elements)
+        return matches
+    }
+
+    try {
+        count := UIAElementArrayLength(elements)
+        Loop count {
+            elem := UIAElementArrayGet(elements, A_Index - 1)
+            if !elem
+                continue
+            details := UIAGetDirectElementInfo(elem)
+            if IsObject(details) {
+                record := UIABuildMatchRecord(details, -1)
+                matches.Push(record)
+            }
+            UIARelease(elem)
+        }
+    } finally {
+        UIARelease(elements)
+        try ObjRelease(cond)
+    }
+
     return matches
 }
 
