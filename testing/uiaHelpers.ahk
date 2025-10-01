@@ -186,13 +186,13 @@ UIAForEachRaw(uia, rootElement, callback, maxNodes := 1000000) {
 
         details := UIAGetDirectElementInfo(elem)
         if IsObject(details) {
-            continueTraversal := true
+            continueTraversal := 1
             try {
                 continueTraversal := callback.Call(elem, details, depth)
             } catch {
-                continueTraversal := true
+                continueTraversal := 1
             }
-            if (continueTraversal is Bool && !continueTraversal) || continueTraversal == 0
+            if continueTraversal == 0
                 stop := true
         }
 
