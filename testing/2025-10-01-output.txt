@@ -1,5 +1,14 @@
-﻿Scan - 2025-10-01 01:03:55 | Filter: Microsoft.UI.Xaml.Controls.MenuBarItem | ClassNN: Notepad | Process: Notepad.exe
-Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: File			Name: File	HWND: <none>	Rect: (80.0,195.0,41.0,32.0)	Depth: 5	LocationLocation:{x: 80 y: 195 w:41, h: 32}
-Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: Edit			Name: Edit	HWND: <none>	Rect: (129.0,195.0,44.0,32.0)	Depth: 5	LocationLocation:{x: 129 y: 195 w:44, h: 32}
-Class: <none>	UIAClass: Microsoft.UI.Xaml.Controls.MenuBarItem	Type: menu item	AutomationId: View			Name: View	HWND: <none>	Rect: (181.0,195.0,50.0,32.0)	Depth: 5	LocationLocation:{x: 181 y: 195 w:50, h: 32}
+﻿Scan - 2025-10-01 09:29:10 | Filter: QScrollArea | ClassNN: Qt673QWindowToolSaveBits | Process: Camera Hub.exe
+Class: <none>	UIAClass: QScrollArea	Type: group	AutomationId: <none>			Name: <none>	HWND: <none>	Rect: (-459.0,-402.0,208.0,168.0)	Depth: 4	LocationLocation:{x: -459 y: -402 w:208, h: 168}
+Class: <none>	UIAClass: QScrollArea	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea			Name: <none>	HWND: <none>	Rect: (317.0,-955.0,374.0,745.0)	Depth: 6	LocationLocation:{x: 317 y: -955 w:374, h: 745}
+
+Scan - 2025-10-01 09:37:17 | Filter: QWidget | ClassNN: Qt673QWindowToolSaveBits | Process: Camera Hub.exe
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: <none>			Name: <none>	HWND: <none>	Rect: (-867.0,-618.0,1024.0,600.0)	Depth: 2	LocationLocation:{x: -867 y: -618 w:1024, h: 600}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget			Name: <none>	HWND: <none>	Rect: (308.0,-1001.0,1422.0,800.0)	Depth: 2	LocationLocation:{x: 308 y: -1001 w:1422, h: 800}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: <none>			Name: <none>	HWND: <none>	Rect: (-867.0,-618.0,1024.0,600.0)	Depth: 3	LocationLocation:{x: -867 y: -618 w:1024, h: 600}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage			Name: <none>	HWND: <none>	Rect: (308.0,-1001.0,1422.0,800.0)	Depth: 4	LocationLocation:{x: 308 y: -1001 w:1422, h: 800}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: qt_scrollarea_viewport			Name: <none>	HWND: <none>	Rect: (-459.0,-402.0,208.0,168.0)	Depth: 5	LocationLocation:{x: -459 y: -402 w:208, h: 168}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.previewContainer			Name: <none>	HWND: <none>	Rect: (697.0,-1001.0,1024.0,791.0)	Depth: 5	LocationLocation:{x: 697 y: -1001 w:1024, h: 791}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: <none>			Name: <none>	HWND: <none>	Rect: (-459.0,-1350.0,208.0,5665.0)	Depth: 6	LocationLocation:{x: -459 y: -1350 w:208, h: 5665}
+Class: <none>	UIAClass: QWidget	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.topBar			Name: <none>	HWND: <none>	Rect: (317.0,-1001.0,374.0,46.0)	Depth: 6	LocationLocation:{x: 317 y: -1001 w:374, h: 46}
 
