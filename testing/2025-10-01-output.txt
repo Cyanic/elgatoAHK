@@ -1,0 +1,4 @@
+﻿Scan - 2025-10-01 09:29:10 | Filter: QScrollArea | ClassNN: Qt673QWindowToolSaveBits | Process: Camera Hub.exe
+Class: <none>	UIAClass: QScrollArea	Type: group	AutomationId: <none>			Name: <none>	HWND: <none>	Rect: (-459.0,-402.0,208.0,168.0)	Depth: 4	LocationLocation:{x: -459 y: -402 w:208, h: 168}
+Class: <none>	UIAClass: QScrollArea	Type: group	AutomationId: EVHMainWindow.centralWidget.stackedWidget.mainPage.propertySidebar.scrollArea			Name: <none>	HWND: <none>	Rect: (317.0,-955.0,374.0,745.0)	Depth: 6	LocationLocation:{x: 317 y: -955 w:374, h: 745}
+
