@@ -29,7 +29,7 @@ Main() {
 
     dateStamp := FormatTime(, "yyyy-MM-dd")
     outPath := A_ScriptDir "\" dateStamp "-output.txt"
-    WriteResults(outPath, matches, filterText, Map("Config", config))
+    WriteResults(outPath, matches, filterText, config)
     MsgBox Format("Found {1} matching controls. Details written to:`n{2}", matches.Length, outPath)
 
 }

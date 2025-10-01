@@ -29,7 +29,10 @@ Main() {
 
     dateStamp := FormatTime(, "yyyy-MM-dd")
     outPath := A_ScriptDir "\" dateStamp "-autoid-output.txt"
-    WriteResults(outPath, matches, filter, Map("Mode", "Automation"))
+    metadata := Map("Mode", "Automation")
+    for key, value in config
+        metadata[key] := value
+    WriteResults(outPath, matches, filter, metadata)
     MsgBox Format("Found {1} matching controls. Details written to:`n{2}", matches.Length, outPath)
 }
 

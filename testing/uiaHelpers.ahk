@@ -345,7 +345,7 @@ WriteResults(path, results, searchTerm := "", config := 0) {
                 rectText := Format("({},{},{},{})", rect["x"], rect["y"], rect["w"], rect["h"])
             }
             location := FormatLocation(item)
-            line := Format("Class: {1}`tUIAClass: {2}`tType: {3}`tAutomationId: {4}`tName: {5}`tHWND: {6}`Rect: {7}`tDepth: {8}`tLocation{9}", class, uiaClass, typeName, autoId, ctrlName, hwnd, rectText, item.Has("Depth") ? item["Depth"] : "?", location)
+            line := Format("Class: {1}`tUIAClass: {2}`tType: {3}`tAutomationId: {4}`t`t`tName: {5}`tHWND: {6}`tRect: {7}`tDepth: {8}`tLocation{9}", class, uiaClass, typeName, autoId, ctrlName, hwnd, rectText, item.Has("Depth") ? item["Depth"] : "?", location)
             lines.Push(line)
         }
     }
