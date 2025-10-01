@@ -169,20 +169,24 @@ UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
     if filterExact = ""
         return matches
 
-    callback := (elem, details, depth) => {
-        record := UIABuildMatchRecord(details, depth)
-        classField := ""
-        if record.Has("UIAClass")
-            classField := record["UIAClass"]
-        if classField = "" && record.Has("Class")
-            classField := record["Class"]
-        if classField != "" && InStr(StrLower(classField), filterLower)
-            matches.Push(record)
-        return true
-    }
+    if filterLower = ""
+        filterLower := StrLower(filterExact)
 
-    UIAForEachRaw(uia, rootElement, callback, 1000000)
+    collector := Func("UIARawClassCollector").Bind(matches, filterLower)
+    UIAForEachRaw(uia, rootElement, collector, 1000000)
     return matches
+}
+
+UIARawClassCollector(matches, filterLower, elem, details, depth) {
+    record := UIABuildMatchRecord(details, depth)
+    classField := ""
+    if record.Has("UIAClass")
+        classField := record["UIAClass"]
+    if classField = "" && record.Has("Class")
+        classField := record["Class"]
+    if classField != "" && InStr(StrLower(classField), filterLower)
+        matches.Push(record)
+    return true
 }
 
 Win32TraverseMatches(hwnd, filter) {

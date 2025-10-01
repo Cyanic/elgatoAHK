@@ -120,8 +120,15 @@ UIAPointerKey(ptr) {
 }
 
 UIAForEachRaw(uia, rootElement, callback, maxNodes := 1000000) {
-    if !IsObject(uia) || !rootElement || !IsObject(callback)
+    if !IsObject(uia) || !rootElement
         return 0
+    if !IsObject(callback) {
+        try {
+            callback := Func(callback)
+        } catch {
+            return 0
+        }
+    }
 
     walker := ""
     try
@@ -183,7 +190,7 @@ UIAForEachRaw(uia, rootElement, callback, maxNodes := 1000000) {
             catch {
                 continueTraversal := true
             }
-            if continueTraversal is Bool && !continueTraversal
+            if (continueTraversal is Bool && !continueTraversal) || continueTraversal === 0
                 stop := true
         }
 
