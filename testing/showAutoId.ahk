@@ -94,13 +94,9 @@ UIAExactAutomationMatches(uia, rootElement, filterExact) {
     if filterExact = ""
         return matches
 
-    cond := ""
-    try {
-        cond := uia.CreatePropertyCondition(30011, filterExact)
-    } catch as err {
-        cond := ""
-        LogAutoId("CreatePropertyCondition failed: " AutoIdErrorText(err))
-    }
+    cond := UIACreatePropertyCondition(uia, 30011, filterExact)
+    if !cond
+        LogAutoId("CreatePropertyCondition returned 0")
     if !IsObject(cond)
         return matches
 

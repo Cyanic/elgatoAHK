@@ -88,6 +88,27 @@ UIAFindChildren(uia, elementPtr) {
     return 0
 }
 
+UIACreatePropertyCondition(uia, propertyId, value) {
+    if !IsObject(uia)
+        return 0
+    condPtr := 0
+    variant := ""
+    try {
+        variant := ComValue(8, value)
+    } catch {
+        variant := ComValue(8, "")
+    }
+    hr := 1
+    try {
+        hr := ComCall(23, uia, "int", propertyId, "ptr", variant, "ptr*", &condPtr)
+    } catch {
+        hr := 1
+    }
+    if hr != 0 || !condPtr
+        return 0
+    return ComObject(ComValue(13, condPtr))
+}
+
 UIAElementArrayLength(arrayPtr) {
     if !arrayPtr
         return 0
