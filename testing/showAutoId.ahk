@@ -358,16 +358,20 @@ AutoIdErrorText(err) {
     if !IsObject(err)
         return err
     parts := []
-    if err.Has("Message")
-        parts.Push("msg=" err.Message)
-    if err.Has("What")
-        parts.Push("what=" err.What)
-    if err.Has("Extra")
-        parts.Push("extra=" err.Extra)
-    if err.Has("File")
-        parts.Push("file=" err.File)
-    if err.Has("Line")
-        parts.Push("line=" err.Line)
+    try {
+        if ObjHasOwnProp(err, "Message") && err.Message != ""
+            parts.Push("msg=" err.Message)
+        if ObjHasOwnProp(err, "What") && err.What != ""
+            parts.Push("what=" err.What)
+        if ObjHasOwnProp(err, "Extra") && err.Extra != ""
+            parts.Push("extra=" err.Extra)
+        if ObjHasOwnProp(err, "File") && err.File != ""
+            parts.Push("file=" err.File)
+        if ObjHasOwnProp(err, "Line") && err.Line != ""
+            parts.Push("line=" err.Line)
+    } catch MethodError {
+        ; fall back to default to avoid rethrowing from debug logging
+    }
     if parts.Length = 0
         return err
     return Join(parts, "; ")
