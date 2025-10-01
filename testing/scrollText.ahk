@@ -448,9 +448,9 @@ JoinWithSpace(items) {
 }
 
 ; Hotkeys for scrolling the viewport element.
-^!F1::ScrollViewport("up")
-^!F2::ScrollViewport("down")
+^!F1:: ScrollViewport("up")
+^!F2:: ScrollViewport("down")
 
 ; Hotkeys for scrolling the containing QScrollArea element.
-^!F3::ScrollScrollArea("up")
-^!F4::ScrollScrollArea("down")
+^!F3:: ScrollScrollArea("up")
+^!F4:: ScrollScrollArea("down")
