@@ -107,6 +107,117 @@ UIAGetTrueCondition(uia) {
     return 0
 }
 
+UIAPointerKey(ptr) {
+    if !ptr
+        return 0
+    key := 0
+    try
+        key := ComObjValue(ptr)
+    catch {
+        key := ptr
+    }
+    return key
+}
+
+UIAForEachRaw(uia, rootElement, callback, maxNodes := 1000000) {
+    if !IsObject(uia) || !rootElement || !IsObject(callback)
+        return 0
+
+    walker := ""
+    try
+        walker := uia.CreateTreeWalker(uia.RawViewCondition)
+    catch {
+        walker := ""
+    }
+    if !IsObject(walker)
+        return 0
+
+    start := rootElement
+    releaseStart := false
+    try {
+        normalized := walker.NormalizeElement(rootElement)
+        if normalized {
+            start := normalized
+            if start != rootElement
+                releaseStart := true
+        }
+    } catch {
+    }
+
+    if !start {
+        walker := ""
+        return 0
+    }
+
+    stack := []
+    stack.Push(Map("Element", start, "Depth", 0, "Release", releaseStart))
+    visited := Map()
+    processed := 0
+    stop := false
+
+    while stack.Length {
+        current := stack.Pop()
+        if !IsObject(current)
+            continue
+        elem := current.Has("Element") ? current["Element"] : 0
+        depth := current.Has("Depth") ? current["Depth"] : 0
+        releaseElem := current.Has("Release") ? current["Release"] : true
+        if !elem
+            continue
+
+        key := UIAPointerKey(elem)
+        if key && visited.Has(key) {
+            if releaseElem
+                UIARelease(elem)
+            continue
+        }
+        if key
+            visited[key] := true
+
+        processed += 1
+
+        details := UIAGetDirectElementInfo(elem)
+        if IsObject(details) {
+            continueTraversal := true
+            try continueTraversal := callback.Call(elem, details, depth)
+            catch {
+                continueTraversal := true
+            }
+            if continueTraversal is Bool && !continueTraversal
+                stop := true
+        }
+
+        if !stop && processed < maxNodes {
+            child := walker.GetFirstChildElement(elem)
+            while child {
+                stack.Push(Map("Element", child, "Depth", depth + 1, "Release", true))
+                sibling := walker.GetNextSiblingElement(child)
+                child := sibling
+            }
+        } else if processed >= maxNodes {
+            stop := true
+        }
+
+        if releaseElem
+            UIARelease(elem)
+
+        if stop
+            break
+    }
+
+    while stack.Length {
+        leftover := stack.Pop()
+        if IsObject(leftover) && leftover.Has("Element") {
+            extra := leftover["Element"]
+            if extra
+                UIARelease(extra)
+        }
+    }
+
+    walker := ""
+    return processed
+}
+
 UIAGetDirectElementInfo(elementPtr) {
     if !elementPtr
         return 0

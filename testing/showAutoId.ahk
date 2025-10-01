@@ -52,6 +52,8 @@ FindAutomationMatches(hwnd, filterText) {
     try {
         needle := StrLower(Trim(filterText))
         matches := UIABreadthFirstSearch(uia, root, needle)
+        if matches.Length = 0
+            matches := UIARawAutomationMatches(uia, root, needle)
     } finally {
         UIARelease(root)
     }
@@ -130,17 +132,6 @@ UIABreadthFirstSearch(uia, rootElement, filterLower) {
     return matches
 }
 
-UIAPointerKey(ptr) {
-    if !ptr
-        return 0
-    key := 0
-    try key := ComObjValue(ptr)
-    catch {
-        key := ptr
-    }
-    return key
-}
-
 UIABuildMatchRecord(details, depth) {
     record := Map()
     automationId := details.Has("Auto") ? Trim(details["Auto"]) : ""
@@ -165,6 +156,20 @@ UIABuildMatchRecord(details, depth) {
         record["Rect"] := details["Rect"]
 
     return record
+}
+
+UIARawAutomationMatches(uia, rootElement, filterLower) {
+    matches := []
+    callback := (elem, details, depth) => {
+        record := UIABuildMatchRecord(details, depth)
+        autoId := record.Has("AutomationId") ? record["AutomationId"] : ""
+        if filterLower = "" || InStr(StrLower(autoId), filterLower)
+            matches.Push(record)
+        return true
+    }
+
+    UIAForEachRaw(uia, rootElement, callback, gAutoIdMaxNodes)
+    return matches
 }
 
 

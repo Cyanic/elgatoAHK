@@ -169,88 +169,19 @@ UIARawClassMatches(uia, rootElement, filterLower, filterExact) {
     if filterExact = ""
         return matches
 
-    walker := ""
-    try {
-        walker := uia.CreateTreeWalker(uia.RawViewCondition)
-    } catch {
-        walker := ""
-    }
-    if !IsObject(walker)
-        return matches
-
-    start := rootElement
-    releaseStart := false
-    try {
-        normalized := walker.NormalizeElement(rootElement)
-        if normalized {
-            start := normalized
-            if start != rootElement
-                releaseStart := true
-        }
-    } catch {
+    callback := (elem, details, depth) => {
+        record := UIABuildMatchRecord(details, depth)
+        classField := ""
+        if record.Has("UIAClass")
+            classField := record["UIAClass"]
+        if classField = "" && record.Has("Class")
+            classField := record["Class"]
+        if classField != "" && InStr(StrLower(classField), filterLower)
+            matches.Push(record)
+        return true
     }
 
-    if !start
-        return matches
-
-    stack := []
-    stack.Push(Map("Element", start, "Depth", 0, "Release", releaseStart))
-    visited := Map()
-
-    maxNodes := 1000000
-    processed := 0
-
-    while stack.Length {
-        current := stack.Pop()
-        elem := current["Element"]
-        depth := current["Depth"]
-        releaseElem := current.Has("Release") ? current["Release"] : true
-        if !elem
-            continue
-
-        key := 0
-        try {
-            key := ComObjValue(elem)
-        }
-        catch {
-            key := elem
-        }
-        if key && visited.Has(key) {
-            if releaseElem
-                UIARelease(elem)
-            continue
-        }
-        if key
-            visited[key] := true
-
-        processed += 1
-        details := UIAGetDirectElementInfo(elem)
-        if IsObject(details) {
-            record := UIABuildMatchRecord(details, depth)
-            classField := record.Has("UIAClass") ? record["UIAClass"] : ""
-            if classField = ""
-                classField := record.Has("Class") ? record["Class"] : ""
-            if classField != "" && InStr(StrLower(classField), filterLower)
-                matches.Push(record)
-        }
-
-        if processed > maxNodes {
-            if releaseElem
-                UIARelease(elem)
-            break
-        }
-
-        child := walker.GetFirstChildElement(elem)
-        while child {
-            stack.Push(Map("Element", child, "Depth", depth + 1, "Release", true))
-            sibling := walker.GetNextSiblingElement(child)
-            child := sibling
-        }
-
-        if releaseElem
-            UIARelease(elem)
-    }
-
+    UIAForEachRaw(uia, rootElement, callback, 1000000)
     return matches
 }
 
