@@ -280,20 +280,48 @@ FindElementByAutomationIdFallback(uia, root, automationId) {
         return 0
 
     needle := StrLower(automationId)
-    found := 0
+    cond := UIAGetTrueCondition(uia)
+    if !cond
+        return 0
 
-    Callback(elem, details, depth) {
-        autoId := details.Has("Auto") ? Trim(details["Auto"]) : ""
-        if autoId != "" && InStr(StrLower(autoId), needle) {
-            UIAAddRef(elem)
-            found := elem
-            DebugLog("FindElementByAutomationId fallback match", DebugDescribeElement(elem))
-            return 0
-        }
-        return true
+    elements := 0
+    static TREE_SCOPE_DESCENDANTS := 4
+    hr := 1
+    try hr := ComCall(8, root, "int", TREE_SCOPE_DESCENDANTS, "ptr", cond, "ptr*", &elements)
+    catch {
+        hr := 1
+    }
+    if hr != 0 || !elements {
+        DebugLog("FindElementByAutomationId fallback query failed", Format("automationId={1} | hr={2}", automationId, hr))
+        return 0
     }
 
-    processed := UIAForEachRaw(uia, root, Callback, gAutomationSearchLimit)
+    found := 0
+    processed := 0
+    try {
+        count := UIAElementArrayLength(elements)
+        Loop count {
+            if processed >= gAutomationSearchLimit
+                break
+            elem := UIAElementArrayGet(elements, A_Index - 1)
+            if !elem
+                continue
+            processed += 1
+            details := UIAGetDirectElementInfo(elem)
+            if IsObject(details) {
+                autoId := details.Has("Auto") ? Trim(details["Auto"]) : ""
+                if autoId != "" && InStr(StrLower(autoId), needle) {
+                    found := elem
+                    DebugLog("FindElementByAutomationId fallback match", DebugDescribeElement(elem))
+                    break
+                }
+            }
+            UIARelease(elem)
+        }
+    } finally {
+        UIARelease(elements)
+    }
+
     if !found
         DebugLog("FindElementByAutomationId fallback exhausted", Format("automationId={1} | processed={2}", automationId, processed))
     return found

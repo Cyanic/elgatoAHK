@@ -221,21 +221,45 @@ UIABuildMatchRecord(details, depth) {
 
 UIARawAutomationMatches(uia, rootElement, filterLower) {
     matches := []
-    filterLower := StrLower(filterLower)
-    collector := UIARawAutomationCollectorFactory(matches, filterLower)
-    UIAForEachRaw(uia, rootElement, collector, gAutoIdMaxNodes)
-    return matches
-}
+    maxNodes := gAutoIdMaxNodes
+    cond := UIAGetTrueCondition(uia)
+    if !cond
+        return matches
 
-UIARawAutomationCollectorFactory(matches, filterLower) {
-    Callback(elem, details, depth) {
-        record := UIABuildMatchRecord(details, depth)
-        autoId := record.Has("AutomationId") ? record["AutomationId"] : ""
-        if filterLower = "" || InStr(StrLower(autoId), filterLower)
-            matches.Push(record)
-        return true
+    elements := 0
+    static TREE_SCOPE_DESCENDANTS := 4
+    hr := 1
+    try hr := ComCall(8, rootElement, "int", TREE_SCOPE_DESCENDANTS, "ptr", cond, "ptr*", &elements)
+    catch {
+        hr := 1
     }
-    return Callback
+    if hr != 0 || !elements
+        return matches
+
+    processed := 0
+    try {
+        count := UIAElementArrayLength(elements)
+        Loop count {
+            if processed >= maxNodes
+                break
+            elem := UIAElementArrayGet(elements, A_Index - 1)
+            if !elem
+                continue
+            processed += 1
+            details := UIAGetDirectElementInfo(elem)
+            if IsObject(details) {
+                record := UIABuildMatchRecord(details, -1)
+                autoId := record.Has("AutomationId") ? record["AutomationId"] : ""
+                if filterLower = "" || InStr(StrLower(autoId), filterLower)
+                    matches.Push(record)
+            }
+            UIARelease(elem)
+        }
+    } finally {
+        UIARelease(elements)
+    }
+
+    return matches
 }
 
 
