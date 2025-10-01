@@ -37,10 +37,12 @@ GetUIAutomation() {
     if IsObject(uia)
         return uia
 
-    try uia := ComObject("UIAutomationClient.CUIAutomation")
-    catch {
-        try uia := ComObject("{FF48DBA4-60EF-4201-AA87-54103EEF594E}", "{30CBE57D-D9D0-452A-AB13-7AC5AC4825EE}")
-        catch {
+    try {
+        uia := ComObject("UIAutomationClient.CUIAutomation")
+    } catch {
+        try {
+            uia := ComObject("{FF48DBA4-60EF-4201-AA87-54103EEF594E}", "{30CBE57D-D9D0-452A-AB13-7AC5AC4825EE}")
+        } catch {
             uia := ""
         }
     }
@@ -82,7 +84,9 @@ UIAElementArrayLength(arrayPtr) {
     if !arrayPtr
         return 0
     length := 0
-    try ComCall(3, arrayPtr, "int*", &length)
+    try {
+        ComCall(3, arrayPtr, "int*", &length)
+    }
     return length
 }
 
@@ -90,7 +94,9 @@ UIAElementArrayGet(arrayPtr, index) {
     if !arrayPtr
         return 0
     element := 0
-    try ComCall(4, arrayPtr, "int", index, "ptr*", &element)
+    try {
+        ComCall(4, arrayPtr, "int", index, "ptr*", &element)
+    }
     return element
 }
 
@@ -111,9 +117,9 @@ UIAPointerKey(ptr) {
     if !ptr
         return 0
     key := 0
-    try
+    try {
         key := ComObjValue(ptr)
-    catch {
+    } catch {
         key := ptr
     }
     return key
@@ -122,18 +128,24 @@ UIAPointerKey(ptr) {
 UIAForEachRaw(uia, rootElement, callback, maxNodes := 1000000) {
     if !IsObject(uia) || !rootElement
         return 0
-    if !IsObject(callback) {
+    callbackFunc := callback
+    if !IsObject(callbackFunc) {
+        if !(callbackFunc is String)
+            return 0
         try {
-            callback := Func(callback)
+            callbackFunc := Func(callbackFunc)
         } catch {
             return 0
         }
     }
 
+    if !IsObject(callbackFunc)
+        return 0
+
     walker := ""
-    try
+    try {
         walker := uia.CreateTreeWalker(uia.RawViewCondition)
-    catch {
+    } catch {
         walker := ""
     }
     if !IsObject(walker)
@@ -186,11 +198,12 @@ UIAForEachRaw(uia, rootElement, callback, maxNodes := 1000000) {
         details := UIAGetDirectElementInfo(elem)
         if IsObject(details) {
             continueTraversal := true
-            try continueTraversal := callback.Call(elem, details, depth)
-            catch {
+            try {
+                continueTraversal := callbackFunc.Call(elem, details, depth)
+            } catch {
                 continueTraversal := true
             }
-            if (continueTraversal is Bool && !continueTraversal) || continueTraversal === 0
+            if (continueTraversal is Bool && !continueTraversal) || continueTraversal == 0
                 stop := true
         }
 
@@ -326,13 +339,15 @@ UIAGetBoundingRect(elementPtr) {
     rectVariant := Buffer(variantSize, 0)
 
     attempt := -1
-    try attempt := ComCall(GET_CURRENT_PROPERTY_VALUE, elementPtr, "int", 30001, "ptr", rectVariant.Ptr)
-    catch {
+    try {
+        attempt := ComCall(GET_CURRENT_PROPERTY_VALUE, elementPtr, "int", 30001, "ptr", rectVariant.Ptr)
+    } catch {
         attempt := -1
     }
     if attempt != 0 {
-        try attempt := ComCall(GET_CURRENT_PROPERTY_VALUE_EX, elementPtr, "int", 30001, "int", true, "ptr", rectVariant.Ptr)
-        catch {
+        try {
+            attempt := ComCall(GET_CURRENT_PROPERTY_VALUE_EX, elementPtr, "int", 30001, "int", true, "ptr", rectVariant.Ptr)
+        } catch {
             attempt := -1
         }
     }
@@ -377,20 +392,21 @@ UIAGetProperty(elementPtr, propertyId) {
     static GET_CURRENT_PROPERTY_VALUE := 10
     static GET_CURRENT_PROPERTY_VALUE_EX := 11
 
-    attempts := [{ index: GET_CURRENT_PROPERTY_VALUE, extra: [] }, { index: GET_CURRENT_PROPERTY_VALUE_EX, extra: [true] }]
+    attempts := [Map("Index", GET_CURRENT_PROPERTY_VALUE, "Extra", []), Map("Index", GET_CURRENT_PROPERTY_VALUE_EX, "Extra", [true])]
 
     for attempt in attempts {
         variant := Buffer(variantSize, 0)
-        params := [attempt.index, elementPtr, "int", propertyId]
-        for param in attempt.extra {
+        params := [attempt["Index"], elementPtr, "int", propertyId]
+        for param in attempt["Extra"] {
             params.Push("int")
             params.Push(param)
         }
         params.Push("ptr")
         params.Push(variant.Ptr)
 
-        try hr := ComCall(params*)
-        catch {
+        try {
+            hr := ComCall(params*)
+        } catch {
             hr := -1
         }
         if hr = 0 {
@@ -426,7 +442,9 @@ UIATryVariantClear(varBuf) {
         ptr := varBuf
     else
         ptr := varBuf.Ptr
-    try DllCall("OleAut32\\VariantClear", "ptr", ptr)
+    try {
+        DllCall("OleAut32\\VariantClear", "ptr", ptr)
+    }
 }
 
 JoinLines(arr) {
