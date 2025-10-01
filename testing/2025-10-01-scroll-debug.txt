@@ -1,0 +1,12 @@
+﻿[2025-10-01 09:17:57] ScrollResolved invoked | direction=up | steps=1 | targetMode=viewport
+[2025-10-01 09:17:57] Loaded configuration | path=C:\Cyanic\Code\elgatoAHK\testing\showClasses.ini | config=ClassNN=Qt673QWindowToolSaveBits, Process=Camera Hub.exe
+[2025-10-01 09:17:57] ResolveTargetElement | mode=viewport
+[2025-10-01 09:17:57] ResolveViewportElement | automationId=qt_scrollarea_viewport
+[2025-10-01 09:17:57] Viewport element missing | automationId=qt_scrollarea_viewport
+[2025-10-01 09:17:57] ResolveTargetElement returned null | targetMode=viewport
+[2025-10-01 09:18:01] ScrollResolved invoked | direction=up | steps=1 | targetMode=scroll area
+[2025-10-01 09:18:01] Loaded configuration | path=C:\Cyanic\Code\elgatoAHK\testing\showClasses.ini | config=ClassNN=Qt673QWindowToolSaveBits, Process=Camera Hub.exe
+[2025-10-01 09:18:01] ResolveTargetElement | mode=scroll area
+[2025-10-01 09:18:01] FindScrollAreaFallback | class=QScrollArea
+[2025-10-01 09:18:01] Fallback failed to locate QScrollArea instance
+[2025-10-01 09:18:01] ResolveTargetElement returned null | targetMode=scroll area
