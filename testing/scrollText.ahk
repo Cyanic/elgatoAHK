@@ -7,14 +7,14 @@ global gViewportAutomationId := "qt_scrollarea_viewport"
 global gScrollContainerClass := "QScrollArea"
 
 ScrollViewport(direction := "down", steps := 1) {
-    return ScrollResolved(direction, steps, Func("ResolveViewportElement"), "viewport")
+    return ScrollResolved(direction, steps, "viewport")
 }
 
 ScrollScrollArea(direction := "down", steps := 1) {
-    return ScrollResolved(direction, steps, Func("ResolveScrollAreaElement"), "scroll area")
+    return ScrollResolved(direction, steps, "scroll area")
 }
 
-ScrollResolved(direction, steps, resolver, label) {
+ScrollResolved(direction, steps, targetMode) {
     direction := StrLower(Trim(direction))
     if direction != "up"
         direction := "down"
@@ -44,9 +44,9 @@ ScrollResolved(direction, steps, resolver, label) {
     element := 0
     success := false
     try {
-        element := resolver.Call(uia, root)
+        element := ResolveTargetElement(uia, root, targetMode)
         if !element {
-            MsgBox Format("Unable to locate the {1} element.", label)
+            MsgBox Format("Unable to locate the {1} element.", targetMode)
             return false
         }
         success := ScrollElement(element, direction, steps)
@@ -57,10 +57,21 @@ ScrollResolved(direction, steps, resolver, label) {
     }
 
     if !success {
-        MsgBox Format("The {1} element does not support UI Automation scrolling.", label)
+        MsgBox Format("The {1} element does not support UI Automation scrolling.", targetMode)
         return false
     }
     return true
+}
+
+ResolveTargetElement(uia, root, mode) {
+    switch mode {
+        case "viewport":
+            return ResolveViewportElement(uia, root)
+        case "scroll area":
+            return ResolveScrollAreaElement(uia, root)
+        default:
+            return 0
+    }
 }
 
 ResolveViewportElement(uia, root) {
