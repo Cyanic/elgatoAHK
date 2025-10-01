@@ -161,17 +161,20 @@ UIABuildMatchRecord(details, depth) {
 UIARawAutomationMatches(uia, rootElement, filterLower) {
     matches := []
     filterLower := StrLower(filterLower)
-    collector := Func("UIARawAutomationCollector").Bind(matches, filterLower)
+    collector := UIARawAutomationCollectorFactory(matches, filterLower)
     UIAForEachRaw(uia, rootElement, collector, gAutoIdMaxNodes)
     return matches
 }
 
-UIARawAutomationCollector(matches, filterLower, elem, details, depth) {
-    record := UIABuildMatchRecord(details, depth)
-    autoId := record.Has("AutomationId") ? record["AutomationId"] : ""
-    if filterLower = "" || InStr(StrLower(autoId), filterLower)
-        matches.Push(record)
-    return true
+UIARawAutomationCollectorFactory(matches, filterLower) {
+    Callback(elem, details, depth) {
+        record := UIABuildMatchRecord(details, depth)
+        autoId := record.Has("AutomationId") ? record["AutomationId"] : ""
+        if filterLower = "" || InStr(StrLower(autoId), filterLower)
+            matches.Push(record)
+        return true
+    }
+    return Callback
 }
 
 
