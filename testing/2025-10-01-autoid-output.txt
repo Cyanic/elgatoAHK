@@ -1,3 +1,45 @@
 ﻿Scan - 2025-10-01 09:27:50 | Filter: qt_scrollarea_viewport | ClassNN: Qt673QWindowToolSaveBits | Process: Camera Hub.exe
 No matches found.
 
+Scan - 2025-10-01 11:05:40 | Filter: qt_scrollarea_viewport | ClassNN: Qt673QWindowToolSaveBits | Process: Camera Hub.exe
+No matches found.
+
+Scan - 2025-10-01 11:06:28 | Filter: qt | ClassNN: Qt673QWindowToolSaveBits | Process: Camera Hub.exe
+No matches found.
+
+Scan - 2025-10-01 11:14:12 | Filter: Edit | ClassNN: Notepad | Process: Notepad.exe
+No matches found.
+
+Scan - 2025-10-01 11:14:44 | Filter: Tabs | ClassNN: Notepad | Process: Notepad.exe
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: sidebar-synced-tabs-context-menu			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: tool bar	AutomationId: TabsToolbar			Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: sidebar-synced-tabs-context-menu			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarTabsFilterContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: tool bar	AutomationId: TabsToolbar			Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarTabsFilterContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: tool bar	AutomationId: TabsToolbar			Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: sidebar-synced-tabs-context-menu			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarTabsFilterContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: tool bar	AutomationId: TabsToolbar			Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: tool bar	AutomationId: TabsToolbar			Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: sidebar-synced-tabs-context-menu			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarTabsFilterContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: tool bar	AutomationId: TabsToolbar			Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: sidebar-synced-tabs-context-menu			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarTabsFilterContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: tool bar	AutomationId: TabsToolbar			Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: sidebar-synced-tabs-context-menu			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarTabsFilterContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: tool bar	AutomationId: TabsToolbar			Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: menu	AutomationId: SyncedTabsSidebarTabsFilterContext			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: tool bar	AutomationId: TabsToolbar			Name: Browser tabs	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 2	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: tab	AutomationId: tabbrowser-tabs			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 3	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+Class: <none>	UIAClass: <none>	Type: tab	AutomationId: tabbrowser-tabs			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 3	LocationLocation:{x: 0 y: 0 w:0, h: 0}
+
