@@ -59,7 +59,7 @@ ScrollWithUIA(el, direction := "down") {
 
     try {
         if !el.IsScrollPatternAvailable {
-            MsgBox("Scroll pattern not available.")
+            ShowElementDebug(el, "Scroll pattern not available.")
             return
         }
     } catch {
@@ -70,7 +70,7 @@ ScrollWithUIA(el, direction := "down") {
     try {
         scrollPattern := el.ScrollPattern
     } catch Error as err {
-        MsgBox("Failed to retrieve scroll pattern.`n" err.Message)
+        ShowElementDebug(el, "Failed to retrieve scroll pattern.`n" err.Message)
         return
     }
 
@@ -80,8 +80,61 @@ ScrollWithUIA(el, direction := "down") {
     try {
         scrollPattern.Scroll(vertAmount)
     } catch Error as err {
-        MsgBox("Failed to invoke scroll pattern.`n" err.Message)
+        ShowElementDebug(el, "Failed to invoke scroll pattern.`n" err.Message)
     }
+}
+
+ShowElementDebug(el, message) {
+    detailLines := []
+    detailLines.Push(message)
+
+    try detailLines.Push("AutomationId: " (el.AutomationId != "" ? el.AutomationId : "<none>"))
+    catch detailLines.Push("AutomationId: <error>")
+
+    try detailLines.Push("ClassName: " (el.ClassName != "" ? el.ClassName : "<none>"))
+    catch detailLines.Push("ClassName: <error>")
+
+    try {
+        loc := el.Location
+        detailLines.Push(Format("Location: x={1}, y={2}, w={3}, h={4}", loc.x, loc.y, loc.w, loc.h))
+    } catch {
+        detailLines.Push("Location: <error>")
+    }
+
+    patternNames := []
+    try {
+        for patternName, patternId in UIA.Pattern.OwnProps() {
+            try {
+                ; Accessing pattern property may throw; use HasPattern equivalent via property lookup
+                el.GetPattern(patternId)
+                patternNames.Push(patternName)
+            } catch {
+                continue
+            }
+        }
+    } catch {
+        patternNames := []
+    }
+
+    if patternNames.Length {
+        detailLines.Push("Available Patterns: " . Join(patternNames, ", "))
+    } else {
+        detailLines.Push("Available Patterns: <none>")
+    }
+
+    MsgBox(Join(detailLines, "`n"))
+}
+
+Join(items, delimiter := "") {
+    if !IsObject(items)
+        return ""
+    output := ""
+    for index, item in items {
+        if index > 1
+            output .= delimiter
+        output .= item
+    }
+    return output
 }
 
 ; Scroll Up
