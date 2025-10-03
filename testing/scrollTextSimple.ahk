@@ -2,7 +2,6 @@
 #SingleInstance Force
 #Include UIA.ahk
 
-
 ; Function to get the scrollable element
 getScrollElement() {
     hwnd := WinExist("ahk_exe Camera Hub.exe")
@@ -77,13 +76,13 @@ getScrollChildElement() {
 
 ScrollWithUIA(el, direction := "down") {
     if !el {
-        return
+        return false
     }
 
     try {
         if !el.IsScrollPatternAvailable {
             ShowElementDebug(el, "Scroll pattern not available.")
-            return
+            return false
         }
     } catch {
         ; fall through to attempting pattern retrieval
@@ -94,7 +93,7 @@ ScrollWithUIA(el, direction := "down") {
         scrollPattern := el.ScrollPattern
     } catch Error as err {
         ShowElementDebug(el, "Failed to retrieve scroll pattern.`n" err.Message)
-        return
+        return false
     }
 
     direction := StrLower(direction)
@@ -104,7 +103,86 @@ ScrollWithUIA(el, direction := "down") {
         scrollPattern.Scroll(vertAmount)
     } catch Error as err {
         ShowElementDebug(el, "Failed to invoke scroll pattern.`n" err.Message)
+        return false
     }
+
+    return true
+}
+
+SendMouseWheel(el, direction := "down") {
+    if !el {
+        return false
+    }
+
+    hwnd := ResolveElementHandle(el)
+    if !hwnd {
+        ShowElementDebug(el, "WM_MOUSEWHEEL: Native window handle not found.")
+        return false
+    }
+
+    x := 0
+    y := 0
+    hasLocation := false
+    try {
+        loc := el.Location
+        if IsObject(loc) {
+            x := Round(loc.x + loc.w / 2)
+            y := Round(loc.y + loc.h / 2)
+            hasLocation := true
+        }
+    }
+
+    if !hasLocation {
+        rect := Buffer(16, 0)
+        if DllCall("user32\\GetWindowRect", "ptr", hwnd, "ptr", rect.Ptr) {
+            left := NumGet(rect, 0, "int")
+            top := NumGet(rect, 4, "int")
+            right := NumGet(rect, 8, "int")
+            bottom := NumGet(rect, 12, "int")
+            x := (left + right) // 2
+            y := (top + bottom) // 2
+            hasLocation := true
+        }
+    }
+
+    if !hasLocation {
+        pt := Buffer(8, 0)
+        if DllCall("user32\\GetCursorPos", "ptr", pt.Ptr) {
+            x := NumGet(pt, 0, "int")
+            y := NumGet(pt, 4, "int")
+            hasLocation := true
+        }
+    }
+
+    delta := direction = "up" ? 120 : -120
+    wParam := delta << 16
+    lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
+
+    sent := DllCall("user32\\PostMessage", "ptr", hwnd, "uint", 0x020A, "int64", wParam, "int64", lParam)
+    if !sent {
+        ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage failed.")
+        return false
+    }
+    return true
+}
+
+ResolveElementHandle(el) {
+    current := el
+    Loop {
+        if !current
+            break
+        hwnd := 0
+        try hwnd := current.NativeWindowHandle
+        catch hwnd := 0
+        if hwnd {
+            return hwnd
+        }
+        nextParent := 0
+        try nextParent := current.Parent
+        catch nextParent := 0
+        current := nextParent
+    }
+    return 0
 }
 
 ShowElementDebug(el, message) {
@@ -180,6 +258,7 @@ Join(items, delimiter := "") {
         return
     }
     ScrollWithUIA(el, "up")
+    SendMouseWheel(el, "up")
 }
 
 ; Scroll Down
@@ -189,6 +268,7 @@ Join(items, delimiter := "") {
         return
     }
     ScrollWithUIA(el, "down")
+    SendMouseWheel(el, "down")
 }
 
 ; Scroll Child Up
@@ -198,6 +278,7 @@ Join(items, delimiter := "") {
         return
     }
     ScrollWithUIA(el, "up")
+    SendMouseWheel(el, "up")
 }
 
 ; Scroll Child Down
@@ -207,6 +288,7 @@ Join(items, delimiter := "") {
         return
     }
     ScrollWithUIA(el, "down")
+    SendMouseWheel(el, "down")
 }
 
 ; Scroll Parent Up
@@ -216,6 +298,7 @@ Join(items, delimiter := "") {
         return
     }
     ScrollWithUIA(el, "up")
+    SendMouseWheel(el, "up")
 }
 
 ; Scroll Parent Down
@@ -225,4 +308,5 @@ Join(items, delimiter := "") {
         return
     }
     ScrollWithUIA(el, "down")
+    SendMouseWheel(el, "down")
 }
