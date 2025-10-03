@@ -91,40 +91,132 @@ FindAutomationMatches(hwnd, filterText) {
 
 UIAExactAutomationMatches(uia, rootElement, filterExact) {
     matches := []
-    if filterExact = ""
-        return matches
 
-    cond := UIACreatePropertyCondition(uia, 30011, filterExact)
-    if !cond
-        LogAutoId("CreatePropertyCondition returned 0")
-    if !IsObject(cond)
+    ; ---- Normalize & validate ----
+    filterExact := Trim(String(filterExact))
+    if (filterExact = "")
         return matches
+    if !IsObject(rootElement) {
+        LogAutoId("UIAExactAutomationMatches: rootElement is not an object")
+        return matches
+    }
+    if !ComObjValue(rootElement) {
+        LogAutoId("UIAExactAutomationMatches: rootElement has null COM pointer")
+        return matches
+    }
 
-    condPtr := ComObjValue(cond)
-    if !condPtr {
-        try ObjRelease(cond)
+    ; ---- Constants ----
+    static UIA_AutomationIdPropertyId := 30011
+    static TREE_SCOPE_SUBTREE := 5  ; include root + descendants
+
+    ; ---- Condition: AutomationId == filterExact ----
+    cond := UIACreatePropertyCondition(uia, UIA_AutomationIdPropertyId, filterExact)
+    if !IsObject(cond) || !ComObjValue(cond) {
+        LogAutoId("UIAExactAutomationMatches: CreatePropertyCondition failed or null ptr")
         return matches
+    }
+
+    ; ---- Helper: safe FindAll using raw pointers (tries slot 6 then 8) ----
+    FindAllSafe_(eltObj, scope, condObj) {
+        elems := 0, hr := 1
+        eltPtr := ComObjValue(eltObj)
+        condPtr := ComObjValue(condObj)
+        if (!eltPtr || !condPtr)
+            return { hr: 1, elements: 0 }
+        try {
+            hr := ComCall(6    ; IUIAutomationElement::FindAll
+                , eltPtr
+                , "int", scope
+                , "ptr", condPtr
+                , "ptr*", &elems)
+        } catch {
+            try {
+                hr := ComCall(8
+                    , eltPtr
+                    , "int", scope
+                    , "ptr", condPtr
+                    , "ptr*", &elems)
+            }
+            catch {
+                hr := 1
+            }
+        }
+        return { hr: hr, elements: elems }
     }
 
     elements := 0
-    static TREE_SCOPE_DESCENDANTS := 4
     hr := 1
-    try hr := ComCall(8, rootElement, "int", TREE_SCOPE_DESCENDANTS, "ptr", condPtr, "ptr*", &elements)
-    catch as err {
-        hr := 1
-        LogAutoId("ComCall(QIExact) threw: " AutoIdErrorText(err))
+
+    ; ---- Attempt 1: Control View subtree, post-filter by AutomationId ----
+    ctrlView := 0
+    try uia.get_ControlViewCondition(&ctrlView)
+    if (ctrlView) {
+        res := FindAllSafe_(rootElement, TREE_SCOPE_SUBTREE, ctrlView)
+        hr := res.hr
+        cvElems := res.elements
+        LogAutoId(Format("ctrlView FindAll hr={1} elementsPtr=0x{2:X}", hr, cvElems))
+
+        if (hr = 0 && cvElems) {
+            try {
+                count := UIAElementArrayLength(cvElems)
+                LogAutoId(Format("ctrlView element array count={1}", count))
+                Loop count {
+                    elem := UIAElementArrayGet(cvElems, A_Index - 1)
+                    if !elem
+                        continue
+                    details := UIAGetDirectElementInfo(elem)
+                    if IsObject(details) {
+                        autoId := details.Has("AutomationId") ? details["AutomationId"] : ""
+                        if (autoId = filterExact) {
+                            record := UIABuildMatchRecord(details, -1)
+                            matches.Push(record)
+                            LogAutoId(Format("ctrlView post-filter match autoId='{1}' name='{2}'",
+                                record.Has("AutomationId") ? record["AutomationId"] : "",
+                                record.Has("Name") ? record["Name"] : ""))
+                        }
+                    }
+                    UIARelease(elem)
+                }
+            } finally {
+                UIARelease(cvElems)
+            }
+        }
+        try ObjRelease(ctrlView)
     }
-    LogAutoId(Format("Exact match ComCall hr={1} elementsPtr=0x{2:X}", hr, elements))
-    if hr != 0 || !elements {
+
+    if (matches.Length) {
         try ObjRelease(cond)
-        if elements
-            UIARelease(elements)
+        LogAutoId(Format("UIAExactAutomationMatches finalized with {1} results (ctrlView path)", matches.Length))
         return matches
     }
 
+    ; ---- Attempt 2: Raw AutomationId property condition ----
+    res := FindAllSafe_(rootElement, TREE_SCOPE_SUBTREE, cond)
+    hr := res.hr
+    elements := res.elements
+    LogAutoId(Format("raw FindAll hr={1} elementsPtr=0x{2:X}", hr, elements))
+
+    ; Tiny retry for late-created children
+    if (hr != 0 || !elements) {
+        Sleep 80
+        res := FindAllSafe_(rootElement, TREE_SCOPE_SUBTREE, cond)
+        hr := res.hr
+        elements := res.elements
+        LogAutoId(Format("raw retry hr={1} elementsPtr=0x{2:X}", hr, elements))
+    }
+
+    if (hr != 0 || !elements) {
+        try ObjRelease(cond)
+        if elements
+            UIARelease(elements)
+        LogAutoId("UIAExactAutomationMatches: no matches")
+        return matches
+    }
+
+    ; ---- Enumerate raw results ----
     try {
         count := UIAElementArrayLength(elements)
-        LogAutoId(Format("Exact match element array count={1}", count))
+        LogAutoId(Format("Exact element array count={1}", count))
         Loop count {
             elem := UIAElementArrayGet(elements, A_Index - 1)
             if !elem
@@ -133,7 +225,9 @@ UIAExactAutomationMatches(uia, rootElement, filterExact) {
             if IsObject(details) {
                 record := UIABuildMatchRecord(details, -1)
                 matches.Push(record)
-                LogAutoId(Format("Exact match found autoId='{1}' name='{2}'", record.Has("AutomationId") ? record["AutomationId"] : "", record.Has("Name") ? record["Name"] : ""))
+                LogAutoId(Format("Exact match autoId='{1}' name='{2}'",
+                    record.Has("AutomationId") ? record["AutomationId"] : "",
+                    record.Has("Name") ? record["Name"] : ""))
             }
             UIARelease(elem)
         }
@@ -145,7 +239,6 @@ UIAExactAutomationMatches(uia, rootElement, filterExact) {
 
     return matches
 }
-
 
 UIABreadthFirstSearch(uia, rootElement, filterLower) {
     maxNodes := gAutoIdMaxNodes
