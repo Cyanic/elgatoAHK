@@ -246,7 +246,7 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    if !ScrollWithUIA(el, "up")
+    ; if !ScrollWithUIA(el, "up")
         SendMouseWheel(el, "up")
 }
 
@@ -256,7 +256,7 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    if !ScrollWithUIA(el, "down")
+    ; if !ScrollWithUIA(el, "down")
         SendMouseWheel(el, "down")
 }
 
@@ -266,7 +266,7 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    if !ScrollWithUIA(el, "up")
+    ; if !ScrollWithUIA(el, "up")
         SendMouseWheel(el, "up")
 }
 
@@ -276,6 +276,6 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    if !ScrollWithUIA(el, "down")
+    ; if !ScrollWithUIA(el, "down")
         SendMouseWheel(el, "down")
 }
