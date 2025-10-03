@@ -19,7 +19,7 @@ getScrollElement() {
 
     scrollEl := 0
     try {
-        scrollEl := root.FindElement({AutomationId: "qt_scrollarea_viewport"})
+        scrollEl := root.FindElement({ AutomationId: "qt_scrollarea_viewport" })
     } catch {
         scrollEl := 0
     }
@@ -53,14 +53,45 @@ getScrollParentElement() {
     return parent
 }
 
-SendMouseWheel(el, direction := "down") {
+ScrollWithUIA(el, direction := "down") {
     if !el {
         return false
     }
 
-    try el.SetFocus()
-    catch
-        ; ignore focus errors
+    try {
+        if !el.IsScrollPatternAvailable {
+            ShowElementDebug(el, "Scroll pattern not available.")
+            return false
+        }
+    } catch {
+        ; fall through to attempting pattern retrieval
+    }
+
+    scrollPattern := 0
+    try {
+        scrollPattern := el.ScrollPattern
+    } catch Error as err {
+        ShowElementDebug(el, "Failed to retrieve scroll pattern.`n" err.Message)
+        return false
+    }
+
+    direction := StrLower(direction)
+    vertAmount := direction = "up" ? UIA.ScrollAmount.SmallDecrement : UIA.ScrollAmount.SmallIncrement
+
+    try {
+        scrollPattern.Scroll(vertAmount)
+    } catch Error as err {
+        ShowElementDebug(el, "Failed to invoke scroll pattern.`n" err.Message)
+        return false
+    }
+
+    return true
+}
+
+SendMouseWheel(el, direction := "down") {
+    if !el {
+        return false
+    }
 
     hwnd := ResolveElementHandle(el)
     if !hwnd {
@@ -104,96 +135,16 @@ SendMouseWheel(el, direction := "down") {
         }
     }
 
-    xScreen := x
-    yScreen := y
-
-    client := Buffer(8, 0)
-    NumPut("int", xScreen, client, 0)
-    NumPut("int", yScreen, client, 4)
-    converted := DllCall("User32.dll\ScreenToClient", "ptr", hwnd, "ptr", client.Ptr)
-    xClient := NumGet(client, 0, "int")
-    yClient := NumGet(client, 4, "int")
-
     delta := direction = "up" ? 120 : -120
     wParam := (delta & 0xFFFF) << 16
-    lParamClient := ((yClient & 0xFFFF) << 16) | (xClient & 0xFFFF)
-    lParamScreen := ((yScreen & 0xFFFF) << 16) | (xScreen & 0xFFFF)
+    lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
 
-    postClient := false
-    try {
-        DllCall("User32.dll\SendMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParamClient)
-        postClient := true
-    }
-    rootHwnd := DllCall("User32.dll\GetAncestor", "ptr", hwnd, "uint", 2, "ptr")
-    postRoot := false
-    if rootHwnd && rootHwnd != hwnd {
-        try {
-            DllCall("User32.dll\SendMessageW", "ptr", rootHwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParamScreen)
-            postRoot := true
-        }
-    }
-
-    DebugMouseWheel(el, hwnd, rootHwnd, xScreen, yScreen, xClient, yClient, converted, postClient, postRoot)
-
-    if postClient || postRoot
-        return true
-
-    if SimulateMouseWheel(xScreen, yScreen, direction)
-        return true
-
-    ShowElementDebug(el, "WM_MOUSEWHEEL: All scroll attempts failed.")
-    return false
-}
-
-DebugMouseWheel(el, hwnd, rootHwnd, xScreen, yScreen, xClient, yClient, converted, postClient, postRoot) {
-    details := []
-    details.Push("WM_MOUSEWHEEL diagnostics:")
-    details.Push(Format("hwnd: 0x{:X}", hwnd))
-    details.Push(Format("root hwnd: 0x{:X}", rootHwnd))
-    details.Push(Format("Screen point: ({1}, {2})", xScreen, yScreen))
-    details.Push(Format("Client point: ({1}, {2})", xClient, yClient))
-    details.Push("ScreenToClient converted: " (converted ? "true" : "false"))
-    details.Push("PostMessage (client hwnd): " (postClient ? "true" : "false"))
-    if rootHwnd && rootHwnd != hwnd
-        details.Push("PostMessage (root hwnd): " (postRoot ? "true" : "false"))
-    try {
-        native := el.NativeWindowHandle
-        details.Push(Format("Element NativeWindowHandle: 0x{:X}", native))
-    } catch {
-        details.Push("Element NativeWindowHandle: <error>")
-    }
-    text := Join(details, "`n")
-    try A_Clipboard := text
-    catch
-        ; ignore clipboard errors
-    MsgBox(text)
-}
-
-SimulateMouseWheel(xScreen, yScreen, direction) {
-    static MOUSEEVENTF_WHEEL := 0x0800
-
-    delta := direction = "up" ? 120 : -120
-
-    orig := Buffer(8, 0)
-    if !DllCall("User32.dll\GetCursorPos", "ptr", orig.Ptr)
+    sent := DllCall("User32.dll\PostMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParam)
+    if !sent {
+        ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage failed.")
         return false
-
-    origX := NumGet(orig, 0, "int")
-    origY := NumGet(orig, 4, "int")
-
-    moveX := xScreen
-    moveY := yScreen
-
-    if moveX = 0 && moveY = 0 {
-        moveX := origX
-        moveY := origY
     }
-
-    DllCall("User32.dll\SetCursorPos", "int", moveX, "int", moveY)
-    success := DllCall("User32.dll\mouse_event", "uint", MOUSEEVENTF_WHEEL, "uint", 0, "uint", 0, "int", delta, "uptr", 0)
-    DllCall("User32.dll\SetCursorPos", "int", origX, "int", origY)
-
-    return success != 0
+    return true
 }
 
 ResolveElementHandle(el) {
@@ -244,6 +195,13 @@ ShowElementDebug(el, message) {
         detailLines.Push("Location: <error>")
     }
 
+    try {
+        valuePattern := el.ValuePattern
+        detailLines.Push("ReadOnly: " (valuePattern.IsReadOnly ? "true" : "false"))
+    } catch {
+        detailLines.Push("ReadOnly: <unknown>")
+    }
+
     patternNames := []
     try {
         for patternName, patternId in UIA.Pattern.OwnProps() {
@@ -286,7 +244,8 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    SendMouseWheel(el, "up")
+    if !ScrollWithUIA(el, "up")
+        SendMouseWheel(el, "up")
 }
 
 ; Scroll Down
@@ -295,7 +254,8 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    SendMouseWheel(el, "down")
+    if !ScrollWithUIA(el, "down")
+        SendMouseWheel(el, "down")
 }
 
 ; Scroll Parent Up
@@ -304,7 +264,8 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    SendMouseWheel(el, "up")
+    if !ScrollWithUIA(el, "up")
+        SendMouseWheel(el, "up")
 }
 
 ; Scroll Parent Down
@@ -313,5 +274,6 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    SendMouseWheel(el, "down")
+    if !ScrollWithUIA(el, "down")
+        SendMouseWheel(el, "down")
 }
