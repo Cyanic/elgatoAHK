@@ -85,7 +85,7 @@ SendMouseWheel(el, direction := "down") {
     } catch Error as err {
         debugSteps.Push("Element location exception: " err.Message)
     }
-
+    /*
     if !hasLocation {
         rect := Buffer(16, 0)
         if DllCall("user32\\GetWindowRect", "ptr", hwnd, "ptr", rect.Ptr) {
@@ -120,7 +120,7 @@ SendMouseWheel(el, direction := "down") {
         LogDebug(msg)
         ShowElementDebug(el, msg)
     }
-
+*/
     delta := direction = "up" ? 120 : -120
     wParam := (delta & 0xFFFF) << 16
     lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
