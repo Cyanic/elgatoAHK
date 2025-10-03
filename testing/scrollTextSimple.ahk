@@ -100,6 +100,15 @@ SendMouseWheel(el, direction := "down") {
         }
     }
 
+    ; Convert screen -> client coordinates
+    client := Buffer(8, 0)
+    NumPut("int", x, client, 0)
+    NumPut("int", y, client, 4)
+    if DllCall("User32.dll\ScreenToClient", "ptr", hwnd, "ptr", client.Ptr) {
+        x := NumGet(client, 0, "int")
+        y := NumGet(client, 4, "int")
+    }
+
     delta := direction = "up" ? 120 : -120
     wParam := (delta & 0xFFFF) << 16
     lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
