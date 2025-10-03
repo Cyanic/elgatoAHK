@@ -2,7 +2,7 @@
 #SingleInstance Force
 #Include UIA.ahk
 
-global LogFile := A_ScriptDir "\\scroll_debug_" FormatTime("yyyyMMdd_HHmmss") ".log"
+global LogFile := A_ScriptDir . "\\scroll_debug_" . FormatTime(, "yyyyMMdd_HHmmss") . ".log"
 
 ; Function to get the scrollable element
 getScrollElement() {
@@ -238,7 +238,7 @@ Join(items, delimiter := "") {
 LogDebug(message) {
     global LogFile
     try {
-        timestamp := FormatTime("yyyy-MM-dd HH:mm:ss")
+        timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
         FileAppend(Format("[{1}] {2}`n", timestamp, message), LogFile, "UTF-8")
     } catch {
         ; ignore logging errors
