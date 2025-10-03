@@ -54,6 +54,27 @@ getScrollParentElement() {
     return parent
 }
 
+getScrollChildElement() {
+    scrollEl := getScrollElement()
+    if !scrollEl {
+        return 0
+    }
+
+    children := []
+    try {
+        children := scrollEl.GetChildren()
+    } catch {
+        children := []
+    }
+
+    if children.Length = 0 {
+        MsgBox("Child element not found.")
+        return 0
+    }
+
+    return children[1]
+}
+
 ScrollWithUIA(el, direction := "down") {
     if !el {
         return
@@ -109,6 +130,13 @@ ShowElementDebug(el, message) {
         detailLines.Push("Location: <error>")
     }
 
+    try {
+        valuePattern := el.ValuePattern
+        detailLines.Push("ReadOnly: " (valuePattern.IsReadOnly ? "true" : "false"))
+    } catch {
+        detailLines.Push("ReadOnly: <unknown>")
+    }
+
     patternNames := []
     try {
         for patternName, patternId in UIA.Pattern.OwnProps() {
@@ -157,6 +185,24 @@ Join(items, delimiter := "") {
 ; Scroll Down
 ^!2:: {
     el := getScrollElement()
+    if !el {
+        return
+    }
+    ScrollWithUIA(el, "down")
+}
+
+; Scroll Child Up
+^!5:: {
+    el := getScrollChildElement()
+    if !el {
+        return
+    }
+    ScrollWithUIA(el, "up")
+}
+
+; Scroll Child Down
+^!6:: {
+    el := getScrollChildElement()
     if !el {
         return
     }
