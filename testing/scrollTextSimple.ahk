@@ -55,6 +55,52 @@ getScrollParentElement() {
     return parent
 }
 
+SendMouseWheelUIA(el, direction := "down", steps := 1) {
+    if !el {
+        return false
+    }
+
+    direction := StrLower(direction)
+    if direction != "up"
+        direction := "down"
+
+    steps := Max(1, Round(Abs(steps)))
+
+    debugSteps := []
+    debugSteps.Push("Direction=" direction)
+    debugSteps.Push("Steps=" steps)
+
+    pattern := ResolveScrollPattern(el, debugSteps)
+    if !pattern {
+        debugSteps.Push("ScrollPattern unresolved")
+        LogDebug("SendMouseWheelUIA: " . Join(debugSteps, " | "))
+        return SendMouseWheel(el, direction)
+    }
+
+    vertAmount := direction = "up" ? 1 : 4
+    success := true
+    try {
+        Loop steps {
+            pattern.Scroll(0, vertAmount)
+            if steps > 1
+                Sleep 60
+        }
+    } catch Error as err {
+        debugSteps.Push("Scroll exception: " err.Message)
+        success := false
+    }
+
+    if !success {
+        debugSteps.Push("Falling back to PostMessage")
+        LogDebug("SendMouseWheelUIA: " . Join(debugSteps, " | "))
+        return SendMouseWheel(el, direction)
+    }
+
+    debugSteps.Push("UIA scroll succeeded")
+    LogDebug("SendMouseWheelUIA: " . Join(debugSteps, " | "))
+    return true
+}
+
 SendMouseWheel(el, direction := "down") {
     if !el {
         return false
@@ -100,6 +146,33 @@ SendMouseWheel(el, direction := "down") {
         return false
     }
     return true
+}
+
+ResolveScrollPattern(el, debugSteps) {
+    static UIA_ScrollPatternId := 10004
+    current := el
+    depth := 0
+    while current {
+        pattern := 0
+        try {
+            pattern := current.GetCurrentPattern(UIA_ScrollPatternId)
+        } catch Error as err {
+            debugSteps.Push("ScrollPattern error depth=" depth ": " err.Message)
+            pattern := 0
+        }
+        if pattern {
+            debugSteps.Push("ScrollPattern found depth=" depth)
+            return pattern
+        }
+        try {
+            current := current.Parent
+        } catch {
+            current := 0
+        }
+        depth += 1
+    }
+    debugSteps.Push("ScrollPattern not located in ancestry")
+    return 0
 }
 
 ResolveElementHandle(el) {
@@ -218,7 +291,7 @@ LogDebug(message) {
     }
     KeyWait("Ctrl")
     KeyWait("Alt")
-    SendMouseWheel(el, "up")
+    SendMouseWheelUIA(el, "up")
 }
 
 ; Scroll Down
@@ -229,7 +302,7 @@ LogDebug(message) {
     }
     KeyWait("Ctrl")
     KeyWait("Alt")
-    SendMouseWheel(el, "down")
+    SendMouseWheelUIA(el, "down")
 }
 
 ; Scroll Parent Up
