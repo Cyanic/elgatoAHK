@@ -1,5 +1,7 @@
 #Requires AutoHotkey v2.0
+#SingleInstance Force
 #Include UIA.ahk
+
 
 ; Function to get the scrollable element
 getScrollElement() {
