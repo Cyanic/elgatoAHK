@@ -2,6 +2,8 @@
 #SingleInstance Force
 #Include UIA.ahk
 
+global LogFile := A_ScriptDir "\\scroll_debug_" FormatTime("yyyyMMdd_HHmmss") ".log"
+
 ; Function to get the scrollable element
 getScrollElement() {
     hwnd := WinExist("ahk_exe Camera Hub.exe")
@@ -59,9 +61,11 @@ SendMouseWheel(el, direction := "down") {
     }
 
     debugSteps := []
+    debugSteps.Push("Direction=" direction)
     hwnd := ResolveElementHandle(el)
     if !hwnd {
         ShowElementDebug(el, "WM_MOUSEWHEEL: Native window handle not found.")
+        LogDebug("WM_MOUSEWHEEL: Native window handle not found")
         return false
     }
 
@@ -112,24 +116,22 @@ SendMouseWheel(el, direction := "down") {
 
     if !hasLocation {
         debugSteps.Push("Falling back to 0,0 coordinates")
-        ShowElementDebug(el, "WM_MOUSEWHEEL: Unable to resolve location.`n" . Join(debugSteps, "`n"))
+        msg := "WM_MOUSEWHEEL: Unable to resolve location.`n" . Join(debugSteps, "`n")
+        LogDebug(msg)
+        ShowElementDebug(el, msg)
     }
 
     delta := direction = "up" ? 120 : -120
     wParam := (delta & 0xFFFF) << 16
     lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
 
-    try {
-        OutputDebug("SendMouseWheel: " . Join(debugSteps, " | "))
-    }
-    catch {
-        ; ignore OutputDebug errors
-    }
+    LogDebug("SendMouseWheel: " . Join(debugSteps, " | "))
 
     sent := DllCall("User32.dll\PostMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParam)
 
     if !sent {
         ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage failed.")
+        LogDebug("WM_MOUSEWHEEL: PostMessage failed")
         return false
     }
     return true
@@ -231,6 +233,16 @@ Join(items, delimiter := "") {
         output .= item
     }
     return output
+}
+
+LogDebug(message) {
+    global LogFile
+    try {
+        timestamp := FormatTime("yyyy-MM-dd HH:mm:ss")
+        FileAppend(Format("[{1}] {2}`n", timestamp, message), LogFile, "UTF-8")
+    } catch {
+        ; ignore logging errors
+    }
 }
 
 ; Scroll Up
