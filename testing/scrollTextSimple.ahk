@@ -157,10 +157,10 @@ SendMouseWheel(el, direction := "down") {
     }
 
     delta := direction = "up" ? 120 : -120
-    wParam := delta << 16
+    wParam := (delta & 0xFFFF) << 16
     lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
 
-    sent := DllCall("user32\\PostMessage", "ptr", hwnd, "uint", 0x020A, "int64", wParam, "int64", lParam)
+    sent := DllCall("User32.dll\PostMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParam)
     if !sent {
         ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage failed.")
         return false
@@ -265,8 +265,8 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    ScrollWithUIA(el, "up")
-    SendMouseWheel(el, "up")
+    if !ScrollWithUIA(el, "up")
+        SendMouseWheel(el, "up")
 }
 
 ; Scroll Down
@@ -275,8 +275,8 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    ScrollWithUIA(el, "down")
-    SendMouseWheel(el, "down")
+    if !ScrollWithUIA(el, "down")
+        SendMouseWheel(el, "down")
 }
 
 ; Scroll Child Up
@@ -285,8 +285,8 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    ScrollWithUIA(el, "up")
-    SendMouseWheel(el, "up")
+    if !ScrollWithUIA(el, "up")
+        SendMouseWheel(el, "up")
 }
 
 ; Scroll Child Down
@@ -295,8 +295,8 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    ScrollWithUIA(el, "down")
-    SendMouseWheel(el, "down")
+    if !ScrollWithUIA(el, "down")
+        SendMouseWheel(el, "down")
 }
 
 ; Scroll Parent Up
@@ -305,8 +305,8 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    ScrollWithUIA(el, "up")
-    SendMouseWheel(el, "up")
+    if !ScrollWithUIA(el, "up")
+        SendMouseWheel(el, "up")
 }
 
 ; Scroll Parent Down
@@ -315,6 +315,6 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    ScrollWithUIA(el, "down")
-    SendMouseWheel(el, "down")
+    if !ScrollWithUIA(el, "down")
+        SendMouseWheel(el, "down")
 }
