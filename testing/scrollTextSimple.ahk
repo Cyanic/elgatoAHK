@@ -88,11 +88,17 @@ ShowElementDebug(el, message) {
     detailLines := []
     detailLines.Push(message)
 
-    try detailLines.Push("AutomationId: " (el.AutomationId != "" ? el.AutomationId : "<none>"))
-    catch detailLines.Push("AutomationId: <error>")
+    try {
+        detailLines.Push("AutomationId: " (el.AutomationId != "" ? el.AutomationId : "<none>"))
+    } catch {
+        detailLines.Push("AutomationId: <error>")
+    }
 
-    try detailLines.Push("ClassName: " (el.ClassName != "" ? el.ClassName : "<none>"))
-    catch detailLines.Push("ClassName: <error>")
+    try {
+        detailLines.Push("ClassName: " (el.ClassName != "" ? el.ClassName : "<none>"))
+    } catch {
+        detailLines.Push("ClassName: <error>")
+    }
 
     try {
         loc := el.Location
