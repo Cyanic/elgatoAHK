@@ -65,13 +65,14 @@ ScrollWithUIA(el, direction := "down") {
         }
     } catch {
         ; fall through to attempting pattern retrieval
+        ShowElementDebug(el, "fall through to attempting pattern retrieval")
     }
 
     scrollPattern := 0
     try {
         scrollPattern := el.ScrollPattern
     } catch Error as err {
-        ShowElementDebug(el, "Failed to retrieve scroll pattern.`n" err.Message)
+        ShowElementDebug(el, "Failed to retrieve scroll pattern.`n" err.Message)        
         return false
     }
 
@@ -85,6 +86,7 @@ ScrollWithUIA(el, direction := "down") {
         return false
     }
 
+    ShowElementDebug(el, "SUCCESS scroll pattern.`n" err.Message)
     return true
 }
 
