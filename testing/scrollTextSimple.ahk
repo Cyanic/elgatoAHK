@@ -58,6 +58,10 @@ SendMouseWheel(el, direction := "down") {
         return false
     }
 
+    try el.SetFocus()
+    catch
+        ; ignore focus errors
+
     hwnd := ResolveElementHandle(el)
     if !hwnd {
         ShowElementDebug(el, "WM_MOUSEWHEEL: Native window handle not found.")
@@ -115,18 +119,29 @@ SendMouseWheel(el, direction := "down") {
     lParamClient := ((yClient & 0xFFFF) << 16) | (xClient & 0xFFFF)
     lParamScreen := ((yScreen & 0xFFFF) << 16) | (xScreen & 0xFFFF)
 
-    postClient := DllCall("User32.dll\PostMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParamClient)
+    postClient := false
+    try {
+        DllCall("User32.dll\SendMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParamClient)
+        postClient := true
+    }
     rootHwnd := DllCall("User32.dll\GetAncestor", "ptr", hwnd, "uint", 2, "ptr")
-    postRoot := 0
-    if rootHwnd && rootHwnd != hwnd
-        postRoot := DllCall("User32.dll\PostMessageW", "ptr", rootHwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParamScreen)
+    postRoot := false
+    if rootHwnd && rootHwnd != hwnd {
+        try {
+            DllCall("User32.dll\SendMessageW", "ptr", rootHwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParamScreen)
+            postRoot := true
+        }
+    }
 
     DebugMouseWheel(el, hwnd, rootHwnd, xScreen, yScreen, xClient, yClient, converted, postClient, postRoot)
 
     if postClient || postRoot
         return true
 
-    ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage failed.")
+    if SimulateMouseWheel(xScreen, yScreen, direction)
+        return true
+
+    ShowElementDebug(el, "WM_MOUSEWHEEL: All scroll attempts failed.")
     return false
 }
 
@@ -152,6 +167,33 @@ DebugMouseWheel(el, hwnd, rootHwnd, xScreen, yScreen, xClient, yClient, converte
     catch
         ; ignore clipboard errors
     MsgBox(text)
+}
+
+SimulateMouseWheel(xScreen, yScreen, direction) {
+    static MOUSEEVENTF_WHEEL := 0x0800
+
+    delta := direction = "up" ? 120 : -120
+
+    orig := Buffer(8, 0)
+    if !DllCall("User32.dll\GetCursorPos", "ptr", orig.Ptr)
+        return false
+
+    origX := NumGet(orig, 0, "int")
+    origY := NumGet(orig, 4, "int")
+
+    moveX := xScreen
+    moveY := yScreen
+
+    if moveX = 0 && moveY = 0 {
+        moveX := origX
+        moveY := origY
+    }
+
+    DllCall("User32.dll\SetCursorPos", "int", moveX, "int", moveY)
+    success := DllCall("User32.dll\mouse_event", "uint", MOUSEEVENTF_WHEEL, "uint", 0, "uint", 0, "int", delta, "uptr", 0)
+    DllCall("User32.dll\SetCursorPos", "int", origX, "int", origY)
+
+    return success != 0
 }
 
 ResolveElementHandle(el) {
