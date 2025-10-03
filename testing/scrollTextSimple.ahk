@@ -53,43 +53,6 @@ getScrollParentElement() {
     return parent
 }
 
-ScrollWithUIA(el, direction := "down") {
-    if !el {
-        return false
-    }
-
-    try {
-        if !el.IsScrollPatternAvailable {
-            ShowElementDebug(el, "Scroll pattern not available.")
-            return false
-        }
-    } catch {
-        ; fall through to attempting pattern retrieval
-        ShowElementDebug(el, "fall through to attempting pattern retrieval")
-    }
-
-    scrollPattern := 0
-    try {
-        scrollPattern := el.ScrollPattern
-    } catch Error as err {
-        ShowElementDebug(el, "Failed to retrieve scroll pattern.`n" err.Message)
-        return false
-    }
-
-    direction := StrLower(direction)
-    vertAmount := direction = "up" ? UIA.ScrollAmount.SmallDecrement : UIA.ScrollAmount.SmallIncrement
-
-    try {
-        scrollPattern.Scroll(vertAmount)
-    } catch Error as err {
-        ShowElementDebug(el, "Failed to invoke scroll pattern.`n" err.Message)
-        return false
-    }
-
-    ShowElementDebug(el, "SUCCESS scroll pattern.`n" err.Message)
-    return true
-}
-
 SendMouseWheel(el, direction := "down") {
     if !el {
         return false
@@ -142,8 +105,9 @@ SendMouseWheel(el, direction := "down") {
     wParam := (delta & 0xFFFF) << 16
     lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
 
-    sent := DllCall("User32.dll\PostMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParam)
     ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage sent.")
+    sent := DllCall("User32.dll\PostMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParam)
+
     if !sent {
         ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage failed.")
         return false
@@ -255,7 +219,6 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    ; if !ScrollWithUIA(el, "up")
     SendMouseWheel(el, "up")
 }
 
@@ -265,8 +228,7 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    if !ScrollWithUIA(el, "down")
-        SendMouseWheel(el, "down")
+    SendMouseWheel(el, "down")
 }
 
 ; Scroll Parent Up
@@ -275,7 +237,6 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    ; if !ScrollWithUIA(el, "up")
     SendMouseWheel(el, "up")
 }
 
@@ -285,6 +246,5 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    ; if !ScrollWithUIA(el, "down")
     SendMouseWheel(el, "down")
 }
