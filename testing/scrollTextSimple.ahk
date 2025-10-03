@@ -219,6 +219,8 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
+    KeyWait("Ctrl")
+    KeyWait("Alt")
     SendMouseWheel(el, "up")
 }
 
@@ -228,6 +230,8 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
+    KeyWait("Ctrl")
+    KeyWait("Alt")
     SendMouseWheel(el, "down")
 }
 
@@ -237,6 +241,8 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
+    KeyWait("Ctrl")
+    KeyWait("Alt")
     SendMouseWheel(el, "up")
 }
 
@@ -246,5 +252,7 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
+    KeyWait("Ctrl")
+    KeyWait("Alt")
     SendMouseWheel(el, "down")
 }
