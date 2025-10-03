@@ -72,7 +72,7 @@ ScrollWithUIA(el, direction := "down") {
     try {
         scrollPattern := el.ScrollPattern
     } catch Error as err {
-        ShowElementDebug(el, "Failed to retrieve scroll pattern.`n" err.Message)        
+        ShowElementDebug(el, "Failed to retrieve scroll pattern.`n" err.Message)
         return false
     }
 
@@ -113,6 +113,7 @@ SendMouseWheel(el, direction := "down") {
         }
     } catch {
         ; ignore location errors
+        ShowElementDebug(el, "ignore location errors")
     }
 
     if !hasLocation {
@@ -142,6 +143,7 @@ SendMouseWheel(el, direction := "down") {
     lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
 
     sent := DllCall("User32.dll\PostMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParam)
+    ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage sent.")
     if !sent {
         ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage failed.")
         return false
@@ -225,6 +227,13 @@ ShowElementDebug(el, message) {
         detailLines.Push("Available Patterns: <none>")
     }
 
+    text := Join(detailLines, "`n")
+    try {
+        A_Clipboard := text
+    }
+    catch {
+        ; ignore clipboard errors
+    }
     MsgBox(Join(detailLines, "`n"))
 }
 
@@ -247,7 +256,7 @@ Join(items, delimiter := "") {
         return
     }
     ; if !ScrollWithUIA(el, "up")
-        SendMouseWheel(el, "up")
+    SendMouseWheel(el, "up")
 }
 
 ; Scroll Down
@@ -256,7 +265,7 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    ; if !ScrollWithUIA(el, "down")
+    if !ScrollWithUIA(el, "down")
         SendMouseWheel(el, "down")
 }
 
@@ -267,7 +276,7 @@ Join(items, delimiter := "") {
         return
     }
     ; if !ScrollWithUIA(el, "up")
-        SendMouseWheel(el, "up")
+    SendMouseWheel(el, "up")
 }
 
 ; Scroll Parent Down
@@ -277,5 +286,5 @@ Join(items, delimiter := "") {
         return
     }
     ; if !ScrollWithUIA(el, "down")
-        SendMouseWheel(el, "down")
+    SendMouseWheel(el, "down")
 }
