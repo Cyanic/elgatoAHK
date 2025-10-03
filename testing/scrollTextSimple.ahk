@@ -22,26 +22,65 @@ getScrollElement() {
     return scrollEl
 }
 
+ScrollWithUIA(el, direction := "down") {
+    static UIA_ScrollPatternId := 10004
+    static SCROLL_NO_AMOUNT := 2
+    static SCROLL_SMALL_DECREMENT := 1
+    static SCROLL_SMALL_INCREMENT := 4
+
+    if !el {
+        return
+    }
+
+    pattern := 0
+    try hr := ComCall(13, el, "int", UIA_ScrollPatternId, "ptr*", &pattern)
+    catch {
+        hr := -1
+    }
+
+    if hr != 0 || !pattern {
+        MsgBox("Scroll pattern not available.")
+        return
+    }
+
+    direction := StrLower(direction)
+    vertAmount := direction = "up" ? SCROLL_SMALL_DECREMENT : SCROLL_SMALL_INCREMENT
+
+    try {
+        callHr := ComCall(9, pattern, "int", SCROLL_NO_AMOUNT, "int", vertAmount)
+        if callHr != 0 {
+            MsgBox(Format("Failed to invoke scroll pattern. (hr={1})", callHr))
+        }
+    } catch Error as err {
+        MsgBox("Failed to invoke scroll pattern:`n" err.Message)
+    } finally {
+        ReleaseComPtr(pattern)
+    }
+}
+
+ReleaseComPtr(ptr) {
+    if !ptr {
+        return
+    }
+    vtable := NumGet(ptr, 0, "ptr")
+    release := NumGet(vtable, 2 * A_PtrSize, "ptr")
+    DllCall(release, "ptr", ptr, "uint")
+}
+
 ; Scroll Up
 ^!1:: {
     el := getScrollElement()
-	MsgBox(el.Dump()) ; Shows available patterns, properties, etc.
-    if el && el.HasPattern("Scroll") {
-        scroll := el.GetCurrentPattern("Scroll")
-        scroll.Scroll(0, -1) ; Scroll up
-    } else {
-        MsgBox("Scroll pattern not available.")
+    if !el {
+        return
     }
+    ScrollWithUIA(el, "up")
 }
 
 ; Scroll Down
 ^!2:: {
     el := getScrollElement()
-	MsgBox(el.Dump()) ; Shows available patterns, properties, etc.
-    if el && el.HasPattern("Scroll") {
-        scroll := el.GetCurrentPattern("Scroll")
-        scroll.Scroll(0, 1) ; Scroll down
-    } else {
-        MsgBox("Scroll pattern not available.")
+    if !el {
+        return
     }
+    ScrollWithUIA(el, "down")
 }
