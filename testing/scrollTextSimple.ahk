@@ -105,7 +105,6 @@ SendMouseWheel(el, direction := "down") {
     wParam := (delta & 0xFFFF) << 16
     lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
 
-    ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage sent.")
     sent := DllCall("User32.dll\PostMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParam)
 
     if !sent {
