@@ -31,6 +31,27 @@ getScrollElement() {
     return scrollEl
 }
 
+getScrollParentElement() {
+    scrollEl := getScrollElement()
+    if !scrollEl {
+        return 0
+    }
+
+    parent := 0
+    try {
+        parent := scrollEl.Parent
+    } catch {
+        parent := 0
+    }
+
+    if !parent {
+        MsgBox("Parent scrollable element not found.")
+        return 0
+    }
+
+    return parent
+}
+
 ScrollWithUIA(el, direction := "down") {
     if !el {
         return
@@ -75,6 +96,24 @@ ScrollWithUIA(el, direction := "down") {
 ; Scroll Down
 ^!2:: {
     el := getScrollElement()
+    if !el {
+        return
+    }
+    ScrollWithUIA(el, "down")
+}
+
+; Scroll Parent Up
+^!3:: {
+    el := getScrollParentElement()
+    if !el {
+        return
+    }
+    ScrollWithUIA(el, "up")
+}
+
+; Scroll Parent Down
+^!4:: {
+    el := getScrollParentElement()
     if !el {
         return
     }
