@@ -1,22 +1,35 @@
 #Requires AutoHotkey v2.0
-#Include UIA.ahk
+#Include "%A_ScriptDir%\uiaHelpers.ahk"
 
 ; Function to get the scrollable element
 getScrollElement() {
     hwnd := WinExist("ahk_exe Camera Hub.exe")
     if !hwnd {
         MsgBox("Camera Hub not found.")
-        return
+        return 0
     }
 
-    root := uia.ElementFromHandle(hwnd)
+    uia := GetUIAutomation()
+    if !IsObject(uia) {
+        MsgBox("UI Automation not available.")
+        return 0
+    }
 
-    ; Try to find element by AutomationId
-    scrollEl := root.FindFirst("AutomationId=qt_scrollarea_viewport")
-    
+    root := UIAElementFromHandle(uia, hwnd)
+    if !root {
+        MsgBox("Unable to bind UI Automation to Camera Hub.")
+        return 0
+    }
+
+    try {
+        scrollEl := FindElementByAutomationIdSimple(uia, root, "qt_scrollarea_viewport")
+    } finally {
+        UIARelease(root)
+    }
+
     if !scrollEl {
         MsgBox("Scrollable element not found.")
-        return
+        return 0
     }
 
     return scrollEl
@@ -54,17 +67,40 @@ ScrollWithUIA(el, direction := "down") {
     } catch Error as err {
         MsgBox("Failed to invoke scroll pattern:`n" err.Message)
     } finally {
-        ReleaseComPtr(pattern)
+        UIARelease(pattern)
     }
 }
 
-ReleaseComPtr(ptr) {
-    if !ptr {
-        return
+FindElementByAutomationIdSimple(uia, root, automationId) {
+    if automationId = ""
+        return 0
+
+    cond := UIACreatePropertyCondition(uia, 30011, automationId)
+    if !IsObject(cond)
+        return 0
+
+    condPtr := ComObjValue(cond)
+    if !condPtr {
+        try ObjRelease(cond)
+        return 0
     }
-    vtable := NumGet(ptr, 0, "ptr")
-    release := NumGet(vtable, 2 * A_PtrSize, "ptr")
-    DllCall(release, "ptr", ptr, "uint")
+
+    element := 0
+    static TREE_SCOPE_DESCENDANTS := 4
+    try hr := ComCall(5, root, "int", TREE_SCOPE_DESCENDANTS, "ptr", condPtr, "ptr*", &element)
+    catch {
+        hr := -1
+    }
+
+    try ObjRelease(cond)
+
+    if hr != 0 || !element {
+        if element
+            UIARelease(element)
+        return 0
+    }
+
+    return element
 }
 
 ; Scroll Up
@@ -73,7 +109,11 @@ ReleaseComPtr(ptr) {
     if !el {
         return
     }
-    ScrollWithUIA(el, "up")
+    try {
+        ScrollWithUIA(el, "up")
+    } finally {
+        UIARelease(el)
+    }
 }
 
 ; Scroll Down
@@ -82,5 +122,9 @@ ReleaseComPtr(ptr) {
     if !el {
         return
     }
-    ScrollWithUIA(el, "down")
+    try {
+        ScrollWithUIA(el, "down")
+    } finally {
+        UIARelease(el)
+    }
 }
