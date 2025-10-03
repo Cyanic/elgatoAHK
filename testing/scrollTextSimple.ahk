@@ -104,10 +104,12 @@ SendMouseWheel(el, direction := "down") {
     client := Buffer(8, 0)
     NumPut("int", x, client, 0)
     NumPut("int", y, client, 4)
-    if DllCall("User32.dll\ScreenToClient", "ptr", hwnd, "ptr", client.Ptr) {
-        x := NumGet(client, 0, "int")
-        y := NumGet(client, 4, "int")
-    }
+    converted := DllCall("User32.dll\ScreenToClient", "ptr", hwnd, "ptr", client.Ptr)
+    xClient := NumGet(client, 0, "int")
+    yClient := NumGet(client, 4, "int")
+    DebugMouseWheel(el, hwnd, x, y, xClient, yClient, converted)
+    x := xClient
+    y := yClient
 
     delta := direction = "up" ? 120 : -120
     wParam := (delta & 0xFFFF) << 16
@@ -119,6 +121,22 @@ SendMouseWheel(el, direction := "down") {
         return false
     }
     return true
+}
+
+DebugMouseWheel(el, hwnd, xScreen, yScreen, xClient, yClient, converted) {
+    details := []
+    details.Push("WM_MOUSEWHEEL diagnostics:")
+    details.Push(Format("hwnd: 0x{:X}", hwnd))
+    details.Push(Format("Screen point: ({1}, {2})", xScreen, yScreen))
+    details.Push(Format("Client point: ({1}, {2})", xClient, yClient))
+    details.Push("ScreenToClient converted: " (converted ? "true" : "false"))
+    try {
+        native := el.NativeWindowHandle
+        details.Push(Format("Element NativeWindowHandle: 0x{:X}", native))
+    } catch {
+        details.Push("Element NativeWindowHandle: <error>")
+    }
+    MsgBox(Join(details, "`n"))
 }
 
 ResolveElementHandle(el) {
