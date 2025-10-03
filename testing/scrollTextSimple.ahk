@@ -53,27 +53,6 @@ getScrollParentElement() {
     return parent
 }
 
-getScrollChildElement() {
-    scrollEl := getScrollElement()
-    if !scrollEl {
-        return 0
-    }
-
-    children := []
-    try {
-        children := scrollEl.GetChildren()
-    } catch {
-        children := []
-    }
-
-    if children.Length = 0 {
-        MsgBox("Child element not found.")
-        return 0
-    }
-
-    return children[1]
-}
-
 ScrollWithUIA(el, direction := "down") {
     if !el {
         return false
@@ -272,26 +251,6 @@ Join(items, delimiter := "") {
 ; Scroll Down
 ^!2:: {
     el := getScrollElement()
-    if !el {
-        return
-    }
-    if !ScrollWithUIA(el, "down")
-        SendMouseWheel(el, "down")
-}
-
-; Scroll Child Up
-^!5:: {
-    el := getScrollChildElement()
-    if !el {
-        return
-    }
-    if !ScrollWithUIA(el, "up")
-        SendMouseWheel(el, "up")
-}
-
-; Scroll Child Down
-^!6:: {
-    el := getScrollChildElement()
     if !el {
         return
     }
