@@ -58,6 +58,7 @@ SendMouseWheel(el, direction := "down") {
         return false
     }
 
+    debugSteps := []
     hwnd := ResolveElementHandle(el)
     if !hwnd {
         ShowElementDebug(el, "WM_MOUSEWHEEL: Native window handle not found.")
@@ -73,10 +74,12 @@ SendMouseWheel(el, direction := "down") {
             x := Round(loc.x + loc.w / 2)
             y := Round(loc.y + loc.h / 2)
             hasLocation := true
+            debugSteps.Push("Element location succeeded")
+        } else {
+            debugSteps.Push("Element location returned non-object")
         }
-    } catch {
-        ; ignore location errors
-        ShowElementDebug(el, "ignore location errors")
+    } catch Error as err {
+        debugSteps.Push("Element location exception: " err.Message)
     }
 
     if !hasLocation {
@@ -89,6 +92,9 @@ SendMouseWheel(el, direction := "down") {
             x := (left + right) // 2
             y := (top + bottom) // 2
             hasLocation := true
+            debugSteps.Push("Window rect fallback succeeded")
+        } else {
+            debugSteps.Push("Window rect fallback failed")
         }
     }
 
@@ -98,12 +104,27 @@ SendMouseWheel(el, direction := "down") {
             x := NumGet(pt, 0, "int")
             y := NumGet(pt, 4, "int")
             hasLocation := true
+            debugSteps.Push("Cursor position fallback succeeded")
+        } else {
+            debugSteps.Push("Cursor position fallback failed")
         }
+    }
+
+    if !hasLocation {
+        debugSteps.Push("Falling back to 0,0 coordinates")
+        ShowElementDebug(el, "WM_MOUSEWHEEL: Unable to resolve location.`n" . Join(debugSteps, "`n"))
     }
 
     delta := direction = "up" ? 120 : -120
     wParam := (delta & 0xFFFF) << 16
     lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
+
+    try {
+        OutputDebug("SendMouseWheel: " . Join(debugSteps, " | "))
+    }
+    catch {
+        ; ignore OutputDebug errors
+    }
 
     sent := DllCall("User32.dll\PostMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParam)
 
