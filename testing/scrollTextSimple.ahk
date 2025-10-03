@@ -136,7 +136,11 @@ DebugMouseWheel(el, hwnd, xScreen, yScreen, xClient, yClient, converted) {
     } catch {
         details.Push("Element NativeWindowHandle: <error>")
     }
-    MsgBox(Join(details, "`n"))
+    text := Join(details, "`n")
+    try A_Clipboard := text
+    catch
+        ; ignore clipboard errors
+    MsgBox(text)
 }
 
 ResolveElementHandle(el) {
