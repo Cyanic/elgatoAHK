@@ -53,41 +53,6 @@ getScrollParentElement() {
     return parent
 }
 
-ScrollWithUIA(el, direction := "down") {
-    if !el {
-        return false
-    }
-
-    try {
-        if !el.IsScrollPatternAvailable {
-            ShowElementDebug(el, "Scroll pattern not available.")
-            return false
-        }
-    } catch {
-        ; fall through to attempting pattern retrieval
-    }
-
-    scrollPattern := 0
-    try {
-        scrollPattern := el.ScrollPattern
-    } catch Error as err {
-        ShowElementDebug(el, "Failed to retrieve scroll pattern.`n" err.Message)
-        return false
-    }
-
-    direction := StrLower(direction)
-    vertAmount := direction = "up" ? UIA.ScrollAmount.SmallDecrement : UIA.ScrollAmount.SmallIncrement
-
-    try {
-        scrollPattern.Scroll(vertAmount)
-    } catch Error as err {
-        ShowElementDebug(el, "Failed to invoke scroll pattern.`n" err.Message)
-        return false
-    }
-
-    return true
-}
-
 SendMouseWheel(el, direction := "down") {
     if !el {
         return false
@@ -195,13 +160,6 @@ ShowElementDebug(el, message) {
         detailLines.Push("Location: <error>")
     }
 
-    try {
-        valuePattern := el.ValuePattern
-        detailLines.Push("ReadOnly: " (valuePattern.IsReadOnly ? "true" : "false"))
-    } catch {
-        detailLines.Push("ReadOnly: <unknown>")
-    }
-
     patternNames := []
     try {
         for patternName, patternId in UIA.Pattern.OwnProps() {
@@ -244,8 +202,7 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    if !ScrollWithUIA(el, "up")
-        SendMouseWheel(el, "up")
+    SendMouseWheel(el, "up")
 }
 
 ; Scroll Down
@@ -254,8 +211,7 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    if !ScrollWithUIA(el, "down")
-        SendMouseWheel(el, "down")
+    SendMouseWheel(el, "down")
 }
 
 ; Scroll Parent Up
@@ -264,8 +220,7 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    if !ScrollWithUIA(el, "up")
-        SendMouseWheel(el, "up")
+    SendMouseWheel(el, "up")
 }
 
 ; Scroll Parent Down
@@ -274,6 +229,5 @@ Join(items, delimiter := "") {
     if !el {
         return
     }
-    if !ScrollWithUIA(el, "down")
-        SendMouseWheel(el, "down")
+    SendMouseWheel(el, "down")
 }
