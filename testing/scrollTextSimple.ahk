@@ -85,42 +85,7 @@ SendMouseWheel(el, direction := "down") {
     } catch Error as err {
         debugSteps.Push("Element location exception: " err.Message)
     }
-    /*
-    if !hasLocation {
-        rect := Buffer(16, 0)
-        if DllCall("user32\\GetWindowRect", "ptr", hwnd, "ptr", rect.Ptr) {
-            left := NumGet(rect, 0, "int")
-            top := NumGet(rect, 4, "int")
-            right := NumGet(rect, 8, "int")
-            bottom := NumGet(rect, 12, "int")
-            x := (left + right) // 2
-            y := (top + bottom) // 2
-            hasLocation := true
-            debugSteps.Push("Window rect fallback succeeded")
-        } else {
-            debugSteps.Push("Window rect fallback failed")
-        }
-    }
 
-    if !hasLocation {
-        pt := Buffer(8, 0)
-        if DllCall("user32\\GetCursorPos", "ptr", pt.Ptr) {
-            x := NumGet(pt, 0, "int")
-            y := NumGet(pt, 4, "int")
-            hasLocation := true
-            debugSteps.Push("Cursor position fallback succeeded")
-        } else {
-            debugSteps.Push("Cursor position fallback failed")
-        }
-    }
-
-    if !hasLocation {
-        debugSteps.Push("Falling back to 0,0 coordinates")
-        msg := "WM_MOUSEWHEEL: Unable to resolve location.`n" . Join(debugSteps, "`n")
-        LogDebug(msg)
-        ShowElementDebug(el, msg)
-    }
-*/
     delta := direction = "up" ? 120 : -120
     wParam := (delta & 0xFFFF) << 16
     lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
