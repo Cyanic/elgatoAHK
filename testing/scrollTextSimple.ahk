@@ -130,6 +130,8 @@ SendMouseWheel(el, direction := "down") {
             y := Round(loc.y + loc.h / 2)
             hasLocation := true
         }
+    } catch {
+        ; ignore location errors
     }
 
     if !hasLocation {
@@ -172,14 +174,20 @@ ResolveElementHandle(el) {
         if !current
             break
         hwnd := 0
-        try hwnd := current.NativeWindowHandle
-        catch hwnd := 0
+        try {
+            hwnd := current.NativeWindowHandle
+        } catch {
+            hwnd := 0
+        }
         if hwnd {
             return hwnd
         }
         nextParent := 0
-        try nextParent := current.Parent
-        catch nextParent := 0
+        try {
+            nextParent := current.Parent
+        } catch {
+            nextParent := 0
+        }
         current := nextParent
     }
     return 0
