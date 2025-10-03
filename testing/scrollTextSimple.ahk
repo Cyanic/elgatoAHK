@@ -100,36 +100,47 @@ SendMouseWheel(el, direction := "down") {
         }
     }
 
-    ; Convert screen -> client coordinates
+    xScreen := x
+    yScreen := y
+
     client := Buffer(8, 0)
-    NumPut("int", x, client, 0)
-    NumPut("int", y, client, 4)
+    NumPut("int", xScreen, client, 0)
+    NumPut("int", yScreen, client, 4)
     converted := DllCall("User32.dll\ScreenToClient", "ptr", hwnd, "ptr", client.Ptr)
     xClient := NumGet(client, 0, "int")
     yClient := NumGet(client, 4, "int")
-    DebugMouseWheel(el, hwnd, x, y, xClient, yClient, converted)
-    x := xClient
-    y := yClient
 
     delta := direction = "up" ? 120 : -120
     wParam := (delta & 0xFFFF) << 16
-    lParam := ((y & 0xFFFF) << 16) | (x & 0xFFFF)
+    lParamClient := ((yClient & 0xFFFF) << 16) | (xClient & 0xFFFF)
+    lParamScreen := ((yScreen & 0xFFFF) << 16) | (xScreen & 0xFFFF)
 
-    sent := DllCall("User32.dll\PostMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParam)
-    if !sent {
-        ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage failed.")
-        return false
-    }
-    return true
+    postClient := DllCall("User32.dll\PostMessageW", "ptr", hwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParamClient)
+    rootHwnd := DllCall("User32.dll\GetAncestor", "ptr", hwnd, "uint", 2, "ptr")
+    postRoot := 0
+    if rootHwnd && rootHwnd != hwnd
+        postRoot := DllCall("User32.dll\PostMessageW", "ptr", rootHwnd, "uint", 0x020A, "ptr", wParam, "ptr", lParamScreen)
+
+    DebugMouseWheel(el, hwnd, rootHwnd, xScreen, yScreen, xClient, yClient, converted, postClient, postRoot)
+
+    if postClient || postRoot
+        return true
+
+    ShowElementDebug(el, "WM_MOUSEWHEEL: PostMessage failed.")
+    return false
 }
 
-DebugMouseWheel(el, hwnd, xScreen, yScreen, xClient, yClient, converted) {
+DebugMouseWheel(el, hwnd, rootHwnd, xScreen, yScreen, xClient, yClient, converted, postClient, postRoot) {
     details := []
     details.Push("WM_MOUSEWHEEL diagnostics:")
     details.Push(Format("hwnd: 0x{:X}", hwnd))
+    details.Push(Format("root hwnd: 0x{:X}", rootHwnd))
     details.Push(Format("Screen point: ({1}, {2})", xScreen, yScreen))
     details.Push(Format("Client point: ({1}, {2})", xClient, yClient))
     details.Push("ScreenToClient converted: " (converted ? "true" : "false"))
+    details.Push("PostMessage (client hwnd): " (postClient ? "true" : "false"))
+    if rootHwnd && rootHwnd != hwnd
+        details.Push("PostMessage (root hwnd): " (postRoot ? "true" : "false"))
     try {
         native := el.NativeWindowHandle
         details.Push(Format("Element NativeWindowHandle: 0x{:X}", native))
