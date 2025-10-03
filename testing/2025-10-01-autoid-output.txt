@@ -43,3 +43,18 @@ Class: <none>	UIAClass: <none>	Type: tool bar	AutomationId: TabsToolbar			Name: 
 Class: <none>	UIAClass: <none>	Type: tab	AutomationId: tabbrowser-tabs			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 3	LocationLocation:{x: 0 y: 0 w:0, h: 0}
 Class: <none>	UIAClass: <none>	Type: tab	AutomationId: tabbrowser-tabs			Name: <none>	HWND: <none>	Rect: (0.0,0.0,0.0,0.0)	Depth: 3	LocationLocation:{x: 0 y: 0 w:0, h: 0}
 
+Scan - 2025-10-01 12:13:41 | Filter: Edit | ClassNN: Notepad | Process: Notepad.exe
+No matches found.
+
+Scan - 2025-10-01 12:34:13 | Filter: Edit | ClassNN: Notepad | Process: Notepad.exe
+No matches found.
+
+Scan - 2025-10-01 12:35:55 | Filter: Edit | ClassNN: Notepad | Process: Notepad.exe
+No matches found.
+
+Scan - 2025-10-01 12:51:23 | Filter: Edit | ClassNN: Notepad | Process: Notepad.exe
+No matches found.
+
+Scan - 2025-10-01 12:56:39 | Filter: Edit | ClassNN: Notepad | Process: Notepad.exe
+No matches found.
+
